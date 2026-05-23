@@ -1,0 +1,16 @@
+{
+  "itemGroup.littlemaidneo": "LittleMaidNeo",
+
+  "entity.littlemaidneo.multi_model": "Little Maid",
+
+  "key.littlemaidneo.open_maid_screen": "Open Maid Screen",
+  "key.littlemaidneo.model_select": "Model Select",
+  "key.littlemaidneo.sound_pack_select": "Sound Pack Select",
+
+  "screen.littlemaidneo.model_select": "Model Select",
+  "screen.littlemaidneo.sound_pack_select": "Sound Pack Select",
+
+  "littlemaidneo.configuration.title": "LittleMaidNeo Configs",
+  "littlemaidneo.configuration.section.littlemaidneo.common.toml": "LittleMaidNeo Configs",
+  "littlemaidneo.configuration.section.littlemaidneo.common.toml.title": "LittleMaidNeo Configs"
+}

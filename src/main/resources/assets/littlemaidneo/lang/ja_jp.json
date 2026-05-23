@@ -1,0 +1,16 @@
+{
+  "itemGroup.littlemaidneo": "リトルメイドネオ",
+
+  "entity.littlemaidneo.multi_model": "リトルメイド",
+
+  "key.littlemaidneo.open_maid_screen": "メイド画面を開く",
+  "key.littlemaidneo.model_select": "モデル選択",
+  "key.littlemaidneo.sound_pack_select": "サウンドパック選択",
+
+  "screen.littlemaidneo.model_select": "モデル選択",
+  "screen.littlemaidneo.sound_pack_select": "サウンドパック選択",
+
+  "littlemaidneo.configuration.title": "リトルメイドネオ設定",
+  "littlemaidneo.configuration.section.littlemaidneo.common.toml": "リトルメイドネオ設定",
+  "littlemaidneo.configuration.section.littlemaidneo.common.toml.title": "リトルメイドネオ設定"
+}
