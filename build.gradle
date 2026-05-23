@@ -27,7 +27,15 @@ sourceSets.main.resources {
 }
 
 repositories {
-    // Add here additional repositories if required by some of the dependencies below.
+    maven {
+        name = 'NeoForge'
+        url = 'https://maven.neoforged.net/releases'
+    }
+    maven {
+        name = 'NeoForge Snapshots'
+        url = 'https://maven.neoforged.net/snapshots'
+    }
+    mavenCentral()
 }
 
 base {
