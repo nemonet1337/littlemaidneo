@@ -237,46 +237,49 @@ public abstract class ModelMultiBase extends ModelBase implements IModelCaps, IM
 
     @Override
     public Object getCapsValue(int pIndex, Object... pArg) {
-        switch (pIndex) {
-            case caps_onGround: return onGrounds;
-            case caps_isRiding: return isRiding;
-            case caps_isSneak: return isSneak;
-            case caps_isWait: return isWait;
-            case caps_isChild: return isChild;
-            case caps_heldItemLeft: return heldItem[1];
-            case caps_heldItemRight: return heldItem[0];
-            case caps_aimedBow: return aimedBow;
-            case caps_entityIdFactor: return entityIdFactor;
-            case caps_ticksExisted: return entityTicksExisted;
-            case caps_ScaleFactor: return scaleFactor;
-            case caps_dominantArm: return dominantArm;
-            case caps_motionSitting: return motionSitting;
-        }
-        return null;
+        return switch (pIndex) {
+            case caps_onGround -> onGrounds;
+            case caps_isRiding -> isRiding;
+            case caps_isSneak -> isSneak;
+            case caps_isWait -> isWait;
+            case caps_isChild -> isChild;
+            case caps_heldItemLeft -> heldItem[1];
+            case caps_heldItemRight -> heldItem[0];
+            case caps_aimedBow -> aimedBow;
+            case caps_entityIdFactor -> entityIdFactor;
+            case caps_ticksExisted -> entityTicksExisted;
+            case caps_ScaleFactor -> scaleFactor;
+            case caps_dominantArm -> dominantArm;
+            case caps_motionSitting -> motionSitting;
+            default -> null;
+        };
     }
 
     @Override
     public boolean setCapsValue(int pIndex, Object... pArg) {
         switch (pIndex) {
-            case caps_onGround:
+            case caps_onGround -> {
                 for (int li = 0; li < onGrounds.length && li < pArg.length; li++) {
                     onGrounds[li] = (Float) pArg[li];
                 }
                 return true;
-            case caps_isRiding: isRiding = (Boolean) pArg[0]; return true;
-            case caps_isSneak: isSneak = (Boolean) pArg[0]; return true;
-            case caps_isWait: isWait = (Boolean) pArg[0]; return true;
-            case caps_isChild: isChild = (Boolean) pArg[0]; return true;
-            case caps_heldItemLeft:
+            }
+            case caps_isRiding -> { isRiding = (Boolean) pArg[0]; return true; }
+            case caps_isSneak -> { isSneak = (Boolean) pArg[0]; return true; }
+            case caps_isWait -> { isWait = (Boolean) pArg[0]; return true; }
+            case caps_isChild -> { isChild = (Boolean) pArg[0]; return true; }
+            case caps_heldItemLeft -> {
                 heldItem[1] = pArg[0] instanceof Float ? (Float) pArg[0] : 0.0F; return true;
-            case caps_heldItemRight:
+            }
+            case caps_heldItemRight -> {
                 heldItem[0] = pArg[0] instanceof Float ? (Float) pArg[0] : 0.0F; return true;
-            case caps_aimedBow: aimedBow = (Boolean) pArg[0]; return true;
-            case caps_entityIdFactor: entityIdFactor = (Float) pArg[0]; return true;
-            case caps_ticksExisted: entityTicksExisted = (Integer) pArg[0]; return true;
-            case caps_ScaleFactor: scaleFactor = (Float) pArg[0]; return true;
-            case caps_dominantArm: dominantArm = (Integer) pArg[0]; return true;
-            case caps_motionSitting: motionSitting = (Boolean) pArg[0]; return true;
+            }
+            case caps_aimedBow -> { aimedBow = (Boolean) pArg[0]; return true; }
+            case caps_entityIdFactor -> { entityIdFactor = (Float) pArg[0]; return true; }
+            case caps_ticksExisted -> { entityTicksExisted = (Integer) pArg[0]; return true; }
+            case caps_ScaleFactor -> { scaleFactor = (Float) pArg[0]; return true; }
+            case caps_dominantArm -> { dominantArm = (Integer) pArg[0]; return true; }
+            case caps_motionSitting -> { motionSitting = (Boolean) pArg[0]; return true; }
         }
         return false;
     }

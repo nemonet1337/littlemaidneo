@@ -167,7 +167,7 @@ public class LittleMaidScreen extends AbstractContainerScreen<LittleMaidScreenHa
             // スロットをクリックしたなら、そのスロットの一つ手前までで設定する
             getMaidSlotPos(mouseX, mouseY)
                     .ifPresent(pos -> {
-                        workItemSlotSize = convSlotIndex(pos.getA(), pos.getB());
+                        workItemSlotSize = convSlotIndex(pos.a(), pos.b());
                         C2SSetWorkItemSlotSizePacket.sendC2SPacket(owner, workItemSlotSize);
                     });
 
@@ -286,7 +286,7 @@ public class LittleMaidScreen extends AbstractContainerScreen<LittleMaidScreenHa
         var optional = getMaidSlotPos(mouseX, mouseY);
         if (optional.isPresent()) {
             var pos = optional.get();
-            int index = convSlotIndex(pos.getA(), pos.getB());
+            int index = convSlotIndex(pos.a(), pos.b());
             drawWorkItemSlotOverlay(context, index);
         } else {
             drawWorkItemSlotOverlay(context, workItemSlotSize);

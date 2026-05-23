@@ -199,8 +199,8 @@ public class MultiModelClassTransformer {
                     tryReplace(changed, fANode.desc, desc -> fANode.desc = desc);
                 } else if (aNode instanceof TypeInsnNode fANode) {
                     tryReplace(changed, fANode.desc, desc -> fANode.desc = desc);
-                } else if (aNode instanceof LdcInsnNode fANode && ((LdcInsnNode) aNode).cst instanceof Type) {
-                    tryReplace(changed, ((Type) fANode.cst).getInternalName(),
+                } else if (aNode instanceof LdcInsnNode fANode && fANode.cst instanceof Type type) {
+                    tryReplace(changed, type.getInternalName(),
                             desc -> fANode.cst = Type.getObjectType(desc));
                 }
                 aNode = aNode.getNext();

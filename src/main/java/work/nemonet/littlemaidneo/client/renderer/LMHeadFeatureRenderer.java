@@ -92,15 +92,15 @@ public class LMHeadFeatureRenderer<T extends LittleMaidEntity, M extends EntityM
 
         if (showHeadItem) {
             Item item = itemStack.getItem();
-            if (item instanceof BlockItem && ((BlockItem) item).getBlock() instanceof AbstractSkullBlock) {
+            if (item instanceof BlockItem blockItem && blockItem.getBlock() instanceof AbstractSkullBlock skullBlock) {
                 matrixStack.scale(1.1875f, -1.1875f, -1.1875f);
                 ResolvableProfile profile = itemStack.get(DataComponents.PROFILE);
                 matrixStack.translate(-0.5, 0.0, -0.5);
-                SkullBlock.Type skullType = ((AbstractSkullBlock) ((BlockItem) item).getBlock()).getType();
+                SkullBlock.Type skullType = skullBlock.getType();
                 SkullModelBase skullBlockEntityModel = this.headModels.get(skullType);
                 RenderType renderLayer = SkullBlockRenderer.getRenderType(skullType, profile);
                 SkullBlockRenderer.renderSkull(null, 180.0f, animationProgress, matrixStack, vertexConsumerProvider, light, skullBlockEntityModel, renderLayer);
-            } else if (!(item instanceof ArmorItem) || ((ArmorItem) item).getEquipmentSlot() != EquipmentSlot.HEAD) {
+            } else if (!(item instanceof ArmorItem armorItem) || armorItem.getEquipmentSlot() != EquipmentSlot.HEAD) {
                 translate(matrixStack, false);
                 Minecraft.getInstance().getEntityRenderDispatcher().getItemInHandRenderer()
                         .renderItem(livingEntity, itemStack, ItemDisplayContext.HEAD,

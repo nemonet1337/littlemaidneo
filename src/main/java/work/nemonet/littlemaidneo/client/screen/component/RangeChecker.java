@@ -1,17 +1,6 @@
 package work.nemonet.littlemaidneo.client.screen.component;
 
-public final class RangeChecker {
-    private final int x;
-    private final int y;
-    private final int width;
-    private final int height;
-
-    public RangeChecker(int x, int y, int width, int height) {
-        this.x = x;
-        this.y = y;
-        this.width = width;
-        this.height = height;
-    }
+public record RangeChecker(int x, int y, int width, int height) {
 
     public boolean check(double x, double y) {
         return checkFromWidth(x, y, this.x, this.y, width, height);
