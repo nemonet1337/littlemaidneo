@@ -27,7 +27,10 @@ sourceSets.main.resources {
 }
 
 repositories {
-    // Add here additional repositories if required by some of the dependencies below.
+    // Required for the third-party dependencies declared below (ASM, commons-io).
+    // The NeoForge moddev plugin adds the NeoForge/Mojang repositories automatically,
+    // but Maven Central must be declared for project-level dependencies.
+    mavenCentral()
 }
 
 base {
