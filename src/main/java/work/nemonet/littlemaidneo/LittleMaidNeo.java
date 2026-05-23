@@ -1,6 +1,7 @@
 package work.nemonet.littlemaidneo;
 
 import com.google.common.collect.ImmutableMap;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.neoforged.api.distmarker.Dist;
@@ -12,12 +13,18 @@ import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
+import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.registries.RegisterEvent;
+import net.neoforged.fml.event.config.ModConfigEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import work.nemonet.littlemaidneo.advancement.criterion.LMRBCriteria;
 import work.nemonet.littlemaidneo.client.resource.loader.LMSoundLoader;
 import work.nemonet.littlemaidneo.client.resource.manager.LMSoundManager;
 import work.nemonet.littlemaidneo.config.LMMLConfig;
+import work.nemonet.littlemaidneo.config.LMRBConfig;
+import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.MultiModelEntity;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
 import work.nemonet.littlemaidneo.maidmodel.*;
@@ -31,6 +38,7 @@ import work.nemonet.littlemaidneo.resource.manager.LMConfigManager;
 import work.nemonet.littlemaidneo.resource.manager.LMModelManager;
 import work.nemonet.littlemaidneo.resource.manager.LMTextureManager;
 import work.nemonet.littlemaidneo.resource.util.LMSounds;
+import work.nemonet.littlemaidneo.setup.ModSetup;
 import work.nemonet.littlemaidneo.setup.Registration;
 
 import java.nio.file.Paths;
@@ -42,14 +50,26 @@ public class LittleMaidNeo {
 
     public LittleMaidNeo(IEventBus modEventBus, ModContainer modContainer) {
         Registration.ENTITIES.register(modEventBus);
+        Registration.BLOCKS.register(modEventBus);
+        Registration.ITEMS.register(modEventBus);
+        Registration.MENUS.register(modEventBus);
+        Registration.CREATIVE_TABS.register(modEventBus);
+        Registration.BLOCK_ENTITIES.register(modEventBus);
+
         modContainer.registerConfig(ModConfig.Type.COMMON, LMMLConfig.SPEC);
+        modContainer.registerConfig(ModConfig.Type.COMMON, LMRBConfig.SPEC, "littlemaidneo-common.toml");
+
         modEventBus.addListener(this::onCommonSetup);
         modEventBus.addListener(this::onRegisterPayloadHandlers);
         modEventBus.addListener(this::onEntityAttributeCreation);
+        modEventBus.addListener(this::onRegisterSpawnPlacements);
+        modEventBus.addListener(this::onRegisterEvent);
+        modEventBus.addListener(this::onModConfig);
     }
 
     private void onCommonSetup(FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
+            ModSetup.init();
             initFileLoader();
             initModelLoader();
             if (FMLEnvironment.dist == Dist.CLIENT) {
@@ -68,6 +88,21 @@ public class LittleMaidNeo {
     private void onEntityAttributeCreation(EntityAttributeCreationEvent event) {
         event.put(Registration.MULTI_MODEL_ENTITY.get(), MultiModelEntity.createAttributes().build());
         event.put(Registration.DUMMY_MODEL_ENTITY.get(), MultiModelEntity.createAttributes().build());
+        event.put(Registration.LITTLE_MAID_ENTITY.get(), LittleMaidEntity.createLittleMaidAttributes().build());
+    }
+
+    private void onRegisterSpawnPlacements(RegisterSpawnPlacementsEvent event) {
+        ModSetup.onRegisterSpawnPlacements(event);
+    }
+
+    private void onRegisterEvent(RegisterEvent event) {
+        event.register(Registries.TRIGGER_TYPE, helper -> LMRBCriteria.init());
+    }
+
+    private void onModConfig(ModConfigEvent event) {
+        if (event.getConfig().getSpec() == LMRBConfig.SPEC) {
+            LMRBConfig.bake();
+        }
     }
 
     public static void initFileLoader() {

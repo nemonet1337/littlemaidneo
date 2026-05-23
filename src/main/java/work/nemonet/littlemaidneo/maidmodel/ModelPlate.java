@@ -33,31 +33,30 @@ public class ModelPlate extends ModelBoxBase {
         int lPlane = pPlane & 0x03;
 
         switch (lPlane) {
-            case planeXY:
+            case planeXY -> {
                 posX1 = pX; posY1 = pY; posZ1 = pZ;
                 posX2 = lx = pX + (float) pWidth;
                 posY2 = ly = pY + (float) pHeight;
                 posZ2 = lz = pZ;
                 pX -= pZoom; pY -= pZoom; lx += pZoom; ly += pZoom;
                 if (lotherplane) { pZ += pZoom; lz += pZoom; } else { pZ -= pZoom; lz -= pZoom; }
-                break;
-            case planeZY:
+            }
+            case planeZY -> {
                 posX1 = pX; posY1 = pY; posZ1 = pZ;
                 posX2 = lx = pX;
                 posY2 = ly = pY + (float) pHeight;
                 posZ2 = lz = pZ + (float) pWidth;
                 pY -= pZoom; pZ -= pZoom; ly += pZoom; lz += pZoom;
                 if (lotherplane) { pX += pZoom; lx += pZoom; } else { pX -= pZoom; lx -= pZoom; }
-                break;
-            case planeXZ:
-            default:
+            }
+            default -> { // planeXZ
                 posX1 = pX; posY1 = pY; posZ1 = pZ;
                 posX2 = lx = pX + (float) pWidth;
                 posY2 = ly = pY;
                 posZ2 = lz = pZ + (float) pHeight;
                 pX -= pZoom; pZ -= pZoom; lx += pZoom; lz += pZoom;
                 if (lotherplane) { pY += pZoom; ly += pZoom; } else { pY -= pZoom; ly -= pZoom; }
-                break;
+            }
         }
 
         quadList = new TexturedQuad[1];
@@ -68,8 +67,7 @@ public class ModelPlate extends ModelBoxBase {
         }
 
         switch (pPlane) {
-            case planeXYFront:
-            case planeZYRight:
+            case planeXYFront, planeZYRight -> {
                 vertexPositions = new PositionTextureVertex[]{
                         new PositionTextureVertex(pX, pY, lz, getU(modelrenderer, pTextureX), getV(modelrenderer, pTextureY)),
                         new PositionTextureVertex(pX, ly, lz, getU(modelrenderer, pTextureX), getV(modelrenderer, pTextureY + pHeight)),
@@ -77,9 +75,8 @@ public class ModelPlate extends ModelBoxBase {
                         new PositionTextureVertex(lx, pY, pZ, getU(modelrenderer, pTextureX + pWidth), getV(modelrenderer, pTextureY))
                 };
                 lotherplane = false;
-                break;
-            case planeXYBack:
-            case planeZYLeft:
+            }
+            case planeXYBack, planeZYLeft -> {
                 vertexPositions = new PositionTextureVertex[]{
                         new PositionTextureVertex(lx, pY, pZ, getU(modelrenderer, pTextureX), getV(modelrenderer, pTextureY)),
                         new PositionTextureVertex(lx, ly, pZ, getU(modelrenderer, pTextureX), getV(modelrenderer, pTextureY + pHeight)),
@@ -87,8 +84,8 @@ public class ModelPlate extends ModelBoxBase {
                         new PositionTextureVertex(pX, pY, lz, getU(modelrenderer, pTextureX + pWidth), getV(modelrenderer, pTextureY))
                 };
                 lotherplane = false;
-                break;
-            case planeXZTop:
+            }
+            case planeXZTop -> {
                 vertexPositions = new PositionTextureVertex[]{
                         new PositionTextureVertex(pX, pY, lz, getU(modelrenderer, pTextureX), getV(modelrenderer, pTextureY)),
                         new PositionTextureVertex(pX, ly, pZ, getU(modelrenderer, pTextureX), getV(modelrenderer, pTextureY + pHeight)),
@@ -96,8 +93,8 @@ public class ModelPlate extends ModelBoxBase {
                         new PositionTextureVertex(lx, pY, lz, getU(modelrenderer, pTextureX + pWidth), getV(modelrenderer, pTextureY))
                 };
                 lotherplane = false;
-                break;
-            case planeXZBottom:
+            }
+            case planeXZBottom -> {
                 vertexPositions = new PositionTextureVertex[]{
                         new PositionTextureVertex(lx, pY, lz, getU(modelrenderer, pTextureX + pWidth), getV(modelrenderer, pTextureY)),
                         new PositionTextureVertex(lx, ly, pZ, getU(modelrenderer, pTextureX + pWidth), getV(modelrenderer, pTextureY + pHeight)),
@@ -105,15 +102,13 @@ public class ModelPlate extends ModelBoxBase {
                         new PositionTextureVertex(pX, pY, lz, getU(modelrenderer, pTextureX), getV(modelrenderer, pTextureY))
                 };
                 lotherplane = false;
-                break;
-            default:
-                vertexPositions = new PositionTextureVertex[]{
-                        new PositionTextureVertex(pX, pY, pZ, 0.0F, 0.0F),
-                        new PositionTextureVertex(lx, pY, lz, 0.0F, 8F),
-                        new PositionTextureVertex(lx, ly, lz, 8F, 8F),
-                        new PositionTextureVertex(pX, ly, pZ, 8F, 0.0F)
-                };
-                break;
+            }
+            default -> vertexPositions = new PositionTextureVertex[]{
+                    new PositionTextureVertex(pX, pY, pZ, 0.0F, 0.0F),
+                    new PositionTextureVertex(lx, pY, lz, 0.0F, 8F),
+                    new PositionTextureVertex(lx, ly, lz, 8F, 8F),
+                    new PositionTextureVertex(pX, ly, pZ, 8F, 0.0F)
+            };
         }
 
         if ((pPlane & 0x0010) > 0) {

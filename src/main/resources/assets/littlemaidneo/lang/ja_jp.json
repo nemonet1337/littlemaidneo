@@ -2,13 +2,65 @@
   "itemGroup.littlemaidneo": "リトルメイドネオ",
 
   "entity.littlemaidneo.multi_model": "リトルメイド",
+  "entity.littlemaidneo.little_maid_mob": "リトルメイド",
+  "entity.littlemaidneo.little_maid_mob.InsideSkirt": "InsideSkirt",
+  "entity.littlemaidneo.maid_soul": "メイドソウル",
 
+  "state.littlemaidneo.None": "からっぽ",
+  "state.littlemaidneo.Wait": "待機",
+  "state.littlemaidneo.Escort": "従者",
+  "state.littlemaidneo.Freedom": "自由人",
+  "state.littlemaidneo.Tracer": "赤石探知",
+  "state.littlemaidneo.Strike": "ストライキ",
+  "mode.littlemaidneo.Fencer": "剣士",
+  "mode.littlemaidneo.Archer": "射手",
+  "mode.littlemaidneo.Cooking": "お料理係",
+  "mode.littlemaidneo.Ripper": "毛狩り隊",
+  "mode.littlemaidneo.Torcher": "照明係",
+  "mode.littlemaidneo.Healer": "回復係",
+
+  "block.littlemaidneo.salary_box": "メイドさんのお給料箱",
+
+  "item.littlemaidneo.little_maid_spawn_egg": "リトルメイドのスポーンエッグ",
+
+  "advancements.husbandry.contract_maid.title": "悟り。",
+  "advancements.husbandry.contract_maid.description": "リトルメイドを雇用する",
+  "advancements.husbandry.resurrect_maid.title": "不滅のメイドソウル",
+  "advancements.husbandry.resurrect_maid.description": "サトウキビに囲まれたロウソク付きケーキに火を灯す",
+
+  "key.categories.littlemaidneo": "リトルメイドネオ",
   "key.littlemaidneo.open_maid_screen": "メイド画面を開く",
   "key.littlemaidneo.model_select": "モデル選択",
   "key.littlemaidneo.sound_pack_select": "サウンドパック選択",
+  "key.littlemaidneo.open_maid_manager_screen": "メイドさん管理画面を開く",
 
   "screen.littlemaidneo.model_select": "モデル選択",
   "screen.littlemaidneo.sound_pack_select": "サウンドパック選択",
+
+  "gui.littlemaidneo.littlemaid.tooltip.open_target_tag_setting": "敵対対象タグ設定",
+  "gui.littlemaidneo.littlemaid.tooltip.open_sound_pack_select": "サウンドパック選択",
+  "gui.littlemaidneo.littlemaid.tooltip.open_model_select": "モデル選択",
+  "gui.littlemaidneo.littlemaid.tooltip.change_moving_mode": "移動モード変更",
+  "gui.littlemaidneo.littlemaid.tooltip.change_blood_suck": "戦闘対象変更",
+  "gui.littlemaidneo.littlemaid.tooltip.change_blood_suck.to_blood_suck": "―現在メイドさんは冷静で、ENEMYのモブだけ狩る",
+  "gui.littlemaidneo.littlemaid.tooltip.change_blood_suck.is_blood_suck": "―現在メイドさんは血に飢え、UNKNOWNのモブまで狩る",
+  "gui.littlemaidneo.littlemaid.tooltip.open_maid_manager": "メイドさん管理画面",
+  "gui.littlemaidneo.littlemaid.tooltip.setting_work_item_slot": "お仕事アイテムスロット設定―メイドさんは\"このスロットのアイテム\"をチェストに仕舞わない",
+
+  "gui.littlemaidneo.target_tag.tags.attack_prohibited": "攻撃禁止",
+  "gui.littlemaidneo.target_tag.tags.preemptive_attack_prohibited": "先制攻撃禁止",
+  "gui.littlemaidneo.target_tag.tags.preemptive_attack_allowed": "先制攻撃許可",
+  "gui.littlemaidneo.target_tag.tags.no_weapon_restriction": "武器制限なし",
+  "gui.littlemaidneo.target_tag.tags.melee_weapon_prohibited": "近距離武器禁止",
+  "gui.littlemaidneo.target_tag.tags.ranged_weapon_prohibited": "遠距離武器禁止",
+  "gui.littlemaidneo.target_tag.tags.approach_allowed": "接近許可",
+  "gui.littlemaidneo.target_tag.tags.approach_prohibited": "接近禁止",
+
+  "gui.littlemaidneo.maidmanager.open_inventory": "インベントリ",
+
+  "container.littlemaidneo.salary_box": "メイドさんのお給料箱",
+
+  "screen.littlemaidmodelloader.model_select_screen.change_screen": "Model / Armor",
 
   "littlemaidneo.configuration.title": "リトルメイドネオ設定",
   "littlemaidneo.configuration.section.littlemaidneo.common.toml": "リトルメイドネオ設定",

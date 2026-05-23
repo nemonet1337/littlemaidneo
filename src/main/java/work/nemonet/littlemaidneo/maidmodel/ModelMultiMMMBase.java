@@ -48,14 +48,20 @@ public abstract class ModelMultiMMMBase extends ModelMultiBase {
     @Override
     public boolean setCapsValue(int pIndex, Object... pArg) {
         switch (pIndex) {
-            case caps_changeModel:
-                changeModel((IModelCaps) pArg[0]); return true;
-            case caps_renderFace:
+            case caps_changeModel -> {
+                changeModel((IModelCaps) pArg[0]);
+                return true;
+            }
+            case caps_renderFace -> {
                 renderFace((IModelCaps) pArg[0], (Float) pArg[1], (Float) pArg[2], (Float) pArg[3],
-                        (Float) pArg[4], (Float) pArg[5], (Float) pArg[6], (Boolean) pArg[7]); return true;
-            case caps_renderBody:
+                        (Float) pArg[4], (Float) pArg[5], (Float) pArg[6], (Boolean) pArg[7]);
+                return true;
+            }
+            case caps_renderBody -> {
                 renderBody((IModelCaps) pArg[0], (Float) pArg[1], (Float) pArg[2], (Float) pArg[3],
-                        (Float) pArg[4], (Float) pArg[5], (Float) pArg[6], (Boolean) pArg[7]); return true;
+                        (Float) pArg[4], (Float) pArg[5], (Float) pArg[6], (Boolean) pArg[7]);
+                return true;
+            }
         }
         return super.setCapsValue(pIndex, pArg);
     }
@@ -63,8 +69,12 @@ public abstract class ModelMultiMMMBase extends ModelMultiBase {
     @Override
     public Object getCapsValue(int pIndex, Object... pArg) {
         switch (pIndex) {
-            case caps_setFaceTexture: return setFaceTexture((Integer) pArg[0]);
-            case caps_textureLightColor: return getTextureLightColor((IModelCaps) pArg[0]);
+            case caps_setFaceTexture -> {
+                return setFaceTexture((Integer) pArg[0]);
+            }
+            case caps_textureLightColor -> {
+                return getTextureLightColor((IModelCaps) pArg[0]);
+            }
         }
         return super.getCapsValue(pIndex, pArg);
     }

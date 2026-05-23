@@ -40,7 +40,7 @@ repo/
 !**/src/**/repo/
 
 ### LMM Base Source ###
-LMMBase/
+#LMMBase/
 
 ### Claude Code ###
 .claude/

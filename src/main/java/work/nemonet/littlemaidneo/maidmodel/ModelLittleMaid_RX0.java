@@ -364,10 +364,12 @@ public class ModelLittleMaid_RX0 extends ModelLittleMaidBase {
     @Override
     public Object getCapsValue(int pIndex, Object... pArg) {
         switch (pIndex) {
-            case caps_PartsStrings:
+            case caps_PartsStrings -> {
                 return "DestroyMode,mimiSkirt,noSkirt";
-            case caps_isUpdateSize:
+            }
+            case caps_isUpdateSize -> {
                 return true;
+            }
         }
         return super.getCapsValue(pIndex, pArg);
     }
