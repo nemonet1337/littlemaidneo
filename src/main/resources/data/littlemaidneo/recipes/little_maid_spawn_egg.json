@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "SGS",
+    "CEC",
+    "SGS"
+  ],
+  "key": {
+    "S": {
+      "tag": "littlemaidneo:maids_salary"
+    },
+    "C": {
+      "tag": "littlemaidneo:maids_employable"
+    },
+    "G": {
+      "item": "minecraft:gold_ingot"
+    },
+    "E": {
+      "item": "minecraft:egg"
+    }
+  },
+  "result": {
+    "item": "littlemaidneo:little_maid_spawn_egg"
+  },
+  "show_notification": true
+}

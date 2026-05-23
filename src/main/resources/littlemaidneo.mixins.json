@@ -1,0 +1,21 @@
+{
+  "required": true,
+  "package": "work.nemonet.littlemaidneo.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "minVersion": "0.8",
+  "mixins": [
+    "MixinAbstractFurnaceBlockEntity",
+    "MixinCandleCakeBlock",
+    "MixinCrossBowItem",
+    "MixinExperienceOrbEntity",
+    "MixinItemEntity",
+    "MixinPlayerEntity",
+    "MixinRangedWeaponItem",
+    "MixinSaddleItem",
+    "MixinServerPlayerEntity"
+  ],
+  "client": [],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

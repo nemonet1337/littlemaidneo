@@ -1,9 +1,11 @@
 package work.nemonet.littlemaidneo.network;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.OwnableEntity;
+import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.neoforged.api.distmarker.Dist;
@@ -11,40 +13,119 @@ import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import work.nemonet.littlemaidneo.client.screen.MaidManagerScreen;
+import work.nemonet.littlemaidneo.client.screen.TargetTagScreen;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel.Layer;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel.Part;
 import work.nemonet.littlemaidneo.entity.compound.SoundPlayable;
+import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
+import work.nemonet.littlemaidneo.entity.targeting.TargetIdentifier;
+import work.nemonet.littlemaidneo.entity.targeting.TargetTagManager;
+import work.nemonet.littlemaidneo.entity.targeting.TargetTagManagerImpl;
+import work.nemonet.littlemaidneo.entity.targeting.TargetingSystem;
+import work.nemonet.littlemaidneo.entity.util.MaidManager;
+import work.nemonet.littlemaidneo.entity.util.MaidManagerImpl;
+import work.nemonet.littlemaidneo.entity.util.MovingMode;
+import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 import work.nemonet.littlemaidneo.resource.holder.ConfigHolder;
 import work.nemonet.littlemaidneo.resource.manager.LMConfigManager;
 import work.nemonet.littlemaidneo.resource.manager.LMTextureManager;
 import work.nemonet.littlemaidneo.resource.util.ArmorSets;
 import work.nemonet.littlemaidneo.resource.util.TextureColors;
+import work.nemonet.littlemaidneo.util.PlayerList;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 public class NetworkHandler {
 
     public static void register(RegisterPayloadHandlersEvent event) {
         var registrar = event.registrar("1");
+
+        // SyncMultiModel (bidirectional)
         registrar.playToClient(
                 SyncMultiModelPayload.TYPE,
                 SyncMultiModelPayload.STREAM_CODEC,
                 NetworkHandler::handleSyncMultiModelClient);
-        registrar.playToClient(
-                SyncSoundPackPayload.TYPE,
-                SyncSoundPackPayload.STREAM_CODEC,
-                NetworkHandler::handleSyncSoundPackClient);
-        registrar.playToClient(
-                LMSoundPayload.TYPE,
-                LMSoundPayload.STREAM_CODEC,
-                NetworkHandler::handleLMSoundClient);
         registrar.playToServer(
                 SyncMultiModelPayload.TYPE,
                 SyncMultiModelPayload.STREAM_CODEC,
                 NetworkHandler::handleSyncMultiModelServer);
+
+        // SyncSoundPack (bidirectional)
+        registrar.playToClient(
+                SyncSoundPackPayload.TYPE,
+                SyncSoundPackPayload.STREAM_CODEC,
+                NetworkHandler::handleSyncSoundPackClient);
         registrar.playToServer(
                 SyncSoundPackPayload.TYPE,
                 SyncSoundPackPayload.STREAM_CODEC,
                 NetworkHandler::handleSyncSoundPackServer);
+
+        // LMSound (S2C only)
+        registrar.playToClient(
+                LMSoundPayload.TYPE,
+                LMSoundPayload.STREAM_CODEC,
+                NetworkHandler::handleLMSoundClient);
+
+        // C2S packets
+        registrar.playToServer(
+                C2SSetMovingStatePayload.TYPE,
+                C2SSetMovingStatePayload.STREAM_CODEC,
+                NetworkHandler::handleSetMovingStateServer);
+        registrar.playToServer(
+                C2SSetBloodSuckPayload.TYPE,
+                C2SSetBloodSuckPayload.STREAM_CODEC,
+                NetworkHandler::handleSetBloodSuckServer);
+        registrar.playToServer(
+                C2SSetWorkItemSlotSizePayload.TYPE,
+                C2SSetWorkItemSlotSizePayload.STREAM_CODEC,
+                NetworkHandler::handleSetWorkItemSlotSizeServer);
+        registrar.playToServer(
+                C2SSetTargetTagsPayload.TYPE,
+                C2SSetTargetTagsPayload.STREAM_CODEC,
+                NetworkHandler::handleSetTargetTagsServer);
+        registrar.playToServer(
+                C2SOpenInventoryPayload.TYPE,
+                C2SOpenInventoryPayload.STREAM_CODEC,
+                NetworkHandler::handleOpenInventoryServer);
+        registrar.playToServer(
+                C2SCallWaitPayload.TYPE,
+                C2SCallWaitPayload.STREAM_CODEC,
+                NetworkHandler::handleCallWaitServer);
+
+        // SyncSoundConfig (bidirectional)
+        registrar.playToClient(
+                SyncSoundConfigPayload.TYPE,
+                SyncSoundConfigPayload.STREAM_CODEC,
+                NetworkHandler::handleSyncSoundConfigClient);
+        registrar.playToServer(
+                SyncSoundConfigPayload.TYPE,
+                SyncSoundConfigPayload.STREAM_CODEC,
+                NetworkHandler::handleSyncSoundConfigServer);
+
+        // OpenTargetTagScreen (split C2S / S2C)
+        registrar.playToServer(
+                OpenTargetTagScreenC2SPayload.TYPE,
+                OpenTargetTagScreenC2SPayload.STREAM_CODEC,
+                NetworkHandler::handleOpenTargetTagScreenServer);
+        registrar.playToClient(
+                OpenTargetTagScreenS2CPayload.TYPE,
+                OpenTargetTagScreenS2CPayload.STREAM_CODEC,
+                NetworkHandler::handleOpenTargetTagScreenClient);
+
+        // OpenMaidManagerScreen (split C2S / S2C)
+        registrar.playToServer(
+                OpenMaidManagerScreenC2SPayload.TYPE,
+                OpenMaidManagerScreenC2SPayload.STREAM_CODEC,
+                NetworkHandler::handleOpenMaidManagerScreenServer);
+        registrar.playToClient(
+                OpenMaidManagerScreenS2CPayload.TYPE,
+                OpenMaidManagerScreenS2CPayload.STREAM_CODEC,
+                NetworkHandler::handleOpenMaidManagerScreenClient);
     }
 
     // --- SyncMultiModel ---
@@ -164,7 +245,7 @@ public class NetworkHandler {
     // --- LMSound ---
 
     public static void sendLMSoundS2C(Entity entity, String soundName) {
-        if (!(entity.level() instanceof ServerLevel serverLevel)) return;
+        if (!(entity.level() instanceof net.minecraft.server.level.ServerLevel serverLevel)) return;
         var payload = new LMSoundPayload(entity.getId(), soundName);
         for (ServerPlayer player : serverLevel.players()) {
             if (player.distanceToSqr(entity) < 16 * 16) {
@@ -182,6 +263,273 @@ public class NetworkHandler {
             if (entity instanceof SoundPlayable soundPlayable) {
                 soundPlayable.play(payload.soundName());
             }
+        });
+    }
+
+    // --- C2SSetMovingState ---
+
+    @OnlyIn(Dist.CLIENT)
+    public static void sendSetMovingStateC2S(Entity entity, MovingMode state) {
+        PacketDistributor.sendToServer(new C2SSetMovingStatePayload(entity.getId(), state));
+    }
+
+    private static void handleSetMovingStateServer(C2SSetMovingStatePayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            Player player = context.player();
+            Entity entity = player.level().getEntity(payload.entityId());
+            if (!(entity instanceof LittleMaidEntity maid)
+                    || TameableUtil.getTameOwnerUuid(maid)
+                            .filter(ownerId -> ownerId.equals(player.getUUID()))
+                            .isEmpty()) {
+                return;
+            }
+            if (maid.isStrike()) {
+                return;
+            }
+            maid.setMovingMode(payload.movingMode());
+            maid.getNavigation().stop();
+            if (payload.movingMode() == MovingMode.FREEDOM) {
+                maid.setFreedomPos(entity.blockPosition());
+            }
+        });
+    }
+
+    // --- C2SSetBloodSuck ---
+
+    @OnlyIn(Dist.CLIENT)
+    public static void sendSetBloodSuckC2S(Entity entity, boolean isBloodSuck) {
+        PacketDistributor.sendToServer(new C2SSetBloodSuckPayload(entity.getId(), isBloodSuck));
+    }
+
+    private static void handleSetBloodSuckServer(C2SSetBloodSuckPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            Player player = context.player();
+            Entity entity = player.level().getEntity(payload.entityId());
+            if (!(entity instanceof LittleMaidEntity maid)) {
+                return;
+            }
+            if (TameableUtil.getTameOwnerUuid(maid)
+                    .filter(uuid -> player.getUUID().equals(uuid))
+                    .isPresent()) {
+                maid.setBloodSuck(payload.isBloodSuck());
+            }
+        });
+    }
+
+    // --- C2SSetWorkItemSlotSize ---
+
+    @OnlyIn(Dist.CLIENT)
+    public static void sendSetWorkItemSlotSizeC2S(LittleMaidEntity entity, int num) {
+        PacketDistributor.sendToServer(new C2SSetWorkItemSlotSizePayload(entity.getId(), num));
+    }
+
+    private static void handleSetWorkItemSlotSizeServer(C2SSetWorkItemSlotSizePayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            Player player = context.player();
+            Entity entity = player.level().getEntity(payload.entityId());
+            if (!(entity instanceof LittleMaidEntity maid)) {
+                return;
+            }
+            if (TameableUtil.getTameOwnerUuid(maid)
+                    .filter(uuid -> player.getUUID().equals(uuid))
+                    .isPresent()) {
+                maid.setWorkItemSlotNum(payload.num());
+            }
+        });
+    }
+
+    // --- C2SSetTargetTags ---
+
+    @OnlyIn(Dist.CLIENT)
+    public static <T extends Entity & TargetTagManager> void sendSetTargetTagsC2S(T entity,
+            Map<TargetIdentifier, Set<TargetingSystem.TargetTag>> targetTags) {
+        CompoundTag tag = new CompoundTag();
+        TargetTagManagerImpl.write(targetTags, tag);
+        PacketDistributor.sendToServer(new C2SSetTargetTagsPayload(entity.getId(), tag));
+    }
+
+    private static void handleSetTargetTagsServer(C2SSetTargetTagsPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            Player player = context.player();
+            Entity entity = player.level().getEntity(payload.entityId());
+            if (!(entity instanceof TargetTagManager targetTagManager)) {
+                return;
+            }
+            if (entity instanceof TamableAnimal && !player.getUUID().equals(((TamableAnimal) entity).getOwnerUUID())) {
+                return;
+            }
+            targetTagManager.readTargetTags(payload.tag());
+        });
+    }
+
+    // --- C2SOpenInventory ---
+
+    @OnlyIn(Dist.CLIENT)
+    public static void sendOpenInventoryC2S(Entity entity) {
+        PacketDistributor.sendToServer(new C2SOpenInventoryPayload(entity.getId()));
+    }
+
+    private static void handleOpenInventoryServer(C2SOpenInventoryPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            Player player = context.player();
+            Entity entity = player.level().getEntity(payload.entityId());
+            if (!(entity instanceof LittleMaidEntity maid)) {
+                return;
+            }
+            if (TameableUtil.getTameOwnerUuid(maid)
+                    .filter(uuid -> player.getUUID().equals(uuid))
+                    .isPresent()) {
+                maid.openInventory(player);
+            }
+        });
+    }
+
+    // --- C2SCallWait ---
+
+    @OnlyIn(Dist.CLIENT)
+    public static void sendCallWaitC2S(Entity entity, C2SCallWaitPayload.State state) {
+        PacketDistributor.sendToServer(new C2SCallWaitPayload(entity.getId(), state));
+    }
+
+    private static void handleCallWaitServer(C2SCallWaitPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            Player player = context.player();
+            Entity entity = player.level().getEntity(payload.entityId());
+            if (!(entity instanceof LittleMaidEntity maid)
+                    || !TameableUtil.isTameOwner(maid, player)) {
+                return;
+            }
+            if (maid.isStrike()) {
+                return;
+            }
+            if (payload.state() == C2SCallWaitPayload.State.WAIT) {
+                TameableUtil.setWait(maid, true);
+            } else {
+                TameableUtil.setWait(maid, false);
+                maid.setMovingMode(MovingMode.ESCORT);
+            }
+        });
+    }
+
+    // --- SyncSoundConfig ---
+
+    @OnlyIn(Dist.CLIENT)
+    public static void sendSyncSoundConfigC2S(Entity entity, String configName) {
+        PacketDistributor.sendToServer(new SyncSoundConfigPayload(entity.getId(), configName));
+    }
+
+    public static void sendSyncSoundConfigS2C(Entity entity, String configName) {
+        for (ServerPlayer player : PlayerList.tracking(entity)) {
+            PacketDistributor.sendToPlayer(player, new SyncSoundConfigPayload(entity.getId(), configName));
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private static void handleSyncSoundConfigClient(SyncSoundConfigPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            Player player = Minecraft.getInstance().player;
+            if (player == null) return;
+            Level world = player.level();
+            Entity entity = world.getEntity(payload.entityId());
+            if (entity instanceof SoundPlayable) {
+                LMConfigManager.INSTANCE.getConfig(payload.configName())
+                        .ifPresent(((SoundPlayable) entity)::setConfigHolder);
+            }
+        });
+    }
+
+    private static void handleSyncSoundConfigServer(SyncSoundConfigPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            Player player = context.player();
+            Level world = player.level();
+            Entity entity = world.getEntity(payload.entityId());
+            if (!(entity instanceof SoundPlayable)) {
+                return;
+            }
+            if (entity instanceof OwnableEntity tameable
+                    && TameableUtil.getTameOwnerUuid(tameable)
+                            .filter(ownerId -> ownerId.equals(player.getUUID()))
+                            .isEmpty()) {
+                return;
+            }
+            LMConfigManager.INSTANCE.getConfig(payload.configName())
+                    .ifPresent(((SoundPlayable) entity)::setConfigHolder);
+            sendSyncSoundConfigS2C(entity, payload.configName());
+        });
+    }
+
+    // --- OpenTargetTagScreen ---
+
+    @OnlyIn(Dist.CLIENT)
+    public static void sendOpenTargetTagScreenC2S(Entity entity) {
+        PacketDistributor.sendToServer(new OpenTargetTagScreenC2SPayload(entity.getId()));
+    }
+
+    public static <T extends Entity & TargetTagManager> void sendOpenTargetTagScreenS2C(T entity, Player player) {
+        CompoundTag nbt = new CompoundTag();
+        entity.writeTargetTags(nbt);
+        PacketDistributor.sendToPlayer((ServerPlayer) player,
+                new OpenTargetTagScreenS2CPayload(entity.getId(), nbt));
+    }
+
+    private static void handleOpenTargetTagScreenServer(OpenTargetTagScreenC2SPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            Player player = context.player();
+            Entity entity = player.level().getEntity(payload.entityId());
+            if (!(entity instanceof TargetTagManager)
+                    || (entity instanceof TamableAnimal
+                            && !player.getUUID().equals(((TamableAnimal) entity).getOwnerUUID()))) {
+                return;
+            }
+            // noinspection unchecked
+            sendOpenTargetTagScreenS2C((Entity & TargetTagManager) entity, player);
+        });
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private static void handleOpenTargetTagScreenClient(OpenTargetTagScreenS2CPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            Player player = Minecraft.getInstance().player;
+            if (player == null) return;
+            Entity entity = player.level().getEntity(payload.entityId());
+            if (!(entity instanceof TargetTagManager targetTagManager)) {
+                return;
+            }
+            Map<TargetIdentifier, Set<TargetingSystem.TargetTag>> targetTagMap = new HashMap<>();
+            TargetTagManagerImpl.read(targetTagMap, payload.nbt());
+            Minecraft.getInstance().setScreen(new TargetTagScreen(entity, targetTagMap));
+        });
+    }
+
+    // --- OpenMaidManagerScreen ---
+
+    @OnlyIn(Dist.CLIENT)
+    public static void sendOpenMaidManagerScreenC2S() {
+        PacketDistributor.sendToServer(OpenMaidManagerScreenC2SPayload.INSTANCE);
+    }
+
+    public static void sendOpenMaidManagerScreenS2C(Player player) {
+        CompoundTag nbt = new CompoundTag();
+        var lmInfos = ((MaidManager) player).getMaidList();
+        MaidManagerImpl.write(nbt, lmInfos);
+        PacketDistributor.sendToPlayer((ServerPlayer) player, new OpenMaidManagerScreenS2CPayload(nbt));
+    }
+
+    private static void handleOpenMaidManagerScreenServer(OpenMaidManagerScreenC2SPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            Player player = context.player();
+            sendOpenMaidManagerScreenS2C(player);
+        });
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private static void handleOpenMaidManagerScreenClient(OpenMaidManagerScreenS2CPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            Player player = Minecraft.getInstance().player;
+            if (player == null) return;
+            var lmInfos = new ArrayList<MaidManager.LMInfo>();
+            MaidManagerImpl.read(payload.nbt(), lmInfos);
+            Minecraft.getInstance().setScreen(new MaidManagerScreen(lmInfos));
         });
     }
 }
