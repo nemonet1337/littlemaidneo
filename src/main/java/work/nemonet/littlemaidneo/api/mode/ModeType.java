@@ -31,7 +31,7 @@ public class ModeType<T extends Mode> {
      * 注意：このメソッドはpriorityを考慮しない。
      */
     public boolean isModeItem(ItemStack stack) {
-        return matchers.stream().anyMatch(matcher -> matcher.getB().isMatch(stack));
+        return matchers.stream().anyMatch(matcher -> matcher.b().isMatch(stack));
     }
 
     public List<Tuple<ItemMatcher.Priority, ItemMatcher>> getItemMatcherList() {

@@ -355,7 +355,7 @@ public class NetworkHandler {
             if (!(entity instanceof TargetTagManager targetTagManager)) {
                 return;
             }
-            if (entity instanceof TamableAnimal && !player.getUUID().equals(((TamableAnimal) entity).getOwnerUUID())) {
+            if (entity instanceof TamableAnimal tamable && !player.getUUID().equals(tamable.getOwnerUUID())) {
                 return;
             }
             targetTagManager.readTargetTags(payload.tag());
@@ -431,9 +431,9 @@ public class NetworkHandler {
             if (player == null) return;
             Level world = player.level();
             Entity entity = world.getEntity(payload.entityId());
-            if (entity instanceof SoundPlayable) {
+            if (entity instanceof SoundPlayable soundPlayable) {
                 LMConfigManager.INSTANCE.getConfig(payload.configName())
-                        .ifPresent(((SoundPlayable) entity)::setConfigHolder);
+                        .ifPresent(soundPlayable::setConfigHolder);
             }
         });
     }
@@ -443,7 +443,7 @@ public class NetworkHandler {
             Player player = context.player();
             Level world = player.level();
             Entity entity = world.getEntity(payload.entityId());
-            if (!(entity instanceof SoundPlayable)) {
+            if (!(entity instanceof SoundPlayable soundPlayable)) {
                 return;
             }
             if (entity instanceof OwnableEntity tameable
@@ -453,7 +453,7 @@ public class NetworkHandler {
                 return;
             }
             LMConfigManager.INSTANCE.getConfig(payload.configName())
-                    .ifPresent(((SoundPlayable) entity)::setConfigHolder);
+                    .ifPresent(soundPlayable::setConfigHolder);
             sendSyncSoundConfigS2C(entity, payload.configName());
         });
     }
@@ -477,8 +477,8 @@ public class NetworkHandler {
             Player player = context.player();
             Entity entity = player.level().getEntity(payload.entityId());
             if (!(entity instanceof TargetTagManager)
-                    || (entity instanceof TamableAnimal
-                            && !player.getUUID().equals(((TamableAnimal) entity).getOwnerUUID()))) {
+                    || (entity instanceof TamableAnimal tamable
+                            && !player.getUUID().equals(tamable.getOwnerUUID()))) {
                 return;
             }
             // noinspection unchecked

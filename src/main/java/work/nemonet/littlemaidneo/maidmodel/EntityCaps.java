@@ -118,15 +118,15 @@ public class EntityCaps implements IModelCaps {
         });
         register("boundingBox", caps_boundingBox, (entity, arg) -> {
             if (arg == null) return entity.getBoundingBox();
-            switch ((Integer) arg[0]) {
-                case 0: return entity.getBoundingBox().maxX;
-                case 1: return entity.getBoundingBox().maxY;
-                case 2: return entity.getBoundingBox().maxZ;
-                case 3: return entity.getBoundingBox().minX;
-                case 4: return entity.getBoundingBox().minY;
-                case 5: return entity.getBoundingBox().minZ;
-            }
-            return null;
+            return switch ((Integer) arg[0]) {
+                case 0 -> entity.getBoundingBox().maxX;
+                case 1 -> entity.getBoundingBox().maxY;
+                case 2 -> entity.getBoundingBox().maxZ;
+                case 3 -> entity.getBoundingBox().minX;
+                case 4 -> entity.getBoundingBox().minY;
+                case 5 -> entity.getBoundingBox().minZ;
+                default -> null;
+            };
         });
         register("rotationYaw", caps_rotationYaw, (entity, arg) -> entity.getYRot());
         register("rotationPitch", caps_rotationPitch, (entity, arg) -> entity.getXRot());

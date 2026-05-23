@@ -67,8 +67,8 @@ public class SalaryBoxBlock extends BaseEntityBlock {
             return;
         }
         BlockEntity blockEntity = world.getBlockEntity(pos);
-        if (blockEntity instanceof Container) {
-            Containers.dropContents(world, pos, (Container) blockEntity);
+        if (blockEntity instanceof Container container) {
+            Containers.dropContents(world, pos, container);
             world.updateNeighbourForOutputSignal(pos, this);
         }
         super.onRemove(state, world, pos, newState, moved);

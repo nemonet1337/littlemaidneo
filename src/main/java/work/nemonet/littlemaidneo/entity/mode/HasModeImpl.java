@@ -42,9 +42,9 @@ public class HasModeImpl implements HasMode {
                 .flatMap(mode -> mode.getModeType().getItemMatcherList().stream()
                         .map(tuple -> new Tuple<>(mode, tuple)))
                 .sorted(Comparator.<Tuple<Mode, Tuple<ItemMatcher.Priority, ItemMatcher>>>
-                                comparingInt(tuple -> tuple.getB().getA().get())
+                                comparingInt(tuple -> tuple.b().a().get())
                         .reversed())
-                .forEach(tuple -> this.itemMatchers.add(new Tuple<>(tuple.getB().getB(), tuple.getA())));
+                .forEach(tuple -> this.itemMatchers.add(new Tuple<>(tuple.b().b(), tuple.a())));
     }
 
     public void addMode(Mode mode) {
@@ -169,8 +169,8 @@ public class HasModeImpl implements HasMode {
             return Optional.empty();
         }
         for (Tuple<ItemMatcher, Mode> tuple : this.itemMatchers) {
-            if (tuple.getA().isMatch(mainHand)) {
-                return Optional.of(tuple.getB());
+            if (tuple.a().isMatch(mainHand)) {
+                return Optional.of(tuple.b());
             }
         }
         return Optional.empty();

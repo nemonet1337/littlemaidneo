@@ -278,36 +278,37 @@ public class ModelRenderer {
 
     protected void setRotation() {
         switch (rotatePriority) {
-            case RotXYZ:
+            case RotXYZ -> {
                 if (rotateAngleZ != 0.0F) poseStack.mulPose(Axis.ZP.rotation(rotateAngleZ));
                 if (rotateAngleY != 0.0F) poseStack.mulPose(Axis.YP.rotation(rotateAngleY));
                 if (rotateAngleX != 0.0F) poseStack.mulPose(Axis.XP.rotation(rotateAngleX));
-                break;
-            case RotXZY:
+            }
+            case RotXZY -> {
                 if (rotateAngleY != 0.0F) poseStack.mulPose(Axis.YP.rotation(rotateAngleY));
                 if (rotateAngleZ != 0.0F) poseStack.mulPose(Axis.ZP.rotation(rotateAngleZ));
                 if (rotateAngleX != 0.0F) poseStack.mulPose(Axis.XP.rotation(rotateAngleX));
-                break;
-            case RotYXZ:
+            }
+            case RotYXZ -> {
                 if (rotateAngleZ != 0.0F) poseStack.mulPose(Axis.ZP.rotation(rotateAngleZ));
                 if (rotateAngleX != 0.0F) poseStack.mulPose(Axis.XP.rotation(rotateAngleX));
                 if (rotateAngleY != 0.0F) poseStack.mulPose(Axis.YP.rotation(rotateAngleY));
-                break;
-            case RotYZX:
+            }
+            case RotYZX -> {
                 if (rotateAngleX != 0.0F) poseStack.mulPose(Axis.XP.rotation(rotateAngleX));
                 if (rotateAngleZ != 0.0F) poseStack.mulPose(Axis.ZP.rotation(rotateAngleZ));
                 if (rotateAngleY != 0.0F) poseStack.mulPose(Axis.YP.rotation(rotateAngleY));
-                break;
-            case RotZXY:
+            }
+            case RotZXY -> {
                 if (rotateAngleY != 0.0F) poseStack.mulPose(Axis.YP.rotation(rotateAngleY));
                 if (rotateAngleX != 0.0F) poseStack.mulPose(Axis.XP.rotation(rotateAngleX));
                 if (rotateAngleZ != 0.0F) poseStack.mulPose(Axis.ZP.rotation(rotateAngleZ));
-                break;
-            case RotZYX:
+            }
+            case RotZYX -> {
                 if (rotateAngleX != 0.0F) poseStack.mulPose(Axis.XP.rotation(rotateAngleX));
                 if (rotateAngleY != 0.0F) poseStack.mulPose(Axis.YP.rotation(rotateAngleY));
                 if (rotateAngleZ != 0.0F) poseStack.mulPose(Axis.ZP.rotation(rotateAngleZ));
-                break;
+            }
+            default -> { }
         }
     }
 
