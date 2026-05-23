@@ -10,7 +10,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
-public class MutableListGUI<T extends GUIElement> extends GUIElement {
+public class ListGUI<T extends GUIElement> extends GUIElement {
     protected final MarginedClickable selectBox = new MarginedClickable(4);
     protected final int widthStack;
     protected final int heightStack;
@@ -20,7 +20,7 @@ public class MutableListGUI<T extends GUIElement> extends GUIElement {
     protected int scroll = 0;
     protected int selectElem = -1;
 
-    public MutableListGUI(int x, int y, int widthStack, int heightStack, int elementW, int elementH, Collection<T> elements) {
+    public ListGUI(int x, int y, int widthStack, int heightStack, int elementW, int elementH, Collection<T> elements) {
         super(widthStack * elementW, heightStack * elementH);
         this.x = x;
         this.y = y;

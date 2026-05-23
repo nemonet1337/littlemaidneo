@@ -5,7 +5,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
 
-public class MutableScrollBar extends GUIElement {
+public class ScrollBar extends GUIElement {
     private int elemSize;
     private final TextureAddress sliderT;
     private final TextureAddress sliderM;
@@ -15,7 +15,7 @@ public class MutableScrollBar extends GUIElement {
     private boolean clicked;
     private int point;
 
-    public MutableScrollBar(
+    public ScrollBar(
             int x, int y, int width, int height, int elemSize,
             TextureAddress sliderT,
             TextureAddress sliderM,
