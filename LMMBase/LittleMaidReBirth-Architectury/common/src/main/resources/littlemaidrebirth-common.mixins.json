@@ -1,0 +1,26 @@
+{
+  "required": true,
+  "package": "net.sistr.littlemaidrebirth.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "minVersion": "0.8",
+  "mixins": [
+    "ItemEntityAccessor",
+    "MeleeAttackGoalAccessor",
+    "MixinAbstractFurnaceBlockEntity",
+    "MixinCandleCakeBlock",
+    "MixinCrossBowItem",
+    "MixinExperienceOrbEntity",
+    "MixinItemEntity",
+    "MixinPlayerEntity",
+    "MixinRangedWeaponItem",
+    "MixinSaddleItem",
+    "MixinServerPlayerEntity",
+    "PersistentProjectileEntityAccessor",
+    "ProjectileEntityAccessor"
+  ],
+  "client": [
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
