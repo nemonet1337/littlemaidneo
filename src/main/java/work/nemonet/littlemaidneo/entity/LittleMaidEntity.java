@@ -152,7 +152,7 @@ import java.util.stream.Collectors;
 //TODO おさわり厳禁：他人のメイドに触ると殴られる
 //TODO 他人のメイドに視線を合わせた時、ご主人の名札を浮かべる
 public class LittleMaidEntity extends TamableAnimal implements IEntityWithComplexSpawn, HasInventory,
-        Contractable, HasMode, AimingPoseable, IHasMultiModel, SoundPlayable, HasMovingMode,
+        Contractable, HasMode, IHasMultiModel, SoundPlayable, HasMovingMode,
         CrossbowAttackMob, SalaryBoxPosListener, TargetTagManager {
 
     @Override
@@ -2028,12 +2028,10 @@ public class LittleMaidEntity extends TamableAnimal implements IEntityWithComple
 
     // 構え
 
-    @Override
     public boolean isAimingBow() {
         return this.getLMMFlag(AIMING_INDEX);
     }
 
-    @Override
     public void setAimingBow(boolean aiming) {
         this.setLMMFlag(AIMING_INDEX, aiming);
     }
