@@ -59,16 +59,20 @@
 - `MutableListGUI` → **`ListGUI` にリネーム統合**（旧 `ListGUI` 削除後）。4階層ピラミッド（`ListGUI`→`MutableListGUI`→`ScrollableListGUI`→`FilterableListGUI`）を3階層へ。実利用は `FilterableListGUI`（4スクリーン全て）と `ScrollableListGUI` のみ。
 - `MutableScrollBar` → **`ScrollBar` にリネーム統合**（旧 `ScrollBar` 削除後）。
 
-### 2-B. 価値の低い単一実装インターフェースの畳み込み
-- `entity/util/HasMovingMode`（12行・enum `MovingMode` を包むだけ）→ メソッドを利用側に直接持たせ、インターフェース廃止。
-- `entity/util/SalaryBoxPosListener`（9行・実装は `LMItemContractable` のみ）→ `LMItemContractable` にインライン化。
-- `entity/util/AimingPoseable`（11行・利用は `AbstractArcherMode` 周辺のみ）→ 必要クラスへ直接実装し廃止。
-- `entity/compound/SoundPlayable` + `SoundPlayableCompound`（12行＋51行・単一実装）→ コンポジション実体 `SoundPlayableCompound` に集約しインターフェース廃止、もしくは1クラス化。
+### 2-B. 価値の低い単一実装インターフェースの畳み込み（参照解析後の確定判定）
+全候補の「型としての多態利用」を grep で精査した結果、除去できるのは1件のみだった。
 
-### 2-C. Interface + Impl ペアの統合（単一実装・内部API）
-- `entity/mode/HasMode` + `HasModeImpl`（29行＋178行）→ 単一実装。`HasModeImpl` に一本化（公開APIでなければインターフェース廃止）。
-- `entity/targeting/TargetTagManager` + `TargetTagManagerImpl`（22行＋201行）→ 単一実装。一本化を検討。
-- `entity/util/MaidManager` + `MaidManagerImpl`（266行＋103行）→ 単一実装。一本化を検討（※将来のバックエンド差し替え予定がある場合のみインターフェース保持）。
+- ✅ `entity/util/AimingPoseable`（11行）→ **除去済み**。多態消費者ゼロ（`LittleMaidEntity` のみ実装、`AbstractArcherMode.mob` は `LittleMaidEntity` 直接型）。2メソッドを `LittleMaidEntity` に直接保持。
+- ❌ `entity/util/HasMovingMode` → **保持**。`HasMMFollowTameOwnerGoal<T extends TamableAnimal & HasMovingMode>` のジェネリック境界として実利用。
+- ❌ `entity/util/SalaryBoxPosListener` → **保持**。`SalaryBoxBlockEntity` が `instanceof SalaryBoxPosListener` + キャストで通知する observer 境界（block→entity の脱結合）。
+- ❌ `entity/compound/SoundPlayable` → **保持**。`LittleMaidEntity` と `MultiModelEntity` の2実装があり、`NetworkHandler`/`MoveToDropItemGoal` 等で型として利用される多態契約。
+
+### 2-C. Interface + Impl ペアの統合 → **中止（統合不可）**
+当初は単一実装の過剰抽象と見ていたが、参照解析の結果いずれも **Mixin で vanilla クラスに注入されるクロスカッティング契約**であり、interface と impl は別物（impl はエンティティが内部 compose する委譲先、interface は vanilla 側にも staple される）。畳み込むと mixin 注入実装が壊れる。**3件とも保持。**
+
+- ❌ `entity/mode/HasMode` → 保持。`ModeWrapperGoal<T extends LivingEntity & HasMode>` の境界。
+- ❌ `entity/targeting/TargetTagManager` → 保持。`MixinPlayerEntity implements TargetTagManager`（vanilla Player に注入）。`NetworkHandler`/`TargetingSystem`/`TargetTagScreen` で型・境界・instanceof として多用。
+- ❌ `entity/util/MaidManager` → 保持。`MixinServerPlayerEntity implements MaidManager`（vanilla ServerPlayer に注入）。`((MaidManager) player)` キャストや `MaidManager.LMInfo`/`Status` ネスト型が network/screen/entity で多用。
 
 ### 2-D. 単一サブクラス Goal 基底クラスの統合（積極方針）
 非LM基底クラスは**いずれも対応する唯一のLMサブクラスからのみ**参照される（検証済み）。汎用の再利用余地はあるが現状ゼロのため、積極方針として統合候補とする。
@@ -116,29 +120,29 @@
 - `MutableListGUI`→`ListGUI`、`MutableScrollBar`→`ScrollBar` へリネーム統合。参照箇所を更新。
 - **テスト**: 各スクリーンの一覧表示・フィルタ・スクロールバー挙動。
 
-### Step 3: 薄い単一実装インターフェースの畳み込み（§2-B）
-- `HasMovingMode` / `SalaryBoxPosListener` / `AimingPoseable` / `SoundPlayable` を順に廃止・インライン化。1つずつコミット。
-- `LittleMaidEntity`（10インターフェース実装の巨大クラス、2218行）の `implements` 句が縮む。
-- **テスト**: メイドの移動モード（ESCORT/FREEDOM/TRACER）切替、弓の構えポーズ、ボイス再生。
+### Step 3: 薄い単一実装インターフェースの畳み込み（§2-B）— ✅ 部分実施済み
+- `AimingPoseable` のみ除去済み（多態消費者ゼロ）。`HasMovingMode`/`SalaryBoxPosListener`/`SoundPlayable` は参照解析の結果 load-bearing と判明し**保持**（§2-B 参照）。
+- **テスト**: 弓の構えポーズが従来通り動くこと（`AbstractArcherMode`→`LittleMaidEntity.setAimingBow`）。
 
-### Step 4: 設定統合（§2-G）
-- `LMMLConfig` を `LMRBConfig` に統合 or 別ファイル名化。`LittleMaidNeo` の `registerConfig` 呼び出しと参照（`getVoiceVolume`/`isEnableAlpha`/`isDebugMode`）を更新。
-- **テスト**: `config/` に生成される toml が衝突せず、voiceVolume/enableAlpha/debugMode が機能。
+### Step 4: 設定の二重登録解消（§2-G）— ✅ 実施済み
+- `LMMLConfig.SPEC` に独立ファイル名 `littlemaidneo-lmml-common.toml` を付与し、`LMRBConfig`（`littlemaidneo-common.toml`）との衝突を解消。
+- 2つの config はアクセスパターンが異なる（`LMMLConfig` は静的 getter、`LMRBConfig` は bean+`bake()`）ため、**1クラスへの完全統合は見送り**（6呼び出し箇所の API 書き換えを伴い、コンパイル検証なしでは高リスク。環境復帰後に任意で実施）。
+- **テスト**: `config/` に両 toml が衝突なく生成され、voiceVolume/enableAlpha/debugMode が機能。
 
-### Step 5: Interface+Impl 統合（§2-C）
-- `HasMode`/`HasModeImpl`、`TargetTagManager`/`TargetTagManagerImpl`、`MaidManager`/`MaidManagerImpl` を1つずつ統合。各コミットで `compileJava`。
-- **テスト**: モード切替・保存/読込（NBT）、ターゲットタグ画面の同期、メイド一覧/ソウル管理。
+### Step 5: Interface+Impl 統合（§2-C）— ❌ 中止
+- `HasMode`/`TargetTagManager`/`MaidManager` はいずれも Mixin で vanilla Player/ServerPlayer に注入される多態契約と判明（§2-C 参照）。畳み込むと mixin 注入実装が壊れるため**実施しない**。
 
-### Step 6: resource サブシステム統合（§2-E）
+### Step 6: resource サブシステム統合（§2-E）— ⏸ 環境復帰後（要コンパイル検証）
 - `ConfigHolder` の record 化 → manager 群の共通化 → loader 共通基底抽出、の順。
 - `LittleMaidNeo.initFileLoader/initModelLoader/initTextureLoader/initSoundLoader` の配線を更新。
+- singleton/loader/wiring に跨る実リファクタのため、`./gradlew compileJava` が通る環境で実施すること。
 - **テスト**: `LMMLResources` フォルダからのモデル/テクスチャ/設定/サウンド読み込み（外部パック）が従来通り動くこと。
 
-### Step 7: 単一サブクラス Goal 基底の統合（§2-D・任意/中リスク）
-- まず1ペア（例 `HealMyselfGoal`+`LMHealMyselfGoal`）を試行統合し、可読性・差分を評価してから横展開。
+### Step 7: 単一サブクラス Goal 基底の統合（§2-D）— ⏸ 環境復帰後（要コンパイル検証）
+- 各基底は唯一の LM サブクラスからのみ使われるが、abstract/concrete の分離は明快で統合効果は中程度・可読性低下のリスクあり。まず1ペア（例 `HealMyselfGoal`+`LMHealMyselfGoal`）を試行統合し差分評価してから横展開。
 - **テスト**: 各AI挙動（追従・テレポート・自己回復・給料回収・アイテム収集/格納・落下物回収・注視）。
 
-### Step 8: MM* 描画層の簡素化（§2-F・最終・要事前検証）
+### Step 8: MM* 描画層の簡素化（§2-F・最終・要事前検証）— ⏸ 環境復帰後
 - 先に `MultiModelClassTransformer` のリマップ表と外部パックが想定する `IModelCaps`/`ModelRenderer`/`IMultiModel` 境界を精査し、**外部互換を壊さない範囲でのみ**着手。壊す場合は本フェーズを見送る。
 - `MultiModel` と `LMMultiModel` の重複（後者は前者を継承し entity 参照保持のみ追加）を統合。
 - **テスト**: 全モデル（Default/SR2/Aug/Archetype/Steve/Stef/Classic64/Slim64/Beverly7/Chloe2/Elsa5/AC/RX0）の描画、防具レイヤー、発光レイヤー、手持ちアイテム、頭部装飾、MaidSoul 描画。**さらに外部 LMM/MMM モデルパックの読み込み描画**を実機確認。
