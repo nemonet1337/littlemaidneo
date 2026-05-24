@@ -9,9 +9,9 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
 import java.util.Optional;
 
-public class ScrollableListGUI<T extends GUIElement> extends MutableListGUI<T> {
+public class ScrollableListGUI<T extends GUIElement> extends ListGUI<T> {
     @Nullable
-    private final MutableScrollBar scrollBar;
+    private final ScrollBar scrollBar;
 
     public ScrollableListGUI(int x, int y, int widthStack, int heightStack,
                              int elementW, int elementH, Collection<T> elements,
@@ -27,8 +27,8 @@ public class ScrollableListGUI<T extends GUIElement> extends MutableListGUI<T> {
         this.scrollBar = createScrollBar(scrollBarConfig);
     }
 
-    private MutableScrollBar createDefaultScrollBar() {
-        return new MutableScrollBar(
+    private ScrollBar createDefaultScrollBar() {
+        return new ScrollBar(
                 this.x + this.width + 10, this.y,
                 8, this.height, calculateScrollBarSize(),
                 new TextureAddress(0, 200, 8, 8, 256, 256),
@@ -39,8 +39,8 @@ public class ScrollableListGUI<T extends GUIElement> extends MutableListGUI<T> {
         );
     }
 
-    private MutableScrollBar createScrollBar(ScrollBarConfig config) {
-        return new MutableScrollBar(
+    private ScrollBar createScrollBar(ScrollBarConfig config) {
+        return new ScrollBar(
                 this.x + this.width + config.offsetX(), this.y + config.offsetY(),
                 config.width(), config.height(), calculateScrollBarSize(),
                 config.sliderT(), config.sliderM(), config.sliderB(), config.pointer(),
@@ -159,7 +159,7 @@ public class ScrollableListGUI<T extends GUIElement> extends MutableListGUI<T> {
         return scrollBar != null;
     }
 
-    public Optional<MutableScrollBar> getScrollBar() {
+    public Optional<ScrollBar> getScrollBar() {
         return Optional.ofNullable(scrollBar);
     }
 

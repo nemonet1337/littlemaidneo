@@ -6,7 +6,7 @@ import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
 
 public class ScrollBar extends GUIElement {
-    private final int elemSize;
+    private int elemSize;
     private final TextureAddress sliderT;
     private final TextureAddress sliderM;
     private final TextureAddress sliderB;
@@ -86,6 +86,10 @@ public class ScrollBar extends GUIElement {
     }
 
     public void pointAt(double y) {
+        if (elemSize <= 0) {
+            point = 0;
+            return;
+        }
         float percent = ((float) y - this.y - width / 2f) / (height - width);
         this.point = Mth.floor(percent * elemSize);
         this.point = Mth.clamp(this.point, 0, elemSize - 1);
@@ -95,16 +99,21 @@ public class ScrollBar extends GUIElement {
     public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
         if (!RangeChecker.checkFromWidth(mouseX, mouseY, this.x, this.y, this.width, this.height)) return false;
         this.point += 0 < deltaY ? -1 : 1;
-        this.point = Mth.clamp(this.point, 0, elemSize - 1);
+        this.point = Mth.clamp(this.point, 0, Math.max(0, elemSize - 1));
         return true;
     }
 
     public float getPercent() {
-        return ((float) getPoint() / elemSize);
+        if (elemSize <= 0) return 0.0f;
+        return ((float) getPoint() / Math.max(1, elemSize - 1));
     }
 
     public void setPercent(float percent) {
-        this.point = Mth.floor(percent * elemSize);
+        if (elemSize <= 0) {
+            this.point = 0;
+            return;
+        }
+        this.point = Mth.floor(percent * (elemSize - 1));
         this.point = Mth.clamp(this.point, 0, elemSize - 1);
     }
 
@@ -114,6 +123,20 @@ public class ScrollBar extends GUIElement {
 
     public void setPoint(int point) {
         this.point = point;
-        this.point = Mth.clamp(this.point, 0, elemSize - 1);
+        this.point = Mth.clamp(this.point, 0, Math.max(0, elemSize - 1));
+    }
+
+    public int getElemSize() {
+        return elemSize;
+    }
+
+    public void setElemSize(int newElemSize) {
+        if (newElemSize < 0) newElemSize = 0;
+        this.elemSize = newElemSize;
+        if (elemSize <= 0) {
+            this.point = 0;
+        } else {
+            this.point = Mth.clamp(this.point, 0, elemSize - 1);
+        }
     }
 }

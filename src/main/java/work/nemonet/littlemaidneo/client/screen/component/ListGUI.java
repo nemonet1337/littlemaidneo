@@ -1,11 +1,11 @@
 package work.nemonet.littlemaidneo.client.screen.component;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -16,7 +16,7 @@ public class ListGUI<T extends GUIElement> extends GUIElement {
     protected final int heightStack;
     protected final int elementW;
     protected final int elementH;
-    protected final ImmutableList<T> elements;
+    protected final List<T> elements;
     protected int scroll = 0;
     protected int selectElem = -1;
 
@@ -28,7 +28,7 @@ public class ListGUI<T extends GUIElement> extends GUIElement {
         this.heightStack = heightStack;
         this.elementW = elementW;
         this.elementH = elementH;
-        this.elements = ImmutableList.copyOf(elements);
+        this.elements = new ArrayList<>(elements);
     }
 
     public int size() {
@@ -37,7 +37,7 @@ public class ListGUI<T extends GUIElement> extends GUIElement {
 
     public void setScroll(int scroll) {
         this.scroll = scroll;
-        this.scroll = Mth.clamp(this.scroll, 0, size() / widthStack - 1);
+        this.scroll = Mth.clamp(this.scroll, 0, Math.max(0, size() / widthStack - 1));
     }
 
     public int getScroll() {
@@ -170,7 +170,7 @@ public class ListGUI<T extends GUIElement> extends GUIElement {
             }
         }
         scroll = scroll + (0 < deltaY ? -1 : 1);
-        this.scroll = Mth.clamp(this.scroll, 0, size() / widthStack - 1);
+        this.scroll = Mth.clamp(this.scroll, 0, Math.max(0, size() / widthStack - 1));
         return true;
     }
 
@@ -196,5 +196,84 @@ public class ListGUI<T extends GUIElement> extends GUIElement {
             return e.get().isMouseOver(mouseX, mouseY);
         }
         return false;
+    }
+
+    public void setElements(Collection<T> newElements) {
+        elements.clear();
+        elements.addAll(newElements);
+        if (size() == 0) {
+            scroll = 0;
+        } else if (scroll >= size() / widthStack) {
+            scroll = Math.max(0, size() / widthStack - 1);
+        }
+        if (selectElem >= elements.size()) {
+            if (checkElementsBounds(selectElem)) {
+                GUIElement prev = this.elements.get(selectElem);
+                if (prev instanceof ListGUIElement) {
+                    ((ListGUIElement) prev).setSelected(false);
+                }
+            }
+            selectElem = -1;
+        }
+    }
+
+    public void addElement(T element) {
+        elements.add(element);
+    }
+
+    public void removeElement(T element) {
+        int index = elements.indexOf(element);
+        if (index != -1) {
+            elements.remove(index);
+            if (selectElem == index) {
+                if (element instanceof ListGUIElement) {
+                    ((ListGUIElement) element).setSelected(false);
+                }
+                selectElem = -1;
+            } else if (selectElem > index) {
+                selectElem--;
+            }
+            if (size() == 0) {
+                scroll = 0;
+            } else if (scroll >= size() / widthStack) {
+                scroll = Math.max(0, size() / widthStack - 1);
+            }
+        }
+    }
+
+    public void removeElementAt(int index) {
+        if (checkElementsBounds(index)) {
+            T element = elements.get(index);
+            if (element instanceof ListGUIElement) {
+                ((ListGUIElement) element).setSelected(false);
+            }
+            elements.remove(index);
+            if (selectElem == index) {
+                selectElem = -1;
+            } else if (selectElem > index) {
+                selectElem--;
+            }
+            if (size() == 0) {
+                scroll = 0;
+            } else if (scroll >= size() / widthStack) {
+                scroll = Math.max(0, size() / widthStack - 1);
+            }
+        }
+    }
+
+    public void clearElements() {
+        if (checkElementsBounds(selectElem)) {
+            GUIElement elem = this.elements.get(selectElem);
+            if (elem instanceof ListGUIElement) {
+                ((ListGUIElement) elem).setSelected(false);
+            }
+        }
+        elements.clear();
+        selectElem = -1;
+        scroll = 0;
+    }
+
+    public boolean isEmpty() {
+        return elements.isEmpty();
     }
 }
