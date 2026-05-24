@@ -2,9 +2,26 @@
 
 > このドキュメントは NeoForge 移行に伴うコードベースのクリーンアップ／クラス統合の
 > 調査結果と実行プランです。環境再作成後もブランチ上で参照できるよう永続化しています。
->
-> **進捗**: Step 1・2 は実装済み（コミット済み）。Step 3〜8 は `maven.neoforged.net`
-> を許可リストに含むネットワークポリシーの環境でコンパイル検証しながら実装する予定。
+
+## 残作業 TODO（チェックリスト）
+
+進捗（ブランチ `claude/neoforge-cleanup-refactor-FKQVY`）:
+
+- [x] **Step 1** デッドコード9クラス削除 — `f5a88b8`
+- [x] **Step 2** GUIクラス統合（`Mutable*`→基底名） — `e17fd3b`
+- [x] **Step 3** 薄いinterface整理（**部分**: `AimingPoseable` のみ除去。`HasMovingMode`/`SalaryBoxPosListener`/`SoundPlayable` は load-bearing で保持） — `e47c9b7`
+- [x] **Step 4** config二重登録の衝突解消（独立ファイル名付与） — `e47c9b7`
+- [x] ~~**Step 5** Interface+Impl 統合~~ — **中止**。`HasMode`/`TargetTagManager`/`MaidManager` は Mixin で vanilla Player/ServerPlayer に注入される多態契約のため統合不可
+- [ ] **Step 6** resource サブシステム統合（`ConfigHolder` record化 → manager共通化 → loader共通基底）— ⏸ 要コンパイル検証環境
+- [ ] **Step 7** 単一サブクラス Goal 基底の統合（まず1ペア試行）— ⏸ 要コンパイル検証環境
+- [ ] **Step 8** MM* 描画層の簡素化 — ⏸ 要コンパイル検証環境＋外部モデルパック互換確認
+
+別件（クリーンアップとは独立の要対応メモ）:
+
+- [ ] `mixins.json` 未登録の `CrossbowItemInvoker` が `LittleMaidEntity` から参照されている（潜在バグ）。クロスボウ発射の実機確認と、必要なら `mixins.json` への登録（削除ではなく修正）
+- [ ] （任意）`LMMLConfig`(3項目) を `LMRBConfig` へ完全統合。静的getter→bean+`bake()` への移行で6呼び出し箇所の書き換えを伴う
+
+**再開条件**: Step 6〜8 は `maven.neoforged.net` を許可リストに含むネットワークポリシーの環境で、各 Step 後に `./gradlew compileJava` を通しながら実施すること（この制限の詳細は末尾「ビルド環境メモ」参照）。
 
 ## Context（背景・目的）
 
