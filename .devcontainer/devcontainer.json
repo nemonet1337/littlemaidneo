@@ -1,0 +1,33 @@
+{
+	"name": "LittleMaidNeo Dev Environment (NeoForge Java 25)",
+	"build": {
+		"dockerfile": "Dockerfile"
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"vscjava.vscode-java-pack",
+				"vscjava.vscode-gradle",
+				"fwcd.kotlin"
+			]
+		}
+	},
+	"runArgs": [
+		"--userns=keep-id",
+		"--tmpfs=/tmp:exec,size=512m,mode=1777"
+	],
+	"containerUser": "vscode",
+	"updateRemoteUserUID": false,
+	"mounts": [
+		"source=littlemaidneo-gradle-cache,target=/home/vscode/.gradle,type=volume"
+	],
+	"containerEnv": {
+		"DISPLAY": "${localEnv:DISPLAY}",
+		"TMPDIR": "/tmp"
+	},
+	"postCreateCommand": "chmod +x ./gradlew && ./gradlew --version",
+	"forwardPorts": [
+		8080
+	],
+	"dockerPath": "podman"
+}
