@@ -1,7 +1,5 @@
 package work.nemonet.littlemaidneo.entity;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.InteractionHand;
@@ -14,7 +12,6 @@ import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import work.nemonet.littlemaidneo.client.screen.ModelSelectScreen;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
 import work.nemonet.littlemaidneo.entity.compound.MultiModelCompound;
 import work.nemonet.littlemaidneo.entity.compound.SoundPlayable;
@@ -73,8 +70,7 @@ public class MultiModelEntity extends PathfinderMob implements IHasMultiModel, S
     @Override
     public InteractionResult mobInteract(Player player, InteractionHand hand) {
         if (player.level().isClientSide()) {
-            Minecraft.getInstance().setScreen(new ModelSelectScreen(
-                    Component.translatable("screen.littlemaidneo.model_select"), this.level(), this));
+            work.nemonet.littlemaidneo.client.util.ClientScreenHelper.openModelSelectScreen(this.level(), this);
             return InteractionResult.SUCCESS;
         }
         return super.mobInteract(player, hand);

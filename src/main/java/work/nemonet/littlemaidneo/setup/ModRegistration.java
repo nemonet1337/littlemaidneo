@@ -44,6 +44,10 @@ public class ModRegistration {
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
             DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, LittleMaidNeo.MODID);
 
+    // Static instances for safe cross-registry reference during registration
+    public static SalaryBoxBlock salaryBoxBlockInstance;
+    public static net.minecraft.world.entity.EntityType<LittleMaidEntity> littleMaidEntityTypeInstance;
+
     // LML entities
     public static final DeferredHolder<EntityType<?>, EntityType<MultiModelEntity>> MULTI_MODEL_ENTITY =
             ENTITIES.register("multi_model_entity", () ->
@@ -61,11 +65,13 @@ public class ModRegistration {
 
     // ReBirth entities
     public static final DeferredHolder<EntityType<?>, EntityType<LittleMaidEntity>> LITTLE_MAID_ENTITY =
-            ENTITIES.register("little_maid_mob", () ->
-                    EntityType.Builder.<LittleMaidEntity>of(LittleMaidEntity::new, MobCategory.CREATURE)
-                            .sized(0.5F, 1.35F)
-                            .build(ResourceKey.create(Registries.ENTITY_TYPE,
-                                    Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, "little_maid_mob"))));
+            ENTITIES.register("little_maid_mob", () -> {
+                littleMaidEntityTypeInstance = EntityType.Builder.<LittleMaidEntity>of(LittleMaidEntity::new, MobCategory.CREATURE)
+                        .sized(0.5F, 1.35F)
+                        .build(ResourceKey.create(Registries.ENTITY_TYPE,
+                                Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, "little_maid_mob")));
+                return littleMaidEntityTypeInstance;
+            });
 
     public static final DeferredHolder<EntityType<?>, EntityType<MaidSoulEntity>> MAID_SOUL_ENTITY =
             ENTITIES.register("maid_soul", () ->
@@ -76,14 +82,17 @@ public class ModRegistration {
 
     // Blocks
     public static final DeferredHolder<Block, SalaryBoxBlock> SALARY_BOX_BLOCK =
-            BLOCKS.register("salary_box", () ->
-                    new SalaryBoxBlock(
-                            BlockBehaviour.Properties.of()
-                                    .mapColor(MapColor.WOOD)
-                                    .instrument(NoteBlockInstrument.BASS)
-                                    .strength(2.5f)
-                                    .sound(SoundType.WOOD)
-                                    .ignitedByLava()));
+            BLOCKS.register("salary_box", () -> {
+                salaryBoxBlockInstance = new SalaryBoxBlock(
+                        BlockBehaviour.Properties.of()
+                                .mapColor(MapColor.WOOD)
+                                .instrument(NoteBlockInstrument.BASS)
+                                .strength(2.5f)
+                                .sound(SoundType.WOOD)
+                                .ignitedByLava()
+                                .setId(ResourceKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, "salary_box"))));
+                return salaryBoxBlockInstance;
+            });
 
     // Items
     public static final DeferredHolder<Item, LittleMaidSpawnEggItem> LITTLE_MAID_SPAWN_EGG_ITEM =
@@ -91,7 +100,8 @@ public class ModRegistration {
 
     public static final DeferredHolder<Item, Item> SALARY_BOX_BLOCK_ITEM =
             ITEMS.register("salary_box", () ->
-                    new BlockItem(SALARY_BOX_BLOCK.get(), new Item.Properties()));
+                    new BlockItem(salaryBoxBlockInstance, new Item.Properties()
+                            .setId(ResourceKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, "salary_box")))));
 
     // Creative tab (declared after items it references to avoid illegal forward reference)
     public static final DeferredHolder<CreativeModeTab, CreativeModeTab> ITEM_GROUP =
@@ -113,5 +123,5 @@ public class ModRegistration {
     // Block entities
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<SalaryBoxBlockEntity>> SALARY_BOX_BLOCK_ENTITY =
             BLOCK_ENTITIES.register("salary_box", () ->
-                    new BlockEntityType<>(SalaryBoxBlockEntity::new, SALARY_BOX_BLOCK.get()));
+                    new BlockEntityType<>(SalaryBoxBlockEntity::new, salaryBoxBlockInstance));
 }

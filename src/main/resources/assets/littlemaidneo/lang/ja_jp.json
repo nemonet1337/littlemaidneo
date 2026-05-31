@@ -66,5 +66,8 @@
   "littlemaidneo.configuration.title": "リトルメイドネオ設定",
   "littlemaidneo.configuration.section.littlemaidneo.common.toml": "リトルメイドネオ設定",
   "littlemaidneo.configuration.section.littlemaidneo.common.toml.title": "リトルメイドネオ設定",
-  "chat.littlemaidneo.maid_died": "%1$s は %2$s によって死亡しました"
+  "chat.littlemaidneo.maid_died": "%1$s は %2$s によって死亡しました",
+  "chat.littlemaidneo.owner_name_prefix": "ご主人",
+  "chat.littlemaidneo.book_parameters_applied": "本からパラメータを読み込み、適用しました。",
+  "chat.littlemaidneo.need_more_sugar_for_strike": "ストライキを解除するには砂糖が8個以上必要です！"
 }

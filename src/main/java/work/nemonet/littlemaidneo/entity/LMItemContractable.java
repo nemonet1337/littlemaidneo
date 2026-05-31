@@ -31,6 +31,14 @@ public class LMItemContractable<T extends LittleMaidEntity> extends ItemContract
     }
 
     @Override
+    public void tick() {
+        super.tick();
+        if (!this.mob.level().isClientSide()) {
+            this.mob.setContractTime(this.consumeInterval);
+        }
+    }
+
+    @Override
     protected void postReceive() {
         super.postReceive();
         var maid = this.mob;
@@ -38,6 +46,9 @@ public class LMItemContractable<T extends LittleMaidEntity> extends ItemContract
         maid.playSound(SoundEvents.ITEM_PICKUP,
                 1.0F, maid.getRandom().nextFloat() * 0.1F + 1.0F);
         maid.play(LMSounds.EAT_SUGAR);
+        if (!maid.level().isClientSide()) {
+            maid.setContractTime(this.consumeInterval);
+        }
     }
 
     @Override

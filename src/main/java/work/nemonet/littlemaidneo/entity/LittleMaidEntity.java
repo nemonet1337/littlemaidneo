@@ -124,20 +124,6 @@ import work.nemonet.littlemaidneo.util.LMCollidable;
 import work.nemonet.littlemaidneo.util.ReachAttributeUtil;
 
 //メイドさん本体
-//TODO 声タイミング調整
-//TODO ドロップアイテム
-//TODO 契約期間の残りと砂糖をあげた時の音符の色を対応させる。
-//TODO 雪バイオームで雪合戦させる、日が暮れると終わるように
-//TODO モードトリガーアイテム指定
-//TODO 署名済みではない書き込み可能な本にパラメータを記述して、メイドさんに右クリックで使用すると値が反映されるように
-//TODO つまみ食い
-//TODO ダメージ/水没待機解除 実装済みだっけ？
-//TODO トランザム機能追加
-//TODO 経験値追加
-//TODO スト時砂糖ドカ食い機能
-//TODO リスポーン機能
-//TODO おさわり厳禁：他人のメイドに触ると殴られる
-//TODO 他人のメイドに視線を合わせた時、ご主人の名札を浮かべる
 public class LittleMaidEntity
         extends TamableAnimal
         implements
@@ -185,6 +171,9 @@ public class LittleMaidEntity
     private static final EntityDataAccessor<Byte> MASTER_STANCE = SynchedEntityData.defineId(
             LittleMaidEntity.class,
             EntityDataSerializers.BYTE);
+    private static final EntityDataAccessor<Integer> CONTRACT_TIME = SynchedEntityData.defineId(
+            LittleMaidEntity.class,
+            EntityDataSerializers.INT);
     // エンチャントの瓶はランダムな経験値を排出するため、その平均値を作成コストとする
     private static final int EXPERIENCE_BOTTLE_COST = 7;
 
@@ -688,6 +677,7 @@ public class LittleMaidEntity
         builder.define(CHARGING, false);
         builder.define(ACCELERATE, false);
         builder.define(MASTER_STANCE, (byte) 0);
+        builder.define(CONTRACT_TIME, 0);
     }
 
     public void addDefaultModes(LittleMaidEntity maid) {
@@ -886,18 +876,23 @@ public class LittleMaidEntity
             }
             case 72 -> {
                 // 砂糖あげた時
+                double maxInterval = getConfig().contract.consumeSalaryInterval;
+                double remaining = Math.max(0, maxInterval - this.getContractTime());
+                double ratio = remaining / maxInterval;
+                float noteColor = (float)(ratio * 2.0);
                 this.level().addParticle(
                         ParticleTypes.NOTE,
                         this.getX(),
                         this.getY() + this.getBbHeight(),
                         this.getZ(),
-                        6 / 24f,
+                        noteColor,
                         0,
                         0);
             }
             case 73 -> showFreedomParticle(); // toFreedom
             case 74 -> spawnTamingParticles(false); // toEscort
             case 75 -> showTracerParticle(); // toTracer
+            case 76 -> showTransAmParticles(); // トランザムのエフェクト
             default -> super.handleEntityEvent(status);
         }
     }
@@ -990,6 +985,16 @@ public class LittleMaidEntity
         }
         itemContractable.tick();
         hasModeImpl.tick();
+
+        // つまみ食い
+        if (this.tickCount % 40 == 0 && this.getHealth() < this.getMaxHealth()) {
+            tryEatingFromInventory();
+        }
+
+        // 水没時のお座り（待機）解除
+        if (TameableUtil.isWait(this) && this.isInWater()) {
+            TameableUtil.setWait(this, false);
+        }
     }
 
     protected void pickupItem() {
@@ -1341,6 +1346,11 @@ public class LittleMaidEntity
         if (isBloodSuck())
             play(LMSounds.LAUGHTER);
 
+        int xp = other.getExperienceReward(world, source.getEntity());
+        if (xp > 0) {
+            this.xpReward = Math.min(100000, this.xpReward + xp);
+        }
+
         return super.killedEntity(world, other, source);
     }
 
@@ -1639,18 +1649,74 @@ public class LittleMaidEntity
             return InteractionResult.PASS;
         }
         // オーナーじゃない場合
-        if (TameableUtil.getTameOwnerUuid(this)
-                .map(id -> !id.equals(player.getUUID()))
-                .orElse(true)) {
-            return InteractionResult.PASS;
+        if (TameableUtil.getTameOwnerUuid(this).isPresent() &&
+                !TameableUtil.isTameOwner(this, player)) {
+            if (!this.level().isClientSide()) {
+                player.hurt(this.level().damageSources().mobAttack(this), 1.0f); // 0.5ハートダメージ
+                this.playForce(LMSounds.FIND_TARGET_D);
+                this.swing(InteractionHand.MAIN_HAND);
+                this.level().broadcastEntityEvent(this, (byte) 6); // 怒りエフェクト
+            }
+            return InteractionResult.SUCCESS;
         }
         // ストライキ時
         if (isStrike()) {
             if (stack.is(LMTags.Items.MAIDS_EMPLOYABLE)) {
                 return contract(player, stack, true);
             }
+            // ストライキ時に砂糖をドカ食い
+            if (stack.is(LMTags.Items.MAIDS_SALARY)) {
+                int count = stack.getCount();
+                if (count >= 8) {
+                    if (!player.getAbilities().instabuild) {
+                        stack.shrink(8);
+                    }
+                    this.level().broadcastEntityEvent(this, (byte) 71); // 再雇用エフェクト
+                    this.playSound(SoundEvents.GENERIC_EAT.value(), 1.0F, 1.0F);
+                    this.swing(InteractionHand.MAIN_HAND);
+                    
+                    setContractMM(true);
+                    if (!this.level().isClientSide()) {
+                        NetworkHandler.sendSyncMultiModelS2C(this, this);
+                    }
+                    setStrike(false);
+                    itemContractable.setUnpaidTimes(0);
+                    getNavigation().stop();
+                    setMovingMode(MovingMode.ESCORT);
+                    
+                    return InteractionResult.SUCCESS;
+                } else {
+                    this.level().broadcastEntityEvent(this, (byte) 6); // 怒りエフェクト
+                    this.playForce(LMSounds.FIND_TARGET_D);
+                    player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("chat.littlemaidneo.need_more_sugar_for_strike"));
+                    return InteractionResult.CONSUME;
+                }
+            }
             this.level().broadcastEntityEvent(this, (byte) 6);
             return InteractionResult.PASS;
+        }
+        // 本
+        if (stack.is(Items.WRITABLE_BOOK)) {
+            if (!this.level().isClientSide()) {
+                applyParametersFromBook(stack, player);
+                player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("chat.littlemaidneo.book_parameters_applied"));
+            }
+            this.swing(InteractionHand.MAIN_HAND);
+            return InteractionResult.SUCCESS;
+        }
+        // ケーキ
+        if (stack.is(Items.CAKE)) {
+            if (!player.getAbilities().instabuild) {
+                stack.shrink(1);
+            }
+            this.playSound(SoundEvents.GENERIC_EAT.value(), 1.0F, 1.0F);
+            this.swing(InteractionHand.MAIN_HAND);
+            if (!this.level().isClientSide()) {
+                this.addEffect(new MobEffectInstance(MobEffects.SPEED, 600, 1)); // Speed II
+                this.addEffect(new MobEffectInstance(MobEffects.HASTE, 600, 1));      // Haste II
+                this.level().broadcastEntityEvent(this, (byte) 76);
+            }
+            return InteractionResult.SUCCESS;
         }
         // サドル持ってるとき
         if (stack.is(Items.SADDLE)) {
@@ -2570,5 +2636,128 @@ public class LittleMaidEntity
         public String getName() {
             return this.name;
         }
+    }
+
+    public int getContractTime() {
+        return this.entityData.get(CONTRACT_TIME);
+    }
+
+    public void setContractTime(int contractTime) {
+        this.entityData.set(CONTRACT_TIME, contractTime);
+    }
+
+    public void playForce(String soundName) {
+        if (isBloodSuck()) {
+            if (soundName.equals(LMSounds.FIND_TARGET_N)) {
+                soundName = LMSounds.FIND_TARGET_B;
+            } else if (soundName.equals(LMSounds.ATTACK)) {
+                soundName = LMSounds.ATTACK_BLOOD_SUCK;
+            }
+        }
+        soundPlayer.play(soundName);
+    }
+
+    private void tryEatingFromInventory() {
+        Container inv = this.getInventory();
+        for (int i = 0; i < inv.getContainerSize(); i++) {
+            ItemStack stack = inv.getItem(i);
+            if (!stack.isEmpty() && stack.is(LMTags.Items.MAIDS_SALARY)) {
+                stack.shrink(1);
+                if (stack.isEmpty()) {
+                    inv.setItem(i, ItemStack.EMPTY);
+                }
+                var config = getConfig();
+                this.heal(config.health.healAmount);
+                this.playSound(SoundEvents.GENERIC_EAT.value(), 0.5f, 0.5f + this.random.nextFloat() * 0.5f);
+                this.level().broadcastEntityEvent(this, (byte) 72); // 音符パーティクル
+                break;
+            }
+        }
+    }
+
+    private void applyParametersFromBook(ItemStack stack, Player player) {
+        var content = stack.get(net.minecraft.core.component.DataComponents.WRITABLE_BOOK_CONTENT);
+        if (content == null) return;
+        
+        for (var page : content.pages()) {
+            String text = page.raw();
+            for (String line : text.split("\\r?\\n")) {
+                line = line.trim();
+                if (line.isEmpty() || line.startsWith("#")) continue;
+                int eqIdx = line.indexOf('=');
+                if (eqIdx != -1) {
+                    String key = line.substring(0, eqIdx).trim().toLowerCase();
+                    String value = line.substring(eqIdx + 1).trim();
+                    applyParameter(key, value, player);
+                }
+            }
+        }
+    }
+
+    private void applyParameter(String key, String value, Player player) {
+        switch (key) {
+            case "name" -> {
+                this.setCustomName(net.minecraft.network.chat.Component.literal(value));
+                this.setCustomNameVisible(true);
+            }
+            case "moving" -> {
+                try {
+                    MovingMode mode = MovingMode.valueOf(value.toUpperCase());
+                    this.setMovingMode(mode);
+                    if (mode == MovingMode.FREEDOM) {
+                        this.setFreedomPos(this.blockPosition());
+                    }
+                } catch (IllegalArgumentException e) {
+                    // 無効値は無視
+                }
+            }
+            case "bloodsuck" -> {
+                boolean bloodSuck = Boolean.parseBoolean(value);
+                this.setBloodSuck(bloodSuck);
+            }
+            case "wait" -> {
+                boolean wait = Boolean.parseBoolean(value);
+                TameableUtil.setWait(this, wait);
+                this.setOrderedToSit(wait);
+            }
+        }
+    }
+
+    protected void showTransAmParticles() {
+        for (int i = 0; i < 20; ++i) {
+            double d = this.random.nextGaussian() * 0.02;
+            double e = this.random.nextGaussian() * 0.02;
+            double f = this.random.nextGaussian() * 0.02;
+            this.level().addParticle(
+                    ParticleTypes.FLAME,
+                    this.getRandomX(1.0),
+                    this.getRandomY() + 0.5,
+                    this.getRandomZ(1.0),
+                    d,
+                    e,
+                    f);
+        }
+    }
+
+    @Override
+    public boolean shouldShowName() {
+        if (net.neoforged.fml.loading.FMLEnvironment.getDist() == net.neoforged.api.distmarker.Dist.CLIENT) {
+            if (work.nemonet.littlemaidneo.client.util.ClientScreenHelper.shouldShowOwnerName(this)) {
+                return true;
+            }
+        }
+        return super.shouldShowName();
+    }
+
+    @Override
+    public net.minecraft.network.chat.Component getDisplayName() {
+        net.minecraft.network.chat.Component name = super.getDisplayName();
+        if (net.neoforged.fml.loading.FMLEnvironment.getDist() == net.neoforged.api.distmarker.Dist.CLIENT) {
+            var ownerNameOpt = work.nemonet.littlemaidneo.client.util.ClientScreenHelper.getOwnerNameForClient(this);
+            if (ownerNameOpt.isPresent()) {
+                return net.minecraft.network.chat.Component.literal(name.getString() + " (" + net.minecraft.network.chat.Component.translatable("chat.littlemaidneo.owner_name_prefix").getString() + ": " + ownerNameOpt.get() + ")");
+            }
+        }
+        return name;
     }
 }

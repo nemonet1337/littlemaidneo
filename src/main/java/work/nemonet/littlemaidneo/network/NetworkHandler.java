@@ -1,6 +1,5 @@
 package work.nemonet.littlemaidneo.network;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.ProblemReporter;
@@ -17,8 +16,6 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
-import work.nemonet.littlemaidneo.client.screen.MaidManagerScreen;
-import work.nemonet.littlemaidneo.client.screen.TargetTagScreen;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel.Layer;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel.Part;
@@ -36,11 +33,8 @@ import work.nemonet.littlemaidneo.resource.holder.ConfigHolder;
 import work.nemonet.littlemaidneo.resource.manager.LMConfigManager;
 import work.nemonet.littlemaidneo.resource.manager.LMTextureManager;
 import work.nemonet.littlemaidneo.resource.util.ArmorSets;
-import work.nemonet.littlemaidneo.resource.util.TextureColors;
 import work.nemonet.littlemaidneo.util.PlayerList;
 
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -50,30 +44,36 @@ public class NetworkHandler {
         var registrar = event.registrar("1");
 
         // SyncMultiModel (bidirectional)
-        registrar.playToClient(
-                SyncMultiModelPayload.TYPE,
-                SyncMultiModelPayload.STREAM_CODEC,
-                NetworkHandler::handleSyncMultiModelClient);
+        if (net.neoforged.fml.loading.FMLEnvironment.getDist() == Dist.CLIENT) {
+            registrar.playToClient(
+                    SyncMultiModelPayload.TYPE,
+                    SyncMultiModelPayload.STREAM_CODEC,
+                    work.nemonet.littlemaidneo.client.network.ClientNetworkHandler::handleSyncMultiModelClient);
+        }
         registrar.playToServer(
                 SyncMultiModelPayload.TYPE,
                 SyncMultiModelPayload.STREAM_CODEC,
                 NetworkHandler::handleSyncMultiModelServer);
 
         // SyncSoundPack (bidirectional)
-        registrar.playToClient(
-                SyncSoundPackPayload.TYPE,
-                SyncSoundPackPayload.STREAM_CODEC,
-                NetworkHandler::handleSyncSoundPackClient);
+        if (net.neoforged.fml.loading.FMLEnvironment.getDist() == Dist.CLIENT) {
+            registrar.playToClient(
+                    SyncSoundPackPayload.TYPE,
+                    SyncSoundPackPayload.STREAM_CODEC,
+                    work.nemonet.littlemaidneo.client.network.ClientNetworkHandler::handleSyncSoundPackClient);
+        }
         registrar.playToServer(
                 SyncSoundPackPayload.TYPE,
                 SyncSoundPackPayload.STREAM_CODEC,
                 NetworkHandler::handleSyncSoundPackServer);
 
         // LMSound (S2C only)
-        registrar.playToClient(
-                LMSoundPayload.TYPE,
-                LMSoundPayload.STREAM_CODEC,
-                NetworkHandler::handleLMSoundClient);
+        if (net.neoforged.fml.loading.FMLEnvironment.getDist() == Dist.CLIENT) {
+            registrar.playToClient(
+                    LMSoundPayload.TYPE,
+                    LMSoundPayload.STREAM_CODEC,
+                    work.nemonet.littlemaidneo.client.network.ClientNetworkHandler::handleLMSoundClient);
+        }
 
         // C2S packets
         registrar.playToServer(
@@ -102,10 +102,12 @@ public class NetworkHandler {
                 NetworkHandler::handleCallWaitServer);
 
         // SyncSoundConfig (bidirectional)
-        registrar.playToClient(
-                SyncSoundConfigPayload.TYPE,
-                SyncSoundConfigPayload.STREAM_CODEC,
-                NetworkHandler::handleSyncSoundConfigClient);
+        if (net.neoforged.fml.loading.FMLEnvironment.getDist() == Dist.CLIENT) {
+            registrar.playToClient(
+                    SyncSoundConfigPayload.TYPE,
+                    SyncSoundConfigPayload.STREAM_CODEC,
+                    work.nemonet.littlemaidneo.client.network.ClientNetworkHandler::handleSyncSoundConfigClient);
+        }
         registrar.playToServer(
                 SyncSoundConfigPayload.TYPE,
                 SyncSoundConfigPayload.STREAM_CODEC,
@@ -116,20 +118,24 @@ public class NetworkHandler {
                 OpenTargetTagScreenC2SPayload.TYPE,
                 OpenTargetTagScreenC2SPayload.STREAM_CODEC,
                 NetworkHandler::handleOpenTargetTagScreenServer);
-        registrar.playToClient(
-                OpenTargetTagScreenS2CPayload.TYPE,
-                OpenTargetTagScreenS2CPayload.STREAM_CODEC,
-                NetworkHandler::handleOpenTargetTagScreenClient);
+        if (net.neoforged.fml.loading.FMLEnvironment.getDist() == Dist.CLIENT) {
+            registrar.playToClient(
+                    OpenTargetTagScreenS2CPayload.TYPE,
+                    OpenTargetTagScreenS2CPayload.STREAM_CODEC,
+                    work.nemonet.littlemaidneo.client.network.ClientNetworkHandler::handleOpenTargetTagScreenClient);
+        }
 
         // OpenMaidManagerScreen (split C2S / S2C)
         registrar.playToServer(
                 OpenMaidManagerScreenC2SPayload.TYPE,
                 OpenMaidManagerScreenC2SPayload.STREAM_CODEC,
                 NetworkHandler::handleOpenMaidManagerScreenServer);
-        registrar.playToClient(
-                OpenMaidManagerScreenS2CPayload.TYPE,
-                OpenMaidManagerScreenS2CPayload.STREAM_CODEC,
-                NetworkHandler::handleOpenMaidManagerScreenClient);
+        if (net.neoforged.fml.loading.FMLEnvironment.getDist() == Dist.CLIENT) {
+            registrar.playToClient(
+                    OpenMaidManagerScreenS2CPayload.TYPE,
+                    OpenMaidManagerScreenS2CPayload.STREAM_CODEC,
+                    work.nemonet.littlemaidneo.client.network.ClientNetworkHandler::handleOpenMaidManagerScreenClient);
+        }
     }
 
     // --- SyncMultiModel ---
@@ -155,35 +161,6 @@ public class NetworkHandler {
         PacketDistributor.sendToPlayersTrackingEntity(entity,
                 new SyncMultiModelPayload(entity.getId(), textureName, armorHead, armorBody, armorLegs, armorFeet,
                         hasMultiModel.getColorMM(), hasMultiModel.isContractMM()));
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    private static void handleSyncMultiModelClient(SyncMultiModelPayload payload, IPayloadContext context) {
-        context.enqueueWork(() -> applyMultiModelClient(
-                payload.entityId(), payload.isContract(), payload.color(),
-                payload.textureName(), payload.getArmorSets()));
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    private static void applyMultiModelClient(int entityId, boolean isContract, TextureColors color,
-                                              String textureName, ArmorSets<String> armorTextureName) {
-        Level level = Minecraft.getInstance().level;
-        if (level == null) return;
-        Entity entity = level.getEntity(entityId);
-        if (!(entity instanceof IHasMultiModel multiModel)) return;
-        multiModel.setContractMM(isContract);
-        multiModel.setColorMM(color);
-        LMTextureManager textureManager = LMTextureManager.INSTANCE;
-        textureManager.getTexture(textureName)
-                .filter(th -> multiModel.isAllowChangeTexture(entity, th, Layer.SKIN, Part.HEAD))
-                .ifPresent(th -> multiModel.setTextureHolder(th, Layer.SKIN, Part.HEAD));
-        for (Part part : Part.values()) {
-            String armorName = armorTextureName.getArmor(part)
-                    .orElseThrow(() -> new IllegalStateException("テクスチャが存在しません。"));
-            textureManager.getTexture(armorName)
-                    .filter(th -> multiModel.isAllowChangeTexture(entity, th, Layer.INNER, part))
-                    .ifPresent(th -> multiModel.setTextureHolder(th, Layer.INNER, part));
-        }
     }
 
     private static void handleSyncMultiModelServer(SyncMultiModelPayload payload, IPayloadContext context) {
@@ -221,19 +198,6 @@ public class NetworkHandler {
                 new SyncSoundPackPayload(entity.getId(), configHolder.getName()));
     }
 
-    @OnlyIn(Dist.CLIENT)
-    private static void handleSyncSoundPackClient(SyncSoundPackPayload payload, IPayloadContext context) {
-        context.enqueueWork(() -> {
-            Level level = Minecraft.getInstance().level;
-            if (level == null) return;
-            Entity entity = level.getEntity(payload.entityId());
-            if (!(entity instanceof SoundPlayable soundPlayable)) return;
-            ConfigHolder configHolder = LMConfigManager.INSTANCE.getConfig(payload.soundPackName())
-                    .orElse(LMConfigManager.EMPTY_CONFIG);
-            soundPlayable.setConfigHolder(configHolder);
-        });
-    }
-
     private static void handleSyncSoundPackServer(SyncSoundPackPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
             Player player = context.player();
@@ -256,18 +220,6 @@ public class NetworkHandler {
                 PacketDistributor.sendToPlayer(player, payload);
             }
         }
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    private static void handleLMSoundClient(LMSoundPayload payload, IPayloadContext context) {
-        context.enqueueWork(() -> {
-            Player player = Minecraft.getInstance().player;
-            if (player == null) return;
-            Entity entity = player.level().getEntity(payload.entityId());
-            if (entity instanceof SoundPlayable soundPlayable) {
-                soundPlayable.play(payload.soundName());
-            }
-        });
     }
 
     // --- C2SSetMovingState ---
@@ -431,20 +383,6 @@ public class NetworkHandler {
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
-    private static void handleSyncSoundConfigClient(SyncSoundConfigPayload payload, IPayloadContext context) {
-        context.enqueueWork(() -> {
-            Player player = Minecraft.getInstance().player;
-            if (player == null) return;
-            Level world = player.level();
-            Entity entity = world.getEntity(payload.entityId());
-            if (entity instanceof SoundPlayable soundPlayable) {
-                LMConfigManager.INSTANCE.getConfig(payload.configName())
-                        .ifPresent(soundPlayable::setConfigHolder);
-            }
-        });
-    }
-
     private static void handleSyncSoundConfigServer(SyncSoundConfigPayload payload, IPayloadContext context) {
         context.enqueueWork(() -> {
             Player player = context.player();
@@ -486,27 +424,12 @@ public class NetworkHandler {
             if (!(entity instanceof TargetTagManager)
                     || (entity instanceof TamableAnimal tamable
                             && TameableUtil.getTameOwnerUuid(tamable)
-                                    .filter(id -> id.equals(player.getUUID()))
-                                    .isEmpty())) {
+                                     .filter(id -> id.equals(player.getUUID()))
+                                     .isEmpty())) {
                 return;
             }
             // noinspection unchecked
             sendOpenTargetTagScreenS2C((Entity & TargetTagManager) entity, player);
-        });
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    private static void handleOpenTargetTagScreenClient(OpenTargetTagScreenS2CPayload payload, IPayloadContext context) {
-        context.enqueueWork(() -> {
-            Player player = Minecraft.getInstance().player;
-            if (player == null) return;
-            Entity entity = player.level().getEntity(payload.entityId());
-            if (!(entity instanceof TargetTagManager targetTagManager)) {
-                return;
-            }
-            Map<TargetIdentifier, Set<TargetingSystem.TargetTag>> targetTagMap = new HashMap<>();
-            TargetTagManagerImpl.read(targetTagMap, TagValueInput.create(ProblemReporter.DISCARDING, player.level().registryAccess(), payload.nbt()));
-            Minecraft.getInstance().setScreen(new TargetTagScreen(entity, targetTagMap));
         });
     }
 
@@ -528,17 +451,6 @@ public class NetworkHandler {
         context.enqueueWork(() -> {
             Player player = context.player();
             sendOpenMaidManagerScreenS2C(player);
-        });
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    private static void handleOpenMaidManagerScreenClient(OpenMaidManagerScreenS2CPayload payload, IPayloadContext context) {
-        context.enqueueWork(() -> {
-            Player player = Minecraft.getInstance().player;
-            if (player == null) return;
-            var lmInfos = new ArrayList<MaidManager.LMInfo>();
-            MaidManagerImpl.read(TagValueInput.create(ProblemReporter.DISCARDING, player.level().registryAccess(), payload.nbt()), lmInfos);
-            Minecraft.getInstance().setScreen(new MaidManagerScreen(lmInfos));
         });
     }
 }

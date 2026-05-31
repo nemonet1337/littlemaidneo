@@ -66,5 +66,8 @@
   "littlemaidneo.configuration.title": "LittleMaidNeo Configs",
   "littlemaidneo.configuration.section.littlemaidneo.common.toml": "LittleMaidNeo Configs",
   "littlemaidneo.configuration.section.littlemaidneo.common.toml.title": "LittleMaidNeo Configs",
-  "chat.littlemaidneo.maid_died": "%1$s died due to %2$s"
+  "chat.littlemaidneo.maid_died": "%1$s died due to %2$s",
+  "chat.littlemaidneo.owner_name_prefix": "Owner",
+  "chat.littlemaidneo.book_parameters_applied": "Parameters applied from the book.",
+  "chat.littlemaidneo.need_more_sugar_for_strike": "Need 8 or more sugar to resume from strike!"
 }
