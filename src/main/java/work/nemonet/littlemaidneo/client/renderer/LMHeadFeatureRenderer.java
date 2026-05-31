@@ -1,113 +1,71 @@
-/*
- * Decompiled with CFR 0.1.1 (FabricMC 57d88659).
- */
 package work.nemonet.littlemaidneo.client.renderer;
 
-import com.mojang.authlib.GameProfile;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
-
-
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.model.EntityModel;
-import net.minecraft.client.model.HeadedModel;
-import net.minecraft.client.model.SkullModelBase;
 import net.minecraft.client.model.geom.EntityModelSet;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.model.object.skull.SkullModelBase;
+import net.minecraft.client.renderer.PlayerSkinRenderCache;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.SkullBlockRenderer;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
+import net.minecraft.client.renderer.rendertype.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtUtils;
-import net.minecraft.core.component.DataComponents;
+import net.minecraft.util.Util;
 import net.minecraft.world.item.component.ResolvableProfile;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.ArmorItem;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemDisplayContext;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.AbstractSkullBlock;
-import net.minecraft.world.level.block.BushBlock;
 import net.minecraft.world.level.block.SkullBlock;
-import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
-import java.util.Map;
+import java.util.function.Function;
 
 /**
  * メイドさんの頭飾りレンダラ
  */
-@Environment(value = EnvType.CLIENT)
-public class LMHeadFeatureRenderer<T extends LittleMaidEntity, M extends EntityModel<T>>
-        extends RenderLayer<T, M> {
-    private final float scaleX;
-    private final float scaleY;
-    private final float scaleZ;
-    private final Map<SkullBlock.Type, SkullModelBase> headModels;
+@OnlyIn(Dist.CLIENT)
+public class LMHeadFeatureRenderer<S extends MaidRenderState, M extends LMMultiModel<S>> extends RenderLayer<S, M> {
 
-    public LMHeadFeatureRenderer(RenderLayerParent<T, M> context, EntityModelSet loader) {
-        this(context, loader, 1.0f, 1.0f, 1.0f);
-    }
+    private final Function<SkullBlock.Type, SkullModelBase> headModels;
+    private final PlayerSkinRenderCache playerSkinRenderCache;
 
-    public LMHeadFeatureRenderer(RenderLayerParent<T, M> context, EntityModelSet loader, float scaleX, float scaleY, float scaleZ) {
+    public LMHeadFeatureRenderer(RenderLayerParent<S, M> context, EntityModelSet loader, PlayerSkinRenderCache playerSkinRenderCache) {
         super(context);
-        this.scaleX = scaleX;
-        this.scaleY = scaleY;
-        this.scaleZ = scaleZ;
-        this.headModels = SkullBlockRenderer.createSkullRenderers(loader);
+        this.headModels = Util.memoize(type -> SkullBlockRenderer.createModel(loader, type));
+        this.playerSkinRenderCache = playerSkinRenderCache;
     }
 
     @Override
-    public void render(PoseStack matrixStack, MultiBufferSource vertexConsumerProvider,
-                       int light, T livingEntity,
-                       float animationProgress, float g, float h, float j, float k, float l) {
-        var lastStack = livingEntity.getInventory().getItem(17);
-        var lastItem = lastStack.getItem();
-        boolean showLastItem = !lastStack.isEmpty()
-                && lastItem instanceof BlockItem
-                && ((BlockItem) lastItem).getBlock() instanceof BushBlock;
-        ItemStack itemStack = ((LivingEntity) livingEntity).getItemBySlot(EquipmentSlot.HEAD);
-        boolean showHeadItem = !itemStack.isEmpty();
-        if (!showLastItem && !showHeadItem) {
-            return;
-        }
+    public void submit(PoseStack matrixStack, SubmitNodeCollector submitNodeCollector, int light, S state, float headYaw, float headPitch) {
+        if (state.maidEntity == null) return;
+
+        boolean showHeadItem = !state.headItem.isEmpty() || state.wornHeadType != null;
+        if (!showHeadItem) return;
+
         matrixStack.pushPose();
-        matrixStack.scale(this.scaleX, this.scaleY, this.scaleZ);
-        ((HeadedModel) this.getParentModel()).getHead().translateAndRotate(matrixStack);
-        if (showLastItem) {
-            matrixStack.pushPose();
+        this.getParentModel().getHead().translateAndRotate(matrixStack);
+
+        if (state.wornHeadType != null) {
+            matrixStack.scale(1.1875f, -1.1875f, -1.1875f);
+            matrixStack.translate(-0.5, 0.0, -0.5);
+            SkullModelBase skullModel = headModels.apply(state.wornHeadType);
+            RenderType renderType = resolveSkullRenderType(state);
+            SkullBlockRenderer.submitSkull(state.wornHeadAnimationPos, matrixStack, submitNodeCollector, light, skullModel, renderType, state.outlineColor, null);
+        } else {
             translate(matrixStack, false);
-            matrixStack.translate(-0.5, 0.35, -0.5);
-            Minecraft.getInstance().getBlockRenderer()
-                    .renderSingleBlock(((BlockItem) lastItem).getBlock().defaultBlockState(),
-                            matrixStack,
-                            vertexConsumerProvider,
-                            light,
-                            OverlayTexture.NO_OVERLAY);
-            matrixStack.popPose();
+            state.headItem.submit(matrixStack, submitNodeCollector, light, OverlayTexture.NO_OVERLAY, state.outlineColor);
         }
 
-        if (showHeadItem) {
-            Item item = itemStack.getItem();
-            if (item instanceof BlockItem blockItem && blockItem.getBlock() instanceof AbstractSkullBlock skullBlock) {
-                matrixStack.scale(1.1875f, -1.1875f, -1.1875f);
-                ResolvableProfile profile = itemStack.get(DataComponents.PROFILE);
-                matrixStack.translate(-0.5, 0.0, -0.5);
-                SkullBlock.Type skullType = skullBlock.getType();
-                SkullModelBase skullBlockEntityModel = this.headModels.get(skullType);
-                RenderType renderLayer = SkullBlockRenderer.getRenderType(skullType, profile);
-                SkullBlockRenderer.renderSkull(null, 180.0f, animationProgress, matrixStack, vertexConsumerProvider, light, skullBlockEntityModel, renderLayer);
-            } else if (!(item instanceof ArmorItem armorItem) || armorItem.getEquipmentSlot() != EquipmentSlot.HEAD) {
-                translate(matrixStack, false);
-                Minecraft.getInstance().getEntityRenderDispatcher().getItemInHandRenderer()
-                        .renderItem(livingEntity, itemStack, ItemDisplayContext.HEAD,
-                                false, matrixStack, vertexConsumerProvider, light);
+        matrixStack.popPose();
+    }
+
+    private RenderType resolveSkullRenderType(S state) {
+        if (state.wornHeadType == SkullBlock.Types.PLAYER) {
+            ResolvableProfile profile = state.wornHeadProfile;
+            if (profile != null) {
+                return this.playerSkinRenderCache.getOrDefault(profile).renderType();
             }
         }
-        matrixStack.popPose();
+        return SkullBlockRenderer.getSkullRenderType(state.wornHeadType, null);
     }
 
     public static void translate(PoseStack matrices, boolean villager) {
@@ -119,4 +77,3 @@ public class LMHeadFeatureRenderer<T extends LittleMaidEntity, M extends EntityM
         }
     }
 }
-

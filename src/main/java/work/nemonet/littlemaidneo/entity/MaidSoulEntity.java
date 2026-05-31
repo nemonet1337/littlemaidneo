@@ -3,7 +3,10 @@ package work.nemonet.littlemaidneo.entity;
 import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
@@ -14,9 +17,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.Vec3;
 import work.nemonet.littlemaidneo.entity.util.MaidManager;
-import work.nemonet.littlemaidneo.setup.Registration;
+import work.nemonet.littlemaidneo.setup.ModRegistration;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Vector3f;
 
 //メイドソウル
 //体重21g！
@@ -32,7 +34,7 @@ public class MaidSoulEntity extends Entity {
     }
 
     public MaidSoulEntity(Level world, LittleMaidEntity.MaidSoul maidSoul) {
-        this(Registration.MAID_SOUL_ENTITY.get(), world);
+        this(ModRegistration.MAID_SOUL_ENTITY.get(), world);
         this.maidSoul = maidSoul;
     }
 
@@ -162,20 +164,31 @@ public class MaidSoulEntity extends Entity {
             float size = 0.5f;
             int count = 20;
             double delta = 1.0;
-            // TODO エフェクト調整
+            // エフェクト調整
             serverWorld.sendParticles(
-                    new DustParticleOptions(new Vector3f(1.0f, 0.0f, 0.0f), size),
+                    new DustParticleOptions(0xFFFF0000, size),
                     this.getX(), this.getY(), this.getZ(),
                     count, delta, delta, delta, 0);
             serverWorld.sendParticles(
-                    new DustParticleOptions(new Vector3f(0.0f, 1.0f, 0.0f), size),
+                    new DustParticleOptions(0xFF00FF00, size),
                     this.getX(), this.getY(), this.getZ(),
                     count, delta, delta, delta, 0);
             serverWorld.sendParticles(
-                    new DustParticleOptions(new Vector3f(0.0f, 0.0f, 1.0f), size),
+                    new DustParticleOptions(0xFF0000FF, size),
                     this.getX(), this.getY(), this.getZ(),
                     count, delta, delta, delta, 0);
-            // TODO 憑依ステータス効果
+            serverWorld.sendParticles(
+                    ParticleTypes.GLOW,
+                    this.getX(), this.getY(), this.getZ(),
+                    15, 0.5, 0.5, 0.5, 0.05);
+            serverWorld.sendParticles(
+                    ParticleTypes.SOUL,
+                    this.getX(), this.getY(), this.getZ(),
+                    10, 0.5, 0.5, 0.5, 0.02);
+            
+            // 憑依ステータス効果
+            player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.LUCK, 600, 0));
+            player.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.REGENERATION, 100, 1));
         }
         this.discard();
     }
@@ -186,16 +199,15 @@ public class MaidSoulEntity extends Entity {
     }
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag nbt) {
-        if (nbt.contains("maidSoul")) {
-            this.maidSoul = LittleMaidEntity.MaidSoul.fromNbt(nbt.getCompound("maidSoul"));
-        }
+    protected void readAdditionalSaveData(ValueInput input) {
+        input.read("maidSoul", CompoundTag.CODEC)
+                .ifPresent(nbt -> this.maidSoul = LittleMaidEntity.MaidSoul.fromNbt(nbt));
     }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag nbt) {
+    protected void addAdditionalSaveData(ValueOutput output) {
         if (this.maidSoul != null) {
-            nbt.put("maidSoul", this.maidSoul.getNbt().copy());
+            output.store("maidSoul", CompoundTag.CODEC, this.maidSoul.getNbt().copy());
         }
     }
 
@@ -212,6 +224,11 @@ public class MaidSoulEntity extends Entity {
     @Override
     protected void addPassenger(Entity passenger) {
         throw new IllegalStateException("Should never addPassenger without checking couldAcceptPassenger()");
+    }
+
+    @Override
+    public boolean hurtServer(ServerLevel level, DamageSource source, float amount) {
+        return false;
     }
 
     @Override

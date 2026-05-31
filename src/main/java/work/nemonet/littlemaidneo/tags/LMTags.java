@@ -1,17 +1,16 @@
 package work.nemonet.littlemaidneo.tags;
 
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
-import work.nemonet.littlemaidneo.LMRBMod;
+import work.nemonet.littlemaidneo.LittleMaidNeo;
 
 /**
  * メイドさんに関するタグを置いとくとこ
  */
-// TODO 判定をタグとコンフィグで行えるように仕様を調整
 public class LMTags {
 
     public static class Items {
@@ -26,7 +25,7 @@ public class LMTags {
         public static final TagKey<Item> HEALER_MODE = register("healer_mode");
 
         private static TagKey<Item> register(String id) {
-            return TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(LittleMaidNeo.MODID, id));
+            return TagKey.create(Registries.ITEM, Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, id));
         }
     }
 
@@ -34,7 +33,7 @@ public class LMTags {
         public static final TagKey<Block> MAID_ALTER_COMPONENT_BLOCKS = register("maid_alter_component_blocks");
 
         private static TagKey<Block> register(String id) {
-            return TagKey.create(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath(LittleMaidNeo.MODID, id));
+            return TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, id));
         }
     }
 
@@ -43,7 +42,7 @@ public class LMTags {
         public static final TagKey<Biome> MAID_SPAWN_EXCLUDE_BIOME = register("maid_spawn_exclude_biome");
 
         private static TagKey<Biome> register(String id) {
-            return TagKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(LittleMaidNeo.MODID, id));
+            return TagKey.create(Registries.BIOME, Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, id));
         }
     }
 }

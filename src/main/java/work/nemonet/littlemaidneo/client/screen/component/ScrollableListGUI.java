@@ -1,7 +1,8 @@
 package work.nemonet.littlemaidneo.client.screen.component;
 
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import work.nemonet.littlemaidneo.client.screen.ModelSelectScreen;
 import org.jetbrains.annotations.Nullable;
@@ -49,39 +50,39 @@ public class ScrollableListGUI<T extends GUIElement> extends ListGUI<T> {
     }
 
     @Override
-    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
-        super.render(context, mouseX, mouseY, delta);
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+        super.extractRenderState(context, mouseX, mouseY, delta);
         if (scrollBar != null) {
-            scrollBar.render(context, mouseX, mouseY, delta);
+            scrollBar.extractRenderState(context, mouseX, mouseY, delta);
         }
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (scrollBar != null && scrollBar.mouseClicked(mouseX, mouseY, button)) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean handled) {
+        if (scrollBar != null && scrollBar.mouseClicked(event, handled)) {
             syncScrollFromScrollBar();
             return true;
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+        return super.mouseClicked(event, handled);
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    public boolean mouseReleased(MouseButtonEvent event) {
         boolean result = false;
-        if (scrollBar != null && scrollBar.mouseReleased(mouseX, mouseY, button)) {
+        if (scrollBar != null && scrollBar.mouseReleased(event)) {
             syncScrollFromScrollBar();
             result = true;
         }
-        return result | super.mouseReleased(mouseX, mouseY, button);
+        return result | super.mouseReleased(event);
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
-        if (scrollBar != null && scrollBar.mouseDragged(mouseX, mouseY, button, deltaX, deltaY)) {
+    public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
+        if (scrollBar != null && scrollBar.mouseDragged(event, deltaX, deltaY)) {
             syncScrollFromScrollBar();
             return true;
         }
-        return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+        return super.mouseDragged(event, deltaX, deltaY);
     }
 
     @Override
@@ -174,7 +175,7 @@ public class ScrollableListGUI<T extends GUIElement> extends ListGUI<T> {
             int offsetX, int offsetY, int width, int height,
             TextureAddress sliderT, TextureAddress sliderM,
             TextureAddress sliderB, TextureAddress pointer,
-            ResourceLocation texture
+            Identifier texture
     ) {
         public static ScrollBarConfig defaultConfig() {
             return new ScrollBarConfig(

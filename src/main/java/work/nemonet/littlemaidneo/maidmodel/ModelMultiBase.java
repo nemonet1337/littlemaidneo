@@ -60,7 +60,7 @@ public abstract class ModelMultiBase extends ModelBase implements IModelCaps, IM
         textureWidth = pTextureWidth;
         textureHeight = pTextureHeight;
 
-        if (FMLEnvironment.dist == Dist.CLIENT) {
+        if (FMLEnvironment.getDist() == Dist.CLIENT) {
             Arms = new ModelRenderer[2];
             HeadMount = new ModelRenderer(this, "HeadMount");
             HeadTop = new ModelRenderer(this, "HeadTop");

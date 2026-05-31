@@ -1,5 +1,6 @@
 package work.nemonet.littlemaidneo.entity.goal;
 
+import java.util.EnumSet;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.player.Player;
@@ -7,11 +8,11 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import work.nemonet.littlemaidneo.entity.util.GuiEntitySupplier;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 
-import java.util.EnumSet;
+public class WaitWhenOpenGUIGoal<
+    T extends TamableAnimal,
+    M extends AbstractContainerMenu & GuiEntitySupplier<T>
+> extends Goal {
 
-//TODO 実装
-public class WaitWhenOpenGUIGoal<T extends TamableAnimal, M extends AbstractContainerMenu & GuiEntitySupplier<T>>
-        extends Goal {
     private final T mob;
     private final Class<? extends M> screenHandler;
 
@@ -24,21 +25,25 @@ public class WaitWhenOpenGUIGoal<T extends TamableAnimal, M extends AbstractCont
     @Override
     public boolean canUse() {
         return TameableUtil.getTameOwner(mob)
-                .filter(owner -> owner instanceof Player)
-                .map(owner -> ((Player) owner).containerMenu)
-                .filter(screen -> this.screenHandler.isAssignableFrom(screen.getClass()))
-                .map(screen -> screenHandler.cast(screen).getGuiEntity())
-                .filter(guiEntity -> mob == guiEntity)
-                .isPresent();
+            .filter(owner -> owner instanceof Player)
+            .map(owner -> ((Player) owner).containerMenu)
+            .filter(screen ->
+                this.screenHandler.isAssignableFrom(screen.getClass())
+            )
+            .map(screen -> screenHandler.cast(screen).getGuiEntity())
+            .filter(guiEntity -> mob == guiEntity)
+            .isPresent();
     }
 
     @Override
     public boolean canContinueToUse() {
         return TameableUtil.getTameOwner(mob)
-                .filter(owner -> owner instanceof Player)
-                .map(owner -> ((Player) owner).containerMenu)
-                .filter(screen -> this.screenHandler.isAssignableFrom(screen.getClass()))
-                .isPresent();
+            .filter(owner -> owner instanceof Player)
+            .map(owner -> ((Player) owner).containerMenu)
+            .filter(screen ->
+                this.screenHandler.isAssignableFrom(screen.getClass())
+            )
+            .isPresent();
     }
 
     @Override
@@ -49,7 +54,8 @@ public class WaitWhenOpenGUIGoal<T extends TamableAnimal, M extends AbstractCont
     @Override
     public void tick() {
         super.tick();
-        TameableUtil.getTameOwner(mob)
-                .ifPresent(owner -> this.mob.getLookControl().setLookAt(owner.getEyePosition(1F)));
+        TameableUtil.getTameOwner(mob).ifPresent(owner ->
+            this.mob.getLookControl().setLookAt(owner.getEyePosition(1F))
+        );
     }
 }

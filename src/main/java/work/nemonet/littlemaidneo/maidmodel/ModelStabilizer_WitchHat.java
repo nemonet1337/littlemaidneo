@@ -1,11 +1,11 @@
 package work.nemonet.littlemaidneo.maidmodel;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import work.nemonet.littlemaidneo.maidmodel.compat.GLCompat;
 
 public class ModelStabilizer_WitchHat extends ModelStabilizerBase {
 
-    public static ResourceLocation ftex = ResourceLocation.fromNamespaceAndPath("littlemaidneo", "mob/littleMaid/ALTERNATIVE/Stabilizer_MagicHat.png");
+    public static Identifier ftex = Identifier.fromNamespaceAndPath("littlemaidneo", "mob/littleMaid/ALTERNATIVE/Stabilizer_MagicHat.png");
     public ModelRenderer WitchHat;
     public ModelRenderer WitchHat1;
     public ModelRenderer WitchHat2;
@@ -36,7 +36,7 @@ public class ModelStabilizer_WitchHat extends ModelStabilizerBase {
     }
 
     @Override
-    public ResourceLocation getTexture() {
+    public Identifier getTexture() {
         return ftex;
     }
 

@@ -2,17 +2,18 @@ package work.nemonet.littlemaidneo.block;
 
 import java.util.List;
 import net.minecraft.world.level.block.entity.*;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.Vec3i;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Container;
 import net.minecraft.world.ContainerHelper;
+import net.minecraft.world.entity.ContainerUser;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -27,9 +28,9 @@ import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import work.nemonet.littlemaidneo.LMRBMod;
+import work.nemonet.littlemaidneo.config.LMRBConfig;
 import work.nemonet.littlemaidneo.entity.util.SalaryBoxPosListener;
-import work.nemonet.littlemaidneo.setup.Registration;
+import work.nemonet.littlemaidneo.setup.ModRegistration;
 import work.nemonet.littlemaidneo.tags.LMTags;
 import org.jetbrains.annotations.Nullable;
 
@@ -56,7 +57,7 @@ public class SalaryBoxBlockEntity extends RandomizableContainerBlockEntity {
         }
 
         @Override
-        protected boolean isOwnContainer(Player player) {
+        public boolean isOwnContainer(Player player) {
             if (player.containerMenu instanceof ChestMenu) {
                 Container inventory = ((ChestMenu)player.containerMenu).getContainer();
                 return inventory == SalaryBoxBlockEntity.this;
@@ -66,23 +67,23 @@ public class SalaryBoxBlockEntity extends RandomizableContainerBlockEntity {
     };
 
     public SalaryBoxBlockEntity(BlockPos pos, BlockState state) {
-        super(Registration.SALARY_BOX_BLOCK_ENTITY.get(), pos, state);
+        super(ModRegistration.SALARY_BOX_BLOCK_ENTITY.get(), pos, state);
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        if (!this.trySaveLootTable(tag)) {
-            ContainerHelper.saveAllItems(tag, this.inventory, registries);
+    protected void saveAdditional(ValueOutput output) {
+        super.saveAdditional(output);
+        if (!this.trySaveLootTable(output)) {
+            ContainerHelper.saveAllItems(output, this.inventory);
         }
     }
 
     @Override
-    protected void loadAdditional(CompoundTag tag, HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
+    protected void loadAdditional(ValueInput input) {
+        super.loadAdditional(input);
         this.inventory = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
-        if (!this.tryLoadLootTable(tag)) {
-            ContainerHelper.loadAllItems(tag, this.inventory, registries);
+        if (!this.tryLoadLootTable(input)) {
+            ContainerHelper.loadAllItems(input, this.inventory);
         }
     }
 
@@ -121,15 +122,15 @@ public class SalaryBoxBlockEntity extends RandomizableContainerBlockEntity {
     }
 
     @Override
-    public void startOpen(Player player) {
-        if (!this.remove && !player.isSpectator()) {
-            this.stateManager.incrementOpeners(player, this.getLevel(), this.getBlockPos(), this.getBlockState());
+    public void startOpen(ContainerUser user) {
+        if (!this.remove && user.getLivingEntity() instanceof Player player && !player.isSpectator()) {
+            this.stateManager.incrementOpeners(player, this.getLevel(), this.getBlockPos(), this.getBlockState(), user.getContainerInteractionRange());
         }
     }
 
     @Override
-    public void stopOpen(Player player) {
-        if (!this.remove && !player.isSpectator()) {
+    public void stopOpen(ContainerUser user) {
+        if (!this.remove && user.getLivingEntity() instanceof Player player && !player.isSpectator()) {
             this.stateManager.decrementOpeners(player, this.getLevel(), this.getBlockPos(), this.getBlockState());
         }
     }
@@ -145,11 +146,11 @@ public class SalaryBoxBlockEntity extends RandomizableContainerBlockEntity {
     }
 
     void playSound(BlockState state, SoundEvent soundEvent) {
-        Vec3i vec3i = state.getValue(BarrelBlock.FACING).getNormal();
+        Vec3i vec3i = state.getValue(BarrelBlock.FACING).getUnitVec3i();
         double d = this.worldPosition.getX() + 0.5 + vec3i.getX() / 2.0;
         double e = this.worldPosition.getY() + 0.5 + vec3i.getY() / 2.0;
         double f = this.worldPosition.getZ() + 0.5 + vec3i.getZ() / 2.0;
-        this.level.playSound(null, d, e, f, soundEvent, SoundSource.BLOCKS, 0.5f, this.level.random.nextFloat() * 0.1f + 0.9f);
+        this.level.playSound(null, d, e, f, soundEvent, SoundSource.BLOCKS, 0.5f, this.level.getRandom().nextFloat() * 0.1f + 0.9f);
     }
 
     public static boolean isinNotifyRange(Vec3i boxPos, Vec3 entityPos) {
@@ -199,10 +200,10 @@ public class SalaryBoxBlockEntity extends RandomizableContainerBlockEntity {
     }
 
     private static float getConfigNotifyRange() {
-        return LMRBMod.getConfig().contract.memorySalaryBoxDistance;
+        return LMRBConfig.get().contract.memorySalaryBoxDistance;
     }
 
     private static int getConfigInterval() {
-        return LMRBMod.getConfig().contract.memorySalaryBoxInterval;
+        return LMRBConfig.get().contract.memorySalaryBoxInterval;
     }
 }

@@ -3,7 +3,7 @@ package work.nemonet.littlemaidneo.network;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import work.nemonet.littlemaidneo.LittleMaidNeo;
 
 public record LMSoundPayload(
@@ -12,7 +12,7 @@ public record LMSoundPayload(
 ) implements CustomPacketPayload {
 
     public static final CustomPacketPayload.Type<LMSoundPayload> TYPE =
-            new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(LittleMaidNeo.MODID, "lm_sound"));
+            new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, "lm_sound"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, LMSoundPayload> STREAM_CODEC =
             StreamCodec.of(LMSoundPayload::encode, LMSoundPayload::decode);

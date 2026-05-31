@@ -1,6 +1,6 @@
 package work.nemonet.littlemaidneo.resource.holder;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
 import work.nemonet.littlemaidneo.resource.util.TextureColors;
@@ -12,8 +12,8 @@ import java.util.stream.Collectors;
 public class TextureHolder {
     private final String name;
     private final String modelName;
-    private final Map<Integer, ResourceLocation> textures = new HashMap<>();
-    private final Map<String, Map<Integer, ResourceLocation>> armors = new HashMap<>();
+    private final Map<Integer, Identifier> textures = new HashMap<>();
+    private final Map<String, Map<Integer, Identifier>> armors = new HashMap<>();
 
     public TextureHolder(String name, String modelName) {
         this.name = name;
@@ -23,16 +23,16 @@ public class TextureHolder {
     public String getTextureName() { return name; }
     public String getModelName() { return modelName; }
 
-    public void addTexture(int index, ResourceLocation texturePath) {
+    public void addTexture(int index, Identifier texturePath) {
         textures.put(index, texturePath);
     }
 
-    public void addArmorTexture(String armorType, int index, ResourceLocation texturePath) {
-        Map<Integer, ResourceLocation> armorMap = armors.computeIfAbsent(armorType.toLowerCase(), k -> new HashMap<>());
+    public void addArmorTexture(String armorType, int index, Identifier texturePath) {
+        Map<Integer, Identifier> armorMap = armors.computeIfAbsent(armorType.toLowerCase(), k -> new HashMap<>());
         armorMap.put(index, texturePath);
     }
 
-    public Optional<ResourceLocation> getTexture(TextureColors color, boolean isContract, boolean isLight) {
+    public Optional<Identifier> getTexture(TextureColors color, boolean isContract, boolean isLight) {
         int index = color.getIndex();
         if (isLight) {
             index += isContract ? TextureIndexes.COLOR_WILD_LIGHT.getIndexMin() : TextureIndexes.COLOR_CONTRACT_LIGHT.getIndexMin();
@@ -42,9 +42,9 @@ public class TextureHolder {
         return Optional.ofNullable(textures.get(index));
     }
 
-    public Optional<ResourceLocation> getArmorTexture(IHasMultiModel.Layer layer, String armorName, float damagePercent, boolean isLight) {
+    public Optional<Identifier> getArmorTexture(IHasMultiModel.Layer layer, String armorName, float damagePercent, boolean isLight) {
         if (armors.isEmpty()) return Optional.empty();
-        Optional<ResourceLocation> optional = getArmorTextureInner(layer, armorName, damagePercent, isLight);
+        Optional<Identifier> optional = getArmorTextureInner(layer, armorName, damagePercent, isLight);
         if (optional.isPresent()) return optional;
         if (armors.containsKey("default") && !armorName.toLowerCase().equals("default")) {
             return getArmorTextureInner(layer, "default", damagePercent, isLight);
@@ -56,9 +56,9 @@ public class TextureHolder {
                 .findAny();
     }
 
-    public Optional<ResourceLocation> getArmorTextureInner(IHasMultiModel.Layer layer, String armorName, float damagePercent, boolean isLight) {
+    public Optional<Identifier> getArmorTextureInner(IHasMultiModel.Layer layer, String armorName, float damagePercent, boolean isLight) {
         if (armors.isEmpty()) return Optional.empty();
-        Map<Integer, ResourceLocation> armorTextures = armors.get(armorName.toLowerCase());
+        Map<Integer, Identifier> armorTextures = armors.get(armorName.toLowerCase());
         if (armorTextures == null || armorTextures.isEmpty()) return Optional.empty();
         int index = switch (layer) {
             case INNER -> (isLight ? TextureIndexes.ARMOR_1_DAMAGED_LIGHT : TextureIndexes.ARMOR_1_DAMAGED).getIndexMin();
@@ -66,10 +66,10 @@ public class TextureHolder {
             default -> throw new IllegalArgumentException("それは防具ではないかnullである");
         };
         int damageIndex = Mth.clamp((int) (damagePercent * 10F - 1F), 0, 9);
-        ResourceLocation armorTexture = armorTextures.get(index + damageIndex);
+        Identifier armorTexture = armorTextures.get(index + damageIndex);
         if (armorTexture != null) return Optional.of(armorTexture);
         for (int i = 1; i <= damageIndex; i++) {
-            ResourceLocation temp = armorTextures.get(index + damageIndex - i);
+            Identifier temp = armorTextures.get(index + damageIndex - i);
             if (temp != null) return Optional.of(temp);
         }
         return Optional.empty();

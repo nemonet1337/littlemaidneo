@@ -3,6 +3,9 @@ package work.nemonet.littlemaidneo.network;
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.OwnableEntity;
 import net.minecraft.world.entity.TamableAnimal;
@@ -10,6 +13,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
@@ -137,7 +141,7 @@ public class NetworkHandler {
         String armorBody = hasMultiModel.getTextureHolder(Layer.INNER, Part.BODY).getTextureName();
         String armorLegs = hasMultiModel.getTextureHolder(Layer.INNER, Part.LEGS).getTextureName();
         String armorFeet = hasMultiModel.getTextureHolder(Layer.INNER, Part.FEET).getTextureName();
-        PacketDistributor.sendToServer(new SyncMultiModelPayload(
+        ClientPacketDistributor.sendToServer(new SyncMultiModelPayload(
                 entity.getId(), textureName, armorHead, armorBody, armorLegs, armorFeet,
                 hasMultiModel.getColorMM(), hasMultiModel.isContractMM()));
     }
@@ -209,7 +213,7 @@ public class NetworkHandler {
 
     @OnlyIn(Dist.CLIENT)
     public static void sendSyncSoundPackC2S(Entity entity, ConfigHolder configHolder) {
-        PacketDistributor.sendToServer(new SyncSoundPackPayload(entity.getId(), configHolder.getName()));
+        ClientPacketDistributor.sendToServer(new SyncSoundPackPayload(entity.getId(), configHolder.getName()));
     }
 
     public static void sendSyncSoundPackS2C(Entity entity, ConfigHolder configHolder) {
@@ -270,7 +274,7 @@ public class NetworkHandler {
 
     @OnlyIn(Dist.CLIENT)
     public static void sendSetMovingStateC2S(Entity entity, MovingMode state) {
-        PacketDistributor.sendToServer(new C2SSetMovingStatePayload(entity.getId(), state));
+        ClientPacketDistributor.sendToServer(new C2SSetMovingStatePayload(entity.getId(), state));
     }
 
     private static void handleSetMovingStateServer(C2SSetMovingStatePayload payload, IPayloadContext context) {
@@ -298,7 +302,7 @@ public class NetworkHandler {
 
     @OnlyIn(Dist.CLIENT)
     public static void sendSetBloodSuckC2S(Entity entity, boolean isBloodSuck) {
-        PacketDistributor.sendToServer(new C2SSetBloodSuckPayload(entity.getId(), isBloodSuck));
+        ClientPacketDistributor.sendToServer(new C2SSetBloodSuckPayload(entity.getId(), isBloodSuck));
     }
 
     private static void handleSetBloodSuckServer(C2SSetBloodSuckPayload payload, IPayloadContext context) {
@@ -320,7 +324,7 @@ public class NetworkHandler {
 
     @OnlyIn(Dist.CLIENT)
     public static void sendSetWorkItemSlotSizeC2S(LittleMaidEntity entity, int num) {
-        PacketDistributor.sendToServer(new C2SSetWorkItemSlotSizePayload(entity.getId(), num));
+        ClientPacketDistributor.sendToServer(new C2SSetWorkItemSlotSizePayload(entity.getId(), num));
     }
 
     private static void handleSetWorkItemSlotSizeServer(C2SSetWorkItemSlotSizePayload payload, IPayloadContext context) {
@@ -343,9 +347,9 @@ public class NetworkHandler {
     @OnlyIn(Dist.CLIENT)
     public static <T extends Entity & TargetTagManager> void sendSetTargetTagsC2S(T entity,
             Map<TargetIdentifier, Set<TargetingSystem.TargetTag>> targetTags) {
-        CompoundTag tag = new CompoundTag();
-        TargetTagManagerImpl.write(targetTags, tag);
-        PacketDistributor.sendToServer(new C2SSetTargetTagsPayload(entity.getId(), tag));
+        TagValueOutput output = TagValueOutput.createWithoutContext(ProblemReporter.DISCARDING);
+        TargetTagManagerImpl.write(targetTags, output);
+        ClientPacketDistributor.sendToServer(new C2SSetTargetTagsPayload(entity.getId(), output.buildResult()));
     }
 
     private static void handleSetTargetTagsServer(C2SSetTargetTagsPayload payload, IPayloadContext context) {
@@ -355,10 +359,13 @@ public class NetworkHandler {
             if (!(entity instanceof TargetTagManager targetTagManager)) {
                 return;
             }
-            if (entity instanceof TamableAnimal tamable && !player.getUUID().equals(tamable.getOwnerUUID())) {
+            if (entity instanceof TamableAnimal tamable
+                    && TameableUtil.getTameOwnerUuid(tamable)
+                            .filter(id -> id.equals(player.getUUID()))
+                            .isEmpty()) {
                 return;
             }
-            targetTagManager.readTargetTags(payload.tag());
+            targetTagManager.readTargetTags(TagValueInput.create(ProblemReporter.DISCARDING, player.level().registryAccess(), payload.tag()));
         });
     }
 
@@ -366,7 +373,7 @@ public class NetworkHandler {
 
     @OnlyIn(Dist.CLIENT)
     public static void sendOpenInventoryC2S(Entity entity) {
-        PacketDistributor.sendToServer(new C2SOpenInventoryPayload(entity.getId()));
+        ClientPacketDistributor.sendToServer(new C2SOpenInventoryPayload(entity.getId()));
     }
 
     private static void handleOpenInventoryServer(C2SOpenInventoryPayload payload, IPayloadContext context) {
@@ -388,7 +395,7 @@ public class NetworkHandler {
 
     @OnlyIn(Dist.CLIENT)
     public static void sendCallWaitC2S(Entity entity, C2SCallWaitPayload.State state) {
-        PacketDistributor.sendToServer(new C2SCallWaitPayload(entity.getId(), state));
+        ClientPacketDistributor.sendToServer(new C2SCallWaitPayload(entity.getId(), state));
     }
 
     private static void handleCallWaitServer(C2SCallWaitPayload payload, IPayloadContext context) {
@@ -415,7 +422,7 @@ public class NetworkHandler {
 
     @OnlyIn(Dist.CLIENT)
     public static void sendSyncSoundConfigC2S(Entity entity, String configName) {
-        PacketDistributor.sendToServer(new SyncSoundConfigPayload(entity.getId(), configName));
+        ClientPacketDistributor.sendToServer(new SyncSoundConfigPayload(entity.getId(), configName));
     }
 
     public static void sendSyncSoundConfigS2C(Entity entity, String configName) {
@@ -462,14 +469,14 @@ public class NetworkHandler {
 
     @OnlyIn(Dist.CLIENT)
     public static void sendOpenTargetTagScreenC2S(Entity entity) {
-        PacketDistributor.sendToServer(new OpenTargetTagScreenC2SPayload(entity.getId()));
+        ClientPacketDistributor.sendToServer(new OpenTargetTagScreenC2SPayload(entity.getId()));
     }
 
     public static <T extends Entity & TargetTagManager> void sendOpenTargetTagScreenS2C(T entity, Player player) {
-        CompoundTag nbt = new CompoundTag();
-        entity.writeTargetTags(nbt);
+        TagValueOutput output = TagValueOutput.createWithoutContext(ProblemReporter.DISCARDING);
+        entity.writeTargetTags(output);
         PacketDistributor.sendToPlayer((ServerPlayer) player,
-                new OpenTargetTagScreenS2CPayload(entity.getId(), nbt));
+                new OpenTargetTagScreenS2CPayload(entity.getId(), output.buildResult()));
     }
 
     private static void handleOpenTargetTagScreenServer(OpenTargetTagScreenC2SPayload payload, IPayloadContext context) {
@@ -478,7 +485,9 @@ public class NetworkHandler {
             Entity entity = player.level().getEntity(payload.entityId());
             if (!(entity instanceof TargetTagManager)
                     || (entity instanceof TamableAnimal tamable
-                            && !player.getUUID().equals(tamable.getOwnerUUID()))) {
+                            && TameableUtil.getTameOwnerUuid(tamable)
+                                    .filter(id -> id.equals(player.getUUID()))
+                                    .isEmpty())) {
                 return;
             }
             // noinspection unchecked
@@ -496,7 +505,7 @@ public class NetworkHandler {
                 return;
             }
             Map<TargetIdentifier, Set<TargetingSystem.TargetTag>> targetTagMap = new HashMap<>();
-            TargetTagManagerImpl.read(targetTagMap, payload.nbt());
+            TargetTagManagerImpl.read(targetTagMap, TagValueInput.create(ProblemReporter.DISCARDING, player.level().registryAccess(), payload.nbt()));
             Minecraft.getInstance().setScreen(new TargetTagScreen(entity, targetTagMap));
         });
     }
@@ -505,14 +514,14 @@ public class NetworkHandler {
 
     @OnlyIn(Dist.CLIENT)
     public static void sendOpenMaidManagerScreenC2S() {
-        PacketDistributor.sendToServer(OpenMaidManagerScreenC2SPayload.INSTANCE);
+        ClientPacketDistributor.sendToServer(OpenMaidManagerScreenC2SPayload.INSTANCE);
     }
 
     public static void sendOpenMaidManagerScreenS2C(Player player) {
-        CompoundTag nbt = new CompoundTag();
+        TagValueOutput output = TagValueOutput.createWithoutContext(ProblemReporter.DISCARDING);
         var lmInfos = ((MaidManager) player).getMaidList();
-        MaidManagerImpl.write(nbt, lmInfos);
-        PacketDistributor.sendToPlayer((ServerPlayer) player, new OpenMaidManagerScreenS2CPayload(nbt));
+        MaidManagerImpl.write(output, lmInfos);
+        PacketDistributor.sendToPlayer((ServerPlayer) player, new OpenMaidManagerScreenS2CPayload(output.buildResult()));
     }
 
     private static void handleOpenMaidManagerScreenServer(OpenMaidManagerScreenC2SPayload payload, IPayloadContext context) {
@@ -528,7 +537,7 @@ public class NetworkHandler {
             Player player = Minecraft.getInstance().player;
             if (player == null) return;
             var lmInfos = new ArrayList<MaidManager.LMInfo>();
-            MaidManagerImpl.read(payload.nbt(), lmInfos);
+            MaidManagerImpl.read(TagValueInput.create(ProblemReporter.DISCARDING, player.level().registryAccess(), payload.nbt()), lmInfos);
             Minecraft.getInstance().setScreen(new MaidManagerScreen(lmInfos));
         });
     }

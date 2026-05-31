@@ -3,7 +3,9 @@ package work.nemonet.littlemaidneo.entity.mode;
 import com.google.common.collect.Sets;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
@@ -63,36 +65,36 @@ public class HasModeImpl implements HasMode {
     }
 
     @Override
-    public void writeModeData(CompoundTag nbt) {
+    public void writeModeData(ValueOutput output) {
         if (this.nowMode != null) {
             ModeManager.INSTANCE.getId(nowMode)
                     .ifPresent(identifier -> {
-                        nbt.putString("ModeID", identifier.toString());
+                        output.putString("ModeID", identifier.toString());
                         CompoundTag modeData = new CompoundTag();
                         nowMode.writeModeData(modeData);
-                        nbt.put("ModeData", modeData);
+                        output.store("ModeData", CompoundTag.CODEC, modeData);
                     });
         }
     }
 
     @Override
-    public void readModeData(CompoundTag nbt) {
-        if (nbt.contains("ModeType") && nbt.contains("ModeData")) {
-            var modeData = nbt.getCompound("ModeData");
-            var modeID = ResourceLocation.tryParse(nbt.getString("ModeID"));
+    public void readModeData(ValueInput input) {
+        input.getString("ModeID").ifPresent(modeIDStr -> {
+            var modeID = Identifier.tryParse(modeIDStr);
             if (modeID != null) {
-                // modesに一致するものがあればピック
-                ModeManager.INSTANCE.getType(modeID)
-                        .flatMap(modeType -> modes.stream()
-                                .filter(mode -> mode.getModeType() == modeType)
-                                .findFirst())
-                        .ifPresent(mode -> {
-                            mode.readModeData(modeData);
-                            nowMode = mode;
-                            onModeChange.accept(mode);
-                        });
+                input.read("ModeData", CompoundTag.CODEC).ifPresent(modeData -> {
+                    ModeManager.INSTANCE.getType(modeID)
+                            .flatMap(modeType -> modes.stream()
+                                    .filter(mode -> mode.getModeType() == modeType)
+                                    .findFirst())
+                            .ifPresent(mode -> {
+                                mode.readModeData(modeData);
+                                nowMode = mode;
+                                onModeChange.accept(mode);
+                            });
+                });
             }
-        }
+        });
     }
 
     public void tick() {

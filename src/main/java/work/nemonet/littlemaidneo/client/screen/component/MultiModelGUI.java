@@ -1,7 +1,8 @@
 package work.nemonet.littlemaidneo.client.screen.component;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
 import work.nemonet.littlemaidneo.client.screen.ModelSelectScreen;
@@ -9,18 +10,20 @@ import work.nemonet.littlemaidneo.resource.holder.TextureHolder;
 import work.nemonet.littlemaidneo.resource.manager.LMModelManager;
 import work.nemonet.littlemaidneo.resource.util.TextureColors;
 
+import work.nemonet.littlemaidneo.entity.DummyModelEntity;
+
 import java.util.Optional;
 
 public class MultiModelGUI extends GUIElement implements ListGUIElement {
     private final MarginedClickable selectBox = new MarginedClickable(4);
     private final int scale;
-    private final MultiModelGUIUtil.DummyModelEntity dummy;
+    private final DummyModelEntity dummy;
     private final TextureHolder texture;
     private final boolean isContract;
     private TextureColors selectColor = null;
     private boolean selected;
 
-    public MultiModelGUI(TextureHolder texture, boolean isContract, int scale, MultiModelGUIUtil.DummyModelEntity dummy) {
+    public MultiModelGUI(TextureHolder texture, boolean isContract, int scale, DummyModelEntity dummy) {
         super(scale * 16, scale * 3);
         this.isContract = isContract;
         this.scale = scale;
@@ -41,7 +44,7 @@ public class MultiModelGUI extends GUIElement implements ListGUIElement {
     }
 
     @Override
-    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         var fontRenderer = Minecraft.getInstance().font;
         ModelSelectScreen.renderColor(context,
                 this.x, this.y,
@@ -57,11 +60,11 @@ public class MultiModelGUI extends GUIElement implements ListGUIElement {
         MultiModelGUIUtil.getModel(LMModelManager.INSTANCE, texture).ifPresent(model ->
                 renderAllColorModel(context, scale, mouseX, mouseY, model, texture, isContract));
 
-        context.drawString(fontRenderer, texture.getTextureName(),
+        context.text(fontRenderer, texture.getTextureName(),
                 this.x, this.y, 0xFFFFFFFF, false);
     }
 
-    private void renderAllColorModel(GuiGraphics context, int scale, float mouseX, float mouseY,
+    private void renderAllColorModel(GuiGraphicsExtractor context, int scale, float mouseX, float mouseY,
                                      work.nemonet.littlemaidneo.multimodel.IMultiModel model,
                                      TextureHolder holder, boolean isContract) {
         for (TextureColors color : TextureColors.values()) {
@@ -77,19 +80,19 @@ public class MultiModelGUI extends GUIElement implements ListGUIElement {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-            selectBox.click(mouseX, mouseY);
+    public boolean mouseClicked(MouseButtonEvent event, boolean handled) {
+        if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            selectBox.click(event.x(), event.y());
             return true;
         }
         return false;
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-            if (selectBox.release(mouseX, mouseY)) {
-                this.selectColor = TextureColors.getColor(Mth.floor((mouseX - this.x) / scale));
+    public boolean mouseReleased(MouseButtonEvent event) {
+        if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            if (selectBox.release(event.x(), event.y())) {
+                this.selectColor = TextureColors.getColor(Mth.floor((event.x() - this.x) / scale));
                 return true;
             }
         }

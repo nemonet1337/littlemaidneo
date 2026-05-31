@@ -2,7 +2,10 @@ package work.nemonet.littlemaidneo.client.screen.component;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
@@ -46,7 +49,7 @@ public class TextInputGUI extends GUIElement {
     }
 
     @Override
-    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         cursorBlinkTicks++;
         if (cursorBlinkTicks >= 30) {
             showCursor = !showCursor;
@@ -62,11 +65,11 @@ public class TextInputGUI extends GUIElement {
         int textColorToUse = editable ? textColor : disabledTextColor;
 
         if (displayText.isEmpty() && !placeholderText.isEmpty() && !isFocused()) {
-            context.drawString(font, placeholderText, x + 4, textY, placeholderColor, false);
+            context.text(font, placeholderText, x + 4, textY, placeholderColor, false);
         } else if (!displayText.isEmpty()) {
             int textWidth = width - 8;
             String visibleText = getVisibleText(displayText, textWidth);
-            context.drawString(font, visibleText, x + 4, textY, textColorToUse, false);
+            context.text(font, visibleText, x + 4, textY, textColorToUse, false);
             if (isFocused() && showCursor && editable) {
                 int cursorX = x + 4 + font.width(visibleText);
                 context.fill(cursorX, textY - 1, cursorX + 1, textY + font.lineHeight - 1, 0xFFD0D0D0);
@@ -85,18 +88,18 @@ public class TextInputGUI extends GUIElement {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-            setFocused(isMouseOver(mouseX, mouseY));
+    public boolean mouseClicked(MouseButtonEvent event, boolean handled) {
+        if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            setFocused(isMouseOver(event.x(), event.y()));
             return isFocused();
         }
         return false;
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public boolean keyPressed(KeyEvent event) {
         if (!isFocused() || !editable) return false;
-        if (keyCode == GLFW.GLFW_KEY_BACKSPACE) {
+        if (event.key() == GLFW.GLFW_KEY_BACKSPACE) {
             if (!text.isEmpty()) {
                 setText(text.substring(0, text.length() - 1));
             }
@@ -106,8 +109,9 @@ public class TextInputGUI extends GUIElement {
     }
 
     @Override
-    public boolean charTyped(char chr, int modifiers) {
+    public boolean charTyped(CharacterEvent event) {
         if (!isFocused() || !editable) return false;
+        char chr = (char) event.codepoint();
         if (chr >= 32 && chr != 127 && text.length() < maxLength) {
             String newText = text + chr;
             if (textPredicate.test(newText)) {

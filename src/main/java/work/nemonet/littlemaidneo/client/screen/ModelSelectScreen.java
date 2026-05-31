@@ -1,11 +1,14 @@
 package work.nemonet.littlemaidneo.client.screen;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
@@ -16,6 +19,7 @@ import net.neoforged.api.distmarker.OnlyIn;
 import work.nemonet.littlemaidneo.LittleMaidNeo;
 import work.nemonet.littlemaidneo.client.screen.component.*;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
+import work.nemonet.littlemaidneo.entity.DummyModelEntity;
 import work.nemonet.littlemaidneo.network.NetworkHandler;
 import work.nemonet.littlemaidneo.resource.holder.TextureHolder;
 import work.nemonet.littlemaidneo.resource.manager.LMModelManager;
@@ -32,13 +36,13 @@ import java.util.stream.Collectors;
 
 @OnlyIn(Dist.CLIENT)
 public class ModelSelectScreen<T extends Entity & IHasMultiModel> extends Screen {
-    public static final ResourceLocation EMPTY_TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(LittleMaidNeo.MODID, "textures/empty.png");
+    public static final Identifier EMPTY_TEXTURE =
+            Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, "textures/empty.png");
     public static final TexturePair EMPTY_TEXTURE_PAIR = new TexturePair(EMPTY_TEXTURE, null);
     public static final ArmorPart EMPTY_ARMOR_DATA =
             new ArmorPart(null, null, null, null, null, null);
-    public static final ResourceLocation MODEL_SELECT_GUI_TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(LittleMaidNeo.MODID, "textures/gui/model_select.png");
+    public static final Identifier MODEL_SELECT_GUI_TEXTURE =
+            Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, "textures/gui/model_select.png");
 
     private static final ItemStack ARMOR = Items.DIAMOND_CHESTPLATE.getDefaultInstance();
     private static final ItemStack MODEL = Items.ARMOR_STAND.getDefaultInstance();
@@ -48,7 +52,7 @@ public class ModelSelectScreen<T extends Entity & IHasMultiModel> extends Screen
     private static final int GUI_HEIGHT = 196;
 
     private final T entity;
-    private final MultiModelGUIUtil.DummyModelEntity dummy;
+    private final DummyModelEntity dummy;
     private final ArmorSets<ArmorModelGUI> armors = new ArmorSets<>();
     private final int scale = 15;
     private final int heightRatio = 3;
@@ -60,7 +64,7 @@ public class ModelSelectScreen<T extends Entity & IHasMultiModel> extends Screen
     public ModelSelectScreen(Component titleIn, Level world, T entity) {
         super(titleIn);
         this.entity = entity;
-        this.dummy = new MultiModelGUIUtil.DummyModelEntity(world);
+        this.dummy = new DummyModelEntity(world);
     }
 
     @Override
@@ -141,24 +145,24 @@ public class ModelSelectScreen<T extends Entity & IHasMultiModel> extends Screen
         restoreArmorSelection();
     }
 
-    public static void renderColor(GuiGraphics context, int minX, int minY, int maxX, int maxY, int rgba) {
+    public static void renderColor(GuiGraphicsExtractor context, int minX, int minY, int maxX, int maxY, int rgba) {
         context.fill(minX, minY, maxX, maxY, rgba);
     }
 
     @Override
-    public void render(GuiGraphics context, int mouseX, int mouseY, float partialTicks) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float partialTicks) {
         assert this.minecraft != null;
         int relX = (this.width - GUI_WIDTH) / 2;
         int relY = (this.height - GUI_HEIGHT) / 2;
-        context.blit(MODEL_SELECT_GUI_TEXTURE, relX, relY, 0, 0, GUI_WIDTH, GUI_HEIGHT);
+        context.blit(MODEL_SELECT_GUI_TEXTURE, relX, relY, GUI_WIDTH, GUI_HEIGHT, 0.0f, 0.0f, (float) GUI_WIDTH, (float) GUI_HEIGHT);
 
-        context.renderItem(guiSwitch ? ARMOR : MODEL, relX - 24, relY + GUI_HEIGHT - 16);
-        context.renderItem(isContract ? WILD : CONTRACT, relX - 24, relY + GUI_HEIGHT - 48);
-        context.blit(MODEL_SELECT_GUI_TEXTURE, relX - 24, relY + GUI_HEIGHT - 16, 0, 240, 16, 16);
-        context.blit(MODEL_SELECT_GUI_TEXTURE, relX - 24, relY + GUI_HEIGHT - 48, 0, 240, 16, 16);
+        context.item(guiSwitch ? ARMOR : MODEL, relX - 24, relY + GUI_HEIGHT - 16);
+        context.item(isContract ? WILD : CONTRACT, relX - 24, relY + GUI_HEIGHT - 48);
+        context.blit(MODEL_SELECT_GUI_TEXTURE, relX - 24, relY + GUI_HEIGHT - 16, 16, 16, 0.0f, 240.0f, 16.0f, 16.0f);
+        context.blit(MODEL_SELECT_GUI_TEXTURE, relX - 24, relY + GUI_HEIGHT - 48, 16, 16, 0.0f, 240.0f, 16.0f, 16.0f);
 
         if (guiSwitch) {
-            modelListGUI.render(context, mouseX, mouseY, partialTicks);
+            modelListGUI.extractRenderState(context, mouseX, mouseY, partialTicks);
             modelListGUI.getSelectedItem()
                     .filter(MultiModelGUI::isSelected)
                     .ifPresent(g -> g.getSelectColor().ifPresent(color -> {
@@ -176,7 +180,7 @@ public class ModelSelectScreen<T extends Entity & IHasMultiModel> extends Screen
                         });
                     }));
         } else {
-            armorListGUI.render(context, mouseX, mouseY, partialTicks);
+            armorListGUI.extractRenderState(context, mouseX, mouseY, partialTicks);
             this.armors.foreach((p, g) -> {
                 TextureHolder texture = g.getTexture();
                 MultiModelGUIUtil.getModel(LMModelManager.INSTANCE, texture).ifPresent(model -> {
@@ -191,7 +195,8 @@ public class ModelSelectScreen<T extends Entity & IHasMultiModel> extends Screen
     }
 
     @Override
-    public boolean mouseClicked(double x, double y, int button) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean handled) {
+        double x = event.x(); double y = event.y();
         int minX = (this.width - GUI_WIDTH) / 2 - 24;
         int minY = (this.height - GUI_HEIGHT) / 2 + GUI_HEIGHT - 16;
         if (minX <= x && x < minX + 16 && minY <= y && y < minY + 16) {
@@ -207,20 +212,20 @@ public class ModelSelectScreen<T extends Entity & IHasMultiModel> extends Screen
             playDownSound();
             return true;
         }
-        if (guiSwitch) return modelListGUI.mouseClicked(x, y, button);
-        else return armorListGUI.mouseClicked(x, y, button);
+        if (guiSwitch) return modelListGUI.mouseClicked(event, handled);
+        else return armorListGUI.mouseClicked(event, handled);
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
-        if (guiSwitch) return modelListGUI.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
-        else return armorListGUI.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+    public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
+        if (guiSwitch) return modelListGUI.mouseDragged(event, deltaX, deltaY);
+        else return armorListGUI.mouseDragged(event, deltaX, deltaY);
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        if (guiSwitch) return modelListGUI.mouseReleased(mouseX, mouseY, button);
-        else return armorListGUI.mouseReleased(mouseX, mouseY, button);
+    public boolean mouseReleased(MouseButtonEvent event) {
+        if (guiSwitch) return modelListGUI.mouseReleased(event);
+        else return armorListGUI.mouseReleased(event);
     }
 
     @Override
@@ -230,20 +235,20 @@ public class ModelSelectScreen<T extends Entity & IHasMultiModel> extends Screen
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (super.keyPressed(keyCode, scanCode, modifiers)) return true;
-        if (guiSwitch) return modelListGUI.keyPressed(keyCode, scanCode, modifiers);
-        else return armorListGUI.keyPressed(keyCode, scanCode, modifiers);
+    public boolean keyPressed(KeyEvent event) {
+        if (super.keyPressed(event)) return true;
+        if (guiSwitch) return modelListGUI.keyPressed(event);
+        else return armorListGUI.keyPressed(event);
     }
 
     @Override
-    public boolean charTyped(char chr, int modifiers) {
+    public boolean charTyped(CharacterEvent event) {
         if (guiSwitch) {
-            if (modelListGUI.charTyped(chr, modifiers)) return true;
+            if (modelListGUI.charTyped(event)) return true;
         } else {
-            if (armorListGUI.charTyped(chr, modifiers)) return true;
+            if (armorListGUI.charTyped(event)) return true;
         }
-        return super.charTyped(chr, modifiers);
+        return super.charTyped(event);
     }
 
     @Override

@@ -1,6 +1,6 @@
 package work.nemonet.littlemaidneo.resource.util;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import work.nemonet.littlemaidneo.LittleMaidNeo;
 
 import java.nio.file.Path;
@@ -126,15 +126,15 @@ public class ResourceHelper {
         }
     }
 
-    public static ResourceLocation getLocation(String packName, String fileName) {
+    public static Identifier getLocation(String packName, String fileName) {
         packName = packName.toLowerCase().replaceAll("[^a-z0-9/._\\-]", "-");
         fileName = fileName.toLowerCase().replaceAll("[^a-z0-9/._\\-]", "-");
-        return ResourceLocation.fromNamespaceAndPath(LittleMaidNeo.MODID, packName + "/" + fileName);
+        return Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, packName + "/" + fileName);
     }
 
-    public static ResourceLocation getLocation(String prefix, String packName, String fileName) {
+    public static Identifier getLocation(String prefix, String packName, String fileName) {
         packName = packName.toLowerCase().replaceAll("[^a-z0-9/._\\-]", "-");
         fileName = fileName.toLowerCase().replaceAll("[^a-z0-9/._\\-]", "-");
-        return ResourceLocation.fromNamespaceAndPath(LittleMaidNeo.MODID, prefix + "/" + packName + "/" + fileName);
+        return Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, prefix + "/" + packName + "/" + fileName);
     }
 }

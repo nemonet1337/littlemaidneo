@@ -2,15 +2,19 @@ package work.nemonet.littlemaidneo.world;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import net.minecraft.core.HolderLookup;
+import com.mojang.serialization.Codec;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
-import work.nemonet.littlemaidneo.LMRBMod;
+import net.minecraft.world.level.saveddata.SavedDataType;
+import work.nemonet.littlemaidneo.LittleMaidNeo;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -18,9 +22,20 @@ import java.util.UUID;
 public class WorldMaidSoulState extends SavedData {
     private final Map<UUID, List<LittleMaidEntity.MaidSoul>> maidSoulsMap = Maps.newHashMap();
 
+    public static final Codec<WorldMaidSoulState> CODEC = CompoundTag.CODEC.xmap(
+            WorldMaidSoulState::fromNbt,
+            WorldMaidSoulState::toNbt
+    );
+
+    public static final SavedDataType<WorldMaidSoulState> TYPE = new SavedDataType<>(
+            Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, "maidsouls"),
+            WorldMaidSoulState::new,
+            CODEC,
+            DataFixTypes.LEVEL
+    );
+
     public void add(UUID ownerId, LittleMaidEntity.MaidSoul maidSoul) {
-        maidSoulsMap.computeIfAbsent(ownerId, (id) -> Lists.newArrayList())
-                .add(maidSoul);
+        maidSoulsMap.computeIfAbsent(ownerId, id -> Lists.newArrayList()).add(maidSoul);
     }
 
     public List<LittleMaidEntity.MaidSoul> get(UUID ownerId) {
@@ -31,48 +46,40 @@ public class WorldMaidSoulState extends SavedData {
         this.maidSoulsMap.remove(ownerId);
     }
 
-    @Override
-    public CompoundTag save(CompoundTag nbt, HolderLookup.Provider registries) {
-        var nbtEntries = new ListTag();
+    private CompoundTag toNbt() {
+        CompoundTag nbt = new CompoundTag();
         for (Map.Entry<UUID, List<LittleMaidEntity.MaidSoul>> entry : maidSoulsMap.entrySet()) {
-            var uuid = entry.getKey();
-            var list = entry.getValue();
-            var nbtEntry = new CompoundTag();
-            nbtEntry.putUUID("id", uuid);
-            var nbtMaidSouls = new ListTag();
-            for (LittleMaidEntity.MaidSoul maidSoul : list) {
-                nbtMaidSouls.add(maidSoul.getNbt());
+            ListTag listTag = new ListTag();
+            for (LittleMaidEntity.MaidSoul soul : entry.getValue()) {
+                listTag.add(soul.getNbt());
             }
-            nbtEntry.put("maidSouls", nbtMaidSouls);
-            nbtEntries.add(nbtEntry);
+            nbt.put(entry.getKey().toString(), listTag);
         }
-        nbt.put("maidSoulsEntries", nbtEntries);
         return nbt;
     }
 
-    public static WorldMaidSoulState createFromNbt(CompoundTag nbt) {
-        WorldMaidSoulState worldMaidSoulState = new WorldMaidSoulState();
-        var nbtEntries = nbt.getList("maidSoulsEntries", Tag.TAG_COMPOUND);
-        for (Tag nbtEntry : nbtEntries) {
-            var id = ((CompoundTag) nbtEntry).getUUID("id");
-            var nbtMaidSouls = ((CompoundTag) nbtEntry).getList("maidSouls", Tag.TAG_COMPOUND);
-            List<LittleMaidEntity.MaidSoul> maidSouls = Lists.newArrayList();
-            for (Tag nbtMaidSoul : nbtMaidSouls) {
-                maidSouls.add(LittleMaidEntity.MaidSoul.fromNbt((CompoundTag) nbtMaidSoul));
+    private static WorldMaidSoulState fromNbt(CompoundTag nbt) {
+        WorldMaidSoulState state = new WorldMaidSoulState();
+        for (String key : nbt.keySet()) {
+            try {
+                UUID uuid = UUID.fromString(key);
+                Tag tag = nbt.get(key);
+                if (tag instanceof ListTag listTag) {
+                    List<LittleMaidEntity.MaidSoul> souls = new ArrayList<>();
+                    for (Tag t : listTag) {
+                        if (t instanceof CompoundTag ct) {
+                            souls.add(LittleMaidEntity.MaidSoul.fromNbt(ct));
+                        }
+                    }
+                    state.maidSoulsMap.put(uuid, souls);
+                }
+            } catch (IllegalArgumentException ignored) {
             }
-            worldMaidSoulState.maidSoulsMap.put(id, maidSouls);
         }
-        return worldMaidSoulState;
+        return state;
     }
 
     public static WorldMaidSoulState getWorldMaidSoulState(ServerLevel world) {
-        var persistentStateManager = world.getDataStorage();
-
-        return persistentStateManager.computeIfAbsent(
-                new SavedData.Factory<WorldMaidSoulState>(WorldMaidSoulState::new,
-                        (nbt, provider) -> WorldMaidSoulState.createFromNbt(nbt),
-                        null),
-                LittleMaidNeo.MODID + "_maidsouls");
+        return world.getDataStorage().computeIfAbsent(TYPE);
     }
-
 }

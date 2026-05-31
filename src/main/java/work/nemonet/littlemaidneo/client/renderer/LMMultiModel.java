@@ -2,13 +2,10 @@ package work.nemonet.littlemaidneo.client.renderer;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.model.HeadedModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
-import work.nemonet.littlemaidneo.client.renderer.MultiModel;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
 import work.nemonet.littlemaidneo.maidmodel.ModelLittleMaidBase;
 import work.nemonet.littlemaidneo.maidmodel.ModelRenderer;
@@ -17,34 +14,19 @@ import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 /**
  * LM専用に拡張
  */
-public class LMMultiModel<T extends LittleMaidEntity> extends MultiModel<T> implements HeadedModel {
-    private T entity;
+public class LMMultiModel<S extends MaidRenderState> extends MultiModel<S> implements HeadedModel {
+    private LittleMaidEntity entity;
     private final ModelPart modelPart = new ModelPart(ImmutableList.of(), ImmutableMap.of());
 
     @Override
-    public void prepareMobModel(T entity, float limbAngle, float limbDistance, float tickDelta) {
-        this.entity = entity;
-        super.prepareMobModel(entity, limbAngle, limbDistance, tickDelta);
-    }
-
-    @Override
-    public void setupAnim(T entity, float limbAngle, float limbDistance, float animationProgress, float headYaw,
-            float headPitch) {
-        this.entity = entity;
-        super.setupAnim(entity, limbAngle, limbDistance, animationProgress, headYaw, headPitch);
-    }
-
-    @Override
-    public void renderToBuffer(PoseStack matrices, VertexConsumer vertices, int light, int overlay, int color) {
-        if (this.entity == null) {
-            return;
-        }
-        // TODO: isAccelerationの色変更は新しいARGB統合colorに対応が必要
-        super.renderToBuffer(matrices, vertices, light, overlay, color);
+    public void setupAnim(S state) {
+        this.entity = state.maidEntity;
+        super.setupAnim(state);
     }
 
     @Override
     public ModelPart getHead() {
+        if (this.entity == null) return modelPart;
         this.entity.getModel(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD)
                 .filter(model -> model instanceof ModelLittleMaidBase)
                 .map(model -> (ModelLittleMaidBase) model)

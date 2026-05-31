@@ -69,7 +69,7 @@ public class MultiModelClassTransformer {
             put("net/minecraft/entity/player/EntityPlayer", "net/minecraft/entity/player/Player");
 
             put("net/blacklab/lmr/entity/littlemaid/EntityLittleMaid", "work/nemonet/littlemaidneo/entity/EntityLittleMaid");
-            if (FMLEnvironment.production) {
+            if (FMLEnvironment.isProduction()) {
                 put("net/minecraft/entity/Entity", "net/minecraft/world/entity/Entity");
             }
         }

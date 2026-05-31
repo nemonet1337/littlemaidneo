@@ -4,13 +4,13 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import work.nemonet.littlemaidneo.LittleMaidNeo;
 
 public record C2SCallWaitPayload(int entityId, C2SCallWaitPayload.State state) implements CustomPacketPayload {
 
     public static final Type<C2SCallWaitPayload> TYPE =
-            new Type<>(ResourceLocation.fromNamespaceAndPath(LittleMaidNeo.MODID, "call_wait"));
+            new Type<>(Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, "call_wait"));
 
     public static final StreamCodec<FriendlyByteBuf, C2SCallWaitPayload> STREAM_CODEC =
             StreamCodec.composite(

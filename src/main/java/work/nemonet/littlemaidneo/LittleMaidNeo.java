@@ -39,7 +39,7 @@ import work.nemonet.littlemaidneo.resource.manager.LMModelManager;
 import work.nemonet.littlemaidneo.resource.manager.LMTextureManager;
 import work.nemonet.littlemaidneo.resource.util.LMSounds;
 import work.nemonet.littlemaidneo.setup.ModSetup;
-import work.nemonet.littlemaidneo.setup.Registration;
+import work.nemonet.littlemaidneo.setup.ModRegistration;
 
 import java.nio.file.Paths;
 
@@ -49,12 +49,12 @@ public class LittleMaidNeo {
     public static final Logger LOGGER = LogManager.getLogger();
 
     public LittleMaidNeo(IEventBus modEventBus, ModContainer modContainer) {
-        Registration.ENTITIES.register(modEventBus);
-        Registration.BLOCKS.register(modEventBus);
-        Registration.ITEMS.register(modEventBus);
-        Registration.MENUS.register(modEventBus);
-        Registration.CREATIVE_TABS.register(modEventBus);
-        Registration.BLOCK_ENTITIES.register(modEventBus);
+        ModRegistration.ENTITIES.register(modEventBus);
+        ModRegistration.BLOCKS.register(modEventBus);
+        ModRegistration.ITEMS.register(modEventBus);
+        ModRegistration.MENUS.register(modEventBus);
+        ModRegistration.CREATIVE_TABS.register(modEventBus);
+        ModRegistration.BLOCK_ENTITIES.register(modEventBus);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, LMMLConfig.SPEC, "littlemaidneo-lmml-common.toml");
         modContainer.registerConfig(ModConfig.Type.COMMON, LMRBConfig.SPEC, "littlemaidneo-common.toml");
@@ -72,7 +72,7 @@ public class LittleMaidNeo {
             ModSetup.init();
             initFileLoader();
             initModelLoader();
-            if (FMLEnvironment.dist == Dist.CLIENT) {
+            if (FMLEnvironment.getDist() == Dist.CLIENT) {
                 addGhastMaidVoice();
                 initTextureLoader();
                 initSoundLoader();
@@ -86,9 +86,9 @@ public class LittleMaidNeo {
     }
 
     private void onEntityAttributeCreation(EntityAttributeCreationEvent event) {
-        event.put(Registration.MULTI_MODEL_ENTITY.get(), MultiModelEntity.createAttributes().build());
-        event.put(Registration.DUMMY_MODEL_ENTITY.get(), MultiModelEntity.createAttributes().build());
-        event.put(Registration.LITTLE_MAID_ENTITY.get(), LittleMaidEntity.createLittleMaidAttributes().build());
+        event.put(ModRegistration.MULTI_MODEL_ENTITY.get(), MultiModelEntity.createAttributes().build());
+        event.put(ModRegistration.DUMMY_MODEL_ENTITY.get(), MultiModelEntity.createAttributes().build());
+        event.put(ModRegistration.LITTLE_MAID_ENTITY.get(), LittleMaidEntity.createLittleMaidAttributes().build());
     }
 
     private void onRegisterSpawnPlacements(RegisterSpawnPlacementsEvent event) {
@@ -168,6 +168,6 @@ public class LittleMaidNeo {
 
     private static void addVoice(String soundName, SoundEvent soundEvent,
                                   ImmutableMap.Builder<String, String> configMap) {
-        configMap.put(soundName, soundEvent.getLocation().toString());
+        configMap.put(soundName, soundEvent.location().toString());
     }
 }

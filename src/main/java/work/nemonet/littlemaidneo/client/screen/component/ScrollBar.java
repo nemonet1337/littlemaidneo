@@ -1,7 +1,8 @@
 package work.nemonet.littlemaidneo.client.screen.component;
 
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
 
@@ -11,7 +12,7 @@ public class ScrollBar extends GUIElement {
     private final TextureAddress sliderM;
     private final TextureAddress sliderB;
     private final TextureAddress pointer;
-    private final ResourceLocation texture;
+    private final Identifier texture;
     private boolean clicked;
     private int point;
 
@@ -21,7 +22,7 @@ public class ScrollBar extends GUIElement {
             TextureAddress sliderM,
             TextureAddress sliderB,
             TextureAddress pointer,
-            ResourceLocation texture
+            Identifier texture
     ) {
         super(width, height);
         this.x = x;
@@ -35,7 +36,7 @@ public class ScrollBar extends GUIElement {
     }
 
     @Override
-    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         draw(context, this.x, this.y, sliderT);
         int midRange = height - (sliderT.height() + sliderB.height());
         int i = 0;
@@ -51,16 +52,17 @@ public class ScrollBar extends GUIElement {
         );
     }
 
-    private void draw(GuiGraphics context, int x, int y, TextureAddress texture) {
+    private void draw(GuiGraphicsExtractor context, int x, int y, TextureAddress texture) {
         context.blit(this.texture, x, y,
-                texture.u(), texture.v(),
                 texture.width(), texture.height(),
-                texture.texSizeW(), texture.texSizeH()
+                (float) texture.u(), (float) texture.v(),
+                (float) texture.width(), (float) texture.height()
         );
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean handled) {
+        double mouseX = event.x(); double mouseY = event.y(); int button = event.button();
         if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
         if (!RangeChecker.checkFromWidth(mouseX, mouseY, this.x, this.y, this.width, this.height)) return false;
         clicked = true;
@@ -69,7 +71,8 @@ public class ScrollBar extends GUIElement {
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
+    public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
+        double mouseX = event.x(); double mouseY = event.y(); int button = event.button();
         if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
         if (!clicked && !RangeChecker.checkFromWidth(mouseX, mouseY, this.x, this.y, this.width, this.height)) return false;
         clicked = true;
@@ -78,8 +81,8 @@ public class ScrollBar extends GUIElement {
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+    public boolean mouseReleased(MouseButtonEvent event) {
+        if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
             clicked = false;
         }
         return false;

@@ -1,18 +1,23 @@
 package work.nemonet.littlemaidneo.client.key;
 
 import net.minecraft.client.KeyMapping;
+import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import org.lwjgl.glfw.GLFW;
 import work.nemonet.littlemaidneo.network.OpenMaidManagerScreenC2SPayload;
 
 public class LMKeys {
+    private static final KeyMapping.Category CATEGORY = KeyMapping.Category.register(
+            Identifier.fromNamespaceAndPath("littlemaidneo", "key_categories")
+    );
+
     public static final KeyMapping OPEN_MAID_MANAGER_SCREEN = new KeyMapping(
             "key.littlemaidneo.open_maid_manager_screen",
             GLFW.GLFW_KEY_M,
-            "key.categories.littlemaidneo"
+            CATEGORY
     );
 
     public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
@@ -33,7 +38,7 @@ public class LMKeys {
             if (mc.player == null || mc.screen != null) {
                 return;
             }
-            PacketDistributor.sendToServer(OpenMaidManagerScreenC2SPayload.INSTANCE);
+            ClientPacketDistributor.sendToServer(OpenMaidManagerScreenC2SPayload.INSTANCE);
         }
     }
 }

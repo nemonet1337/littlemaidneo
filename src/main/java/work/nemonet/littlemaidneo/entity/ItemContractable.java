@@ -1,16 +1,18 @@
 package work.nemonet.littlemaidneo.entity;
 
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import work.nemonet.littlemaidneo.entity.util.Contractable;
 import work.nemonet.littlemaidneo.entity.util.HasInventory;
 
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-//クライアント側では概ね役に立たない
+// クライアント側では概ね役に立たない
+// TODO クライアント側でも活用するか、無理なら動かさずに何とかする方法を考える
 public class ItemContractable<T extends LivingEntity & HasInventory> implements Contractable {
     protected final T mob;
     protected final Supplier<Integer> maxConsumeInterval;
@@ -21,7 +23,8 @@ public class ItemContractable<T extends LivingEntity & HasInventory> implements 
     protected boolean contract;
     protected boolean strike;
 
-    public ItemContractable(T mob, Supplier<Integer> maxConsumeInterval, Supplier<Integer> maxUnpaidTimes, Predicate<ItemStack> salaryItems) {
+    public ItemContractable(T mob, Supplier<Integer> maxConsumeInterval, Supplier<Integer> maxUnpaidTimes,
+            Predicate<ItemStack> salaryItems) {
         this.mob = mob;
         this.maxConsumeInterval = maxConsumeInterval;
         this.maxUnpaidTimes = maxUnpaidTimes;
@@ -129,22 +132,19 @@ public class ItemContractable<T extends LivingEntity & HasInventory> implements 
     }
 
     @Override
-    public void writeContractable(CompoundTag nbt) {
-        CompoundTag itemContractable = new CompoundTag();
-        itemContractable.putBoolean("contract", contract);
-        itemContractable.putBoolean("strike", strike);
-        itemContractable.putInt("consumeInterval", consumeInterval);
-        nbt.put("ItemContractable", itemContractable);
+    public void writeContractable(ValueOutput output) {
+        var child = output.child("ItemContractable");
+        child.putBoolean("contract", contract);
+        child.putBoolean("strike", strike);
+        child.putInt("consumeInterval", consumeInterval);
     }
 
     @Override
-    public void readContractable(CompoundTag nbt) {
-        if (!nbt.contains("ItemContractable")) {
-            return;
-        }
-        CompoundTag itemContractable = nbt.getCompound("ItemContractable");
-        contract = itemContractable.getBoolean("contract");
-        strike = itemContractable.getBoolean("strike");
-        consumeInterval = itemContractable.getInt("consumeInterval");
+    public void readContractable(ValueInput input) {
+        input.child("ItemContractable").ifPresent(child -> {
+            contract = child.getBooleanOr("contract", false);
+            strike = child.getBooleanOr("strike", false);
+            consumeInterval = child.getIntOr("consumeInterval", 0);
+        });
     }
 }

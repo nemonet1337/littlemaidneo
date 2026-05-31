@@ -103,6 +103,7 @@ public class LMRBConfig {
 
     // --- Target ---
     static ModConfigSpec.IntValue TARGET_ALERT_RANGE;
+    static ModConfigSpec.IntValue TARGET_TARGETING_FREQUENCY;
     static ModConfigSpec.IntValue TARGET_COMBAT_RANGE;
     static ModConfigSpec.IntValue TARGET_DANGEROUS_AVOID_DISTANCE;
     static ModConfigSpec.DoubleValue TARGET_DISTRIBUTION_RATIO;
@@ -230,6 +231,7 @@ public class LMRBConfig {
         TARGET_MAX_ATTACKERS_PER_TARGET = builder.defineInRange("maxAttackersPerTarget", 2, 1, 100);
         TARGET_INJURED_THRESHOLD = builder.defineInRange("injuredThreshold", 0.5, 0.0, 1.0);
         TARGET_ATTACKED_BY_VALID_TICKS = builder.defineInRange("attackedByValidTicks", 200, 1, Integer.MAX_VALUE);
+        TARGET_TARGETING_FREQUENCY = builder.defineInRange("targetingFrequency", 10, 1, 100);
         builder.pop();
 
         builder.push("client");
@@ -347,6 +349,7 @@ public class LMRBConfig {
         INSTANCE.target.maxAttackersPerTarget = TARGET_MAX_ATTACKERS_PER_TARGET.get();
         INSTANCE.target.injuredThreshold = TARGET_INJURED_THRESHOLD.get().floatValue();
         INSTANCE.target.attackedByValidTicks = TARGET_ATTACKED_BY_VALID_TICKS.get();
+        INSTANCE.target.targetingFrequency = TARGET_TARGETING_FREQUENCY.get();
 
         INSTANCE.client.enableWaitPoseOnMoving = CLIENT_ENABLE_WAIT_POSE_ON_MOVING.get();
     }
@@ -455,6 +458,7 @@ public class LMRBConfig {
         public int maxAttackersPerTarget = 2;
         public float injuredThreshold = 0.5f;
         public int attackedByValidTicks = 200;
+        public int targetingFrequency = 10;
     }
 
     public static class Client {

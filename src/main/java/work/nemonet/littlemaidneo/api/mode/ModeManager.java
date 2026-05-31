@@ -2,7 +2,7 @@ package work.nemonet.littlemaidneo.api.mode;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 
 import java.util.Collection;
@@ -15,21 +15,21 @@ import java.util.stream.Collectors;
  */
 public class ModeManager {
     public static ModeManager INSTANCE = new ModeManager();
-    private final BiMap<ResourceLocation, ModeType<? extends Mode>> MODE_TYPES = HashBiMap.create();
+    private final BiMap<Identifier, ModeType<? extends Mode>> MODE_TYPES = HashBiMap.create();
 
-    public void register(ResourceLocation id, ModeType<? extends Mode> type) {
+    public void register(Identifier id, ModeType<? extends Mode> type) {
         MODE_TYPES.put(id, type);
     }
 
-    public Optional<ResourceLocation> getId(Mode mode) {
+    public Optional<Identifier> getId(Mode mode) {
         return getId(mode.getModeType());
     }
 
-    public Optional<ResourceLocation> getId(ModeType<?> modeType) {
+    public Optional<Identifier> getId(ModeType<?> modeType) {
         return Optional.ofNullable(MODE_TYPES.inverse().get(modeType));
     }
 
-    public Optional<ModeType<? extends Mode>> getType(ResourceLocation id) {
+    public Optional<ModeType<? extends Mode>> getType(Identifier id) {
         return Optional.ofNullable(MODE_TYPES.get(id));
     }
 

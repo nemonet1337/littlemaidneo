@@ -1,7 +1,10 @@
 package work.nemonet.littlemaidneo.client.screen.component;
 
 import com.google.common.collect.Lists;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
 
@@ -93,7 +96,7 @@ public class ListGUI<T extends GUIElement> extends GUIElement {
     }
 
     @Override
-    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         for (int i = 0; i < widthStack * heightStack; i++) {
             int xIndex = i % widthStack;
             int yIndex = i / widthStack;
@@ -103,7 +106,7 @@ public class ListGUI<T extends GUIElement> extends GUIElement {
             if (checkElementsBounds(index)) {
                 T elem = elements.get(index);
                 elem.setPos(x, y);
-                elem.render(context, mouseX, mouseY, delta);
+                elem.extractRenderState(context, mouseX, mouseY, delta);
             }
         }
     }
@@ -114,19 +117,21 @@ public class ListGUI<T extends GUIElement> extends GUIElement {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean handled) {
+        double mouseX = event.x(); double mouseY = event.y(); int button = event.button();
         if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
             selectBox.click(mouseX, mouseY);
         }
         Optional<T> e = getElement(mouseX, mouseY);
         if (e.isPresent()) {
-            return e.get().mouseClicked(mouseX, mouseY, button);
+            return e.get().mouseClicked(event, handled);
         }
         return false;
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    public boolean mouseReleased(MouseButtonEvent event) {
+        double mouseX = event.x(); double mouseY = event.y(); int button = event.button();
         Optional<T> e = getElement(mouseX, mouseY);
         if (e.isPresent()) {
             if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
@@ -147,16 +152,17 @@ public class ListGUI<T extends GUIElement> extends GUIElement {
                     }
                 }
             }
-            return e.get().mouseReleased(mouseX, mouseY, button);
+            return e.get().mouseReleased(event);
         }
         return false;
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
+    public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
+        double mouseX = event.x(); double mouseY = event.y();
         Optional<T> e = getElement(mouseX, mouseY);
         if (e.isPresent()) {
-            return e.get().mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+            return e.get().mouseDragged(event, deltaX, deltaY);
         }
         return false;
     }
@@ -175,18 +181,18 @@ public class ListGUI<T extends GUIElement> extends GUIElement {
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        return super.keyPressed(keyCode, scanCode, modifiers);
+    public boolean keyPressed(KeyEvent event) {
+        return super.keyPressed(event);
     }
 
     @Override
-    public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-        return super.keyPressed(keyCode, scanCode, modifiers);
+    public boolean keyReleased(KeyEvent event) {
+        return super.keyReleased(event);
     }
 
     @Override
-    public boolean charTyped(char chr, int modifiers) {
-        return super.charTyped(chr, modifiers);
+    public boolean charTyped(CharacterEvent event) {
+        return super.charTyped(event);
     }
 
     @Override

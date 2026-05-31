@@ -1,15 +1,16 @@
 package work.nemonet.littlemaidneo.client.renderer;
 
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.renderer.rendertype.RenderType;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.resources.Identifier;
 import work.nemonet.littlemaidneo.config.LMMLConfig;
 
 public class MultiModelRenderLayer {
 
-    public static RenderType getDefault(ResourceLocation resourceLocation) {
+    public static RenderType getDefault(Identifier Identifier) {
         if (LMMLConfig.isEnableAlpha()) {
-            return RenderType.entityTranslucent(resourceLocation);
+            return RenderTypes.entityTranslucent(Identifier);
         }
-        return RenderType.entityCutoutNoCull(resourceLocation);
+        return RenderTypes.entityCutout(Identifier);
     }
 }

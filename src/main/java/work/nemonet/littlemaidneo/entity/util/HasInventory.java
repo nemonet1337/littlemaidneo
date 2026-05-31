@@ -1,7 +1,8 @@
 package work.nemonet.littlemaidneo.entity.util;
 
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.Container;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 
 /**
  * インベントリを持っていることを示すインターフェイス
@@ -16,11 +17,11 @@ public interface HasInventory {
     /**
      * インベントリの状態をNBTに書き出す
      */
-    void writeInventory(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries);
+    void writeInventory(ValueOutput output);
 
     /**
      * インベントリ状態をNBTから読み込む
      */
-    void readInventory(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries);
+    void readInventory(ValueInput input);
 
 }

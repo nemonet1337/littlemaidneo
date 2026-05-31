@@ -1,6 +1,7 @@
 package work.nemonet.littlemaidneo.entity.util;
 
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 
 /**
  * 契約可能であることを示すインターフェイス
@@ -30,11 +31,11 @@ public interface Contractable {
     /**
      * 契約状態をNBTに書き出す
      */
-    void writeContractable(CompoundTag nbt);
+    void writeContractable(ValueOutput output);
 
     /**
      * 契約状態をNBTから読み込む
      */
-    void readContractable(CompoundTag nbt);
+    void readContractable(ValueInput input);
 
 }

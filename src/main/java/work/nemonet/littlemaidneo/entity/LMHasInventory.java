@@ -1,18 +1,18 @@
 package work.nemonet.littlemaidneo.entity;
 
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
 import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import work.nemonet.littlemaidneo.LMRBMod;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import work.nemonet.littlemaidneo.config.LMRBConfig;
 import work.nemonet.littlemaidneo.entity.util.HasInventory;
 
 public class LMHasInventory implements HasInventory {
     private final Container inventory;
-    private int workItemSlotSize = LMRBMod.getConfig().work.defaultWorkItemSlotSize;
+    private int workItemSlotSize = LMRBConfig.get().work.defaultWorkItemSlotSize;
 
     public LMHasInventory() {
         this.inventory = new SimpleContainer(18);
@@ -37,68 +37,30 @@ public class LMHasInventory implements HasInventory {
     }
 
     @Override
-    public void writeInventory(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
-        nbt.put("Inventory", this.writeNbt(new ListTag(), registries));
-        nbt.putByte("workItemSlotSize", (byte) this.workItemSlotSize);
+    public void writeInventory(ValueOutput output) {
+        var list = output.childrenList("Inventory");
+        for (int i = 0; i < 18; ++i) {
+            var stack = this.inventory.getItem(i);
+            if (!stack.isEmpty()) {
+                var entry = list.addChild();
+                entry.putByte("Slot", (byte) i);
+                entry.store(ItemStack.MAP_CODEC, stack);
+            }
+        }
+        output.putByte("workItemSlotSize", (byte) this.workItemSlotSize);
     }
 
     @Override
-    public void readInventory(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
-        int maidVersion = nbt.getByte("maidVersion") & 255;
-        if (maidVersion == 0) {
-            this.readNbtOld(nbt.getList("Inventory", 10), registries);
-        } else {
-            this.readNbt(nbt.getList("Inventory", 10), registries);
-        }
-        if (nbt.contains("workItemSlotSize")) {
-            this.workItemSlotSize = nbt.getByte("workItemSlotSize") & 255;
-        }
-    }
-
-    public ListTag writeNbt(ListTag nbtList, net.minecraft.core.HolderLookup.Provider registries) {
-        int i;
-        CompoundTag nbt;
-        for (i = 0; i < 18; ++i) {
-            var stack = this.inventory.getItem(i);
-            if (!stack.isEmpty()) {
-                nbt = new CompoundTag();
-                nbt.putByte("Slot", (byte) i);
-                stack.save(registries, nbt);
-                nbtList.add(nbt);
-            }
-        }
-
-        return nbtList;
-    }
-
-    public void readNbt(ListTag nbtList, net.minecraft.core.HolderLookup.Provider registries) {
+    public void readInventory(ValueInput input) {
         this.inventory.clearContent();
-
-        for (int i = 0; i < nbtList.size(); ++i) {
-            CompoundTag nbtCompound = nbtList.getCompound(i);
-            int j = nbtCompound.getByte("Slot") & 255;
-            ItemStack stack = ItemStack.parseOptional(registries, nbtCompound);
-            if (!stack.isEmpty()) {
-                if (j < 18) {
-                    this.inventory.setItem(j, stack);
-                }
+        for (var entry : input.childrenListOrEmpty("Inventory")) {
+            int slot = entry.getByteOr("Slot", (byte) 0) & 0xFF;
+            var stack = entry.read(ItemStack.MAP_CODEC).orElse(ItemStack.EMPTY);
+            if (!stack.isEmpty() && slot < 18) {
+                this.inventory.setItem(slot, stack);
             }
         }
-    }
-
-    public void readNbtOld(ListTag nbtList, net.minecraft.core.HolderLookup.Provider registries) {
-        this.inventory.clearContent();
-
-        for (int i = 0; i < nbtList.size(); ++i) {
-            CompoundTag nbtCompound = nbtList.getCompound(i);
-            int j = nbtCompound.getByte("Slot") & 255;
-            ItemStack stack = ItemStack.parseOptional(registries, nbtCompound);
-            if (!stack.isEmpty()) {
-                if (1 <= j && j <= 18) {
-                    this.inventory.setItem(j - 1, stack);
-                }
-            }
-        }
+        this.workItemSlotSize = input.getByteOr("workItemSlotSize", (byte) this.workItemSlotSize) & 0xFF;
     }
 
     public static Container getInvAndHands(LittleMaidEntity maid) {

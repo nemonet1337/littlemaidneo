@@ -2,8 +2,12 @@ package work.nemonet.littlemaidneo.mixin;
 
 import com.mojang.datafixers.util.Either;
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Unit;
 import net.minecraft.world.entity.EntityType;
@@ -22,7 +26,6 @@ import work.nemonet.littlemaidneo.entity.util.MaidManagerImpl;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 import work.nemonet.littlemaidneo.world.WorldMaidSoulState;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -34,8 +37,7 @@ import java.util.stream.Stream;
 
 @Mixin(ServerPlayer.class)
 public abstract class MixinServerPlayerEntity extends MixinPlayerEntity implements MaidManager {
-    @Shadow
-    public abstract ServerLevel serverLevel();
+
 
     @Unique
     private final MaidManager maidManager = new MaidManagerImpl();
@@ -54,9 +56,9 @@ public abstract class MixinServerPlayerEntity extends MixinPlayerEntity implemen
         // メイドさん管理
         migrateWorldMaidSoulState();
         this.checkMaidUnload();
-        var nbt = new CompoundTag();
-        ((MaidManager) oldPlayer).writeMaidManager(oldPlayer.saveWithoutId(nbt));
-        this.readMaidManager(nbt);
+        TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, this.registryAccess());
+        ((MaidManager) oldPlayer).writeMaidManager(output);
+        this.readMaidManager(TagValueInput.create(ProblemReporter.DISCARDING, this.registryAccess(), output.buildResult()));
     }
 
     @Inject(method = "startSleepInBed", at = @At("RETURN"))
@@ -90,15 +92,15 @@ public abstract class MixinServerPlayerEntity extends MixinPlayerEntity implemen
     }
 
     @Inject(method = "readAdditionalSaveData", at = @At("RETURN"))
-    private void onReadSP(CompoundTag nbt, CallbackInfo ci) {
-        this.readMaidManager(nbt);
+    private void onReadSP(ValueInput input, CallbackInfo ci) {
+        this.readMaidManager(input);
         migrateWorldMaidSoulState();
     }
 
     @Inject(method = "addAdditionalSaveData", at = @At("RETURN"))
-    private void onWriteSP(CompoundTag nbt, CallbackInfo ci) {
+    private void onWriteSP(ValueOutput output, CallbackInfo ci) {
         this.checkMaidUnload();
-        this.writeMaidManager(nbt);
+        this.writeMaidManager(output);
     }
 
     @Inject(method = "tick", at = @At("HEAD"))
@@ -113,7 +115,7 @@ public abstract class MixinServerPlayerEntity extends MixinPlayerEntity implemen
      */
     @Unique
     private void migrateWorldMaidSoulState() {
-        WorldMaidSoulState worldMaidSoulState = WorldMaidSoulState.getWorldMaidSoulState(serverLevel());
+        WorldMaidSoulState worldMaidSoulState = WorldMaidSoulState.getWorldMaidSoulState((ServerLevel) this.level());
         worldMaidSoulState.get(this.getUUID())
                 .forEach(this.maidManager::registerMaid);
         worldMaidSoulState.remove(this.getUUID());
@@ -140,13 +142,13 @@ public abstract class MixinServerPlayerEntity extends MixinPlayerEntity implemen
     }
 
     @Override
-    public void writeMaidManager(CompoundTag nbt) {
-        this.maidManager.writeMaidManager(nbt);
+    public void writeMaidManager(ValueOutput output) {
+        this.maidManager.writeMaidManager(output);
     }
 
     @Override
-    public void readMaidManager(CompoundTag nbt) {
-        this.maidManager.readMaidManager(nbt);
+    public void readMaidManager(ValueInput input) {
+        this.maidManager.readMaidManager(input);
     }
 
     @Override

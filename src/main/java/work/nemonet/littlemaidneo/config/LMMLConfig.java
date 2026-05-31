@@ -3,7 +3,7 @@ package work.nemonet.littlemaidneo.config;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 public class LMMLConfig {
-    private static ModConfigSpec.FloatValue VOICE_VOLUME;
+    private static ModConfigSpec.DoubleValue VOICE_VOLUME;
     private static ModConfigSpec.BooleanValue ENABLE_ALPHA;
     private static ModConfigSpec.BooleanValue DEBUG_MODE;
     public static final ModConfigSpec SPEC;
@@ -23,7 +23,7 @@ public class LMMLConfig {
     }
 
     public static float getVoiceVolume() {
-        return VOICE_VOLUME.get();
+        return VOICE_VOLUME.get().floatValue();
     }
 
     public static boolean isEnableAlpha() {

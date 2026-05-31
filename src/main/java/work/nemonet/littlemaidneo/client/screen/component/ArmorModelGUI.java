@@ -3,7 +3,8 @@ package work.nemonet.littlemaidneo.client.screen.component;
 import com.google.common.collect.ImmutableList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -15,12 +16,13 @@ import work.nemonet.littlemaidneo.resource.holder.TextureHolder;
 import work.nemonet.littlemaidneo.resource.manager.LMModelManager;
 import work.nemonet.littlemaidneo.resource.util.ArmorPart;
 import work.nemonet.littlemaidneo.resource.util.ArmorSets;
+import work.nemonet.littlemaidneo.entity.DummyModelEntity;
 
 public class ArmorModelGUI extends GUIElement implements ListGUIElement {
     private static final ArmorSets<ItemStack> ARMOR_ICONS = new ArmorSets<>();
     private final MarginedClickable selectBox = new MarginedClickable(4);
     private final int scale;
-    private final MultiModelGUIUtil.DummyModelEntity dummy;
+    private final DummyModelEntity dummy;
     private final TextureHolder texture;
     private final ImmutableList<String> armorNames;
     private final ArmorSets<ArmorModelGUI> armors;
@@ -33,7 +35,7 @@ public class ArmorModelGUI extends GUIElement implements ListGUIElement {
         ARMOR_ICONS.setArmor(Items.DIAMOND_BOOTS.getDefaultInstance(), IHasMultiModel.Part.FEET);
     }
 
-    public ArmorModelGUI(TextureHolder texture, int scale, MultiModelGUIUtil.DummyModelEntity dummy,
+    public ArmorModelGUI(TextureHolder texture, int scale, DummyModelEntity dummy,
                          ArmorSets<ArmorModelGUI> armors) {
         super(scale * 16, scale * 3);
         this.scale = scale;
@@ -44,13 +46,13 @@ public class ArmorModelGUI extends GUIElement implements ListGUIElement {
     }
 
     @Override
-    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         MultiModelGUIUtil.getModel(LMModelManager.INSTANCE, texture).ifPresent(model ->
                 renderAllArmorModel(context, scale, mouseX, mouseY, model, texture, dummy));
     }
 
-    public void renderAllArmorModel(GuiGraphics context, int scale, float mouseX, float mouseY,
-                                    IMultiModel model, TextureHolder texture, MultiModelGUIUtil.DummyModelEntity dummy) {
+    public void renderAllArmorModel(GuiGraphicsExtractor context, int scale, float mouseX, float mouseY,
+                                    IMultiModel model, TextureHolder texture, DummyModelEntity dummy) {
         Font fontRenderer = Minecraft.getInstance().font;
         ModelSelectScreen.renderColor(context,
                 this.x, this.y,
@@ -68,11 +70,11 @@ public class ArmorModelGUI extends GUIElement implements ListGUIElement {
                     mouseX, mouseY, scale, model, armorData, dummy);
         }
 
-        context.drawString(fontRenderer, texture.getTextureName(),
+        context.text(fontRenderer, texture.getTextureName(),
                 this.x, this.y, 0xFFFFFFFF, false);
 
         ARMOR_ICONS.foreach((part, stack) ->
-                context.renderItem(stack,
+                context.item(stack,
                         this.x + this.width - 16 * (part.getIndex() + 1),
                         this.y + fontRenderer.lineHeight));
         armors.foreach((p, g) -> {
@@ -89,21 +91,21 @@ public class ArmorModelGUI extends GUIElement implements ListGUIElement {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-            selectBox.click(mouseX, mouseY);
+    public boolean mouseClicked(MouseButtonEvent event, boolean handled) {
+        if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            selectBox.click(event.x(), event.y());
             return true;
         }
         return false;
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-            if (selectBox.release(mouseX, mouseY)) {
+    public boolean mouseReleased(MouseButtonEvent event) {
+        if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            if (selectBox.release(event.x(), event.y())) {
                 Font fontRenderer = Minecraft.getInstance().font;
-                double relativeX = mouseX - this.x;
-                double relativeY = mouseY - this.y;
+                double relativeX = event.x() - this.x;
+                double relativeY = event.y() - this.y;
                 if (this.width - 16 * 4 <= relativeX && relativeX < this.width
                         && fontRenderer.lineHeight <= relativeY && relativeY < fontRenderer.lineHeight + 16) {
                     int idx = 3 - Mth.floor((relativeX - (this.width - 16 * 4)) / 16);

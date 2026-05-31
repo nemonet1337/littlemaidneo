@@ -1,12 +1,12 @@
 package work.nemonet.littlemaidneo.maidmodel;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public abstract class ModelStabilizerBase extends ModelBase {
 
     public ModelStabilizerBase() {}
 
-    public ResourceLocation getTexture() { return null; }
+    public Identifier getTexture() { return null; }
 
     public boolean checkEquipment(String pName) { return true; }
 

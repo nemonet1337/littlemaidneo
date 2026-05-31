@@ -1,31 +1,31 @@
 package work.nemonet.littlemaidneo.entity.targeting;
 
+import com.mojang.serialization.Codec;
+import work.nemonet.littlemaidneo.LittleMaidNeo;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.monster.*;
 import net.minecraft.world.entity.animal.*;
-import net.minecraft.nbt.ByteTag;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.entity.TamableAnimal;
-import net.minecraft.world.entity.animal.Chicken;
-import net.minecraft.world.entity.animal.Cow;
-import net.minecraft.world.entity.animal.Pig;
-import net.minecraft.world.entity.animal.PolarBear;
-import net.minecraft.world.entity.animal.Rabbit;
-import net.minecraft.world.entity.animal.Sheep;
+import net.minecraft.world.entity.animal.chicken.Chicken;
+import net.minecraft.world.entity.animal.cow.Cow;
+import net.minecraft.world.entity.animal.pig.Pig;
+import net.minecraft.world.entity.animal.polarbear.PolarBear;
+import net.minecraft.world.entity.animal.rabbit.Rabbit;
+import net.minecraft.world.entity.animal.sheep.Sheep;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.EnderMan;
 import net.minecraft.world.entity.monster.Enemy;
-import net.minecraft.world.entity.monster.ZombifiedPiglin;
+import net.minecraft.world.entity.monster.zombie.ZombifiedPiglin;
 import net.minecraft.world.entity.monster.piglin.Piglin;
 import net.minecraft.world.entity.monster.warden.Warden;
 import net.minecraft.world.entity.npc.Npc;
 import net.minecraft.world.item.trading.Merchant;
 import net.minecraft.world.level.Level;
-import work.nemonet.littlemaidneo.LMRBMod;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -50,7 +50,7 @@ public class TargetTagManagerImpl implements TargetTagManager {
         if (!staticInitialized) {
             BuiltInRegistries.ENTITY_TYPE.stream()
                     .filter(type -> type.canSummon() && type.canSerialize())
-                    .map(type -> type.create(world))
+                    .map(type -> (net.minecraft.world.entity.Entity) type.create(world, EntitySpawnReason.MOB_SUMMONED))
                     .filter(e -> e != null)
                     .forEach(e -> {
                         if (!(e instanceof LivingEntity)) {
@@ -103,7 +103,7 @@ public class TargetTagManagerImpl implements TargetTagManager {
                         TARGET_TAG_MAP.put(new TargetIdentifier(e), set);
                     });
             staticInitialized = true;
-            LMRBMod.LOGGER.info("TargetTagMap Count: {}", TARGET_TAG_MAP.size());
+            LittleMaidNeo.LOGGER.info("TargetTagMap Count: {}", TARGET_TAG_MAP.size());
         }
         var tmp = new HashMap<>(TARGET_TAG_MAP);
         tmp.putAll(targetTagMap);
@@ -124,51 +124,41 @@ public class TargetTagManagerImpl implements TargetTagManager {
     }
 
     @Override
-    public void writeTargetTags(CompoundTag nbt) {
+    public void writeTargetTags(ValueOutput output) {
         if (!this.isInitialized) {
             init();
             this.isInitialized = true;
         }
-        write(this.targetTagMap, nbt);
+        write(this.targetTagMap, output);
     }
 
-    public static void write(Map<TargetIdentifier, Set<TargetingSystem.TargetTag>> targetTagMap, CompoundTag nbt) {
-        var list = new ListTag();
+    public static void write(Map<TargetIdentifier, Set<TargetingSystem.TargetTag>> targetTagMap, ValueOutput output) {
+        var list = output.childrenList("targetTagMap");
         for (Map.Entry<TargetIdentifier, Set<TargetingSystem.TargetTag>> entry : targetTagMap.entrySet()) {
             var id = entry.getKey();
             var tags = entry.getValue();
-            var listEntry = new CompoundTag();
-            listEntry.putString("id", id.toString());
-            var tagsList = new ListTag();
+            var entryOutput = list.addChild();
+            entryOutput.putString("id", id.toString());
+            var tagsList = entryOutput.list("tags", Codec.BYTE);
             for (TargetingSystem.TargetTag tag : tags) {
-                tagsList.add(ByteTag.valueOf((byte) tag.ordinal()));
+                tagsList.add((byte) tag.ordinal());
             }
-            listEntry.put("tags", tagsList);
-            list.add(listEntry);
         }
-        nbt.put("targetTagMap", list);
     }
 
     @Override
-    public void readTargetTags(CompoundTag nbt) {
-        read(this.targetTagMap, nbt);
+    public void readTargetTags(ValueInput input) {
+        read(this.targetTagMap, input);
         this.hash = this.targetTagMap.hashCode();
     }
 
-    public static void read(Map<TargetIdentifier, Set<TargetingSystem.TargetTag>> targetTagMap, CompoundTag nbt) {
+    public static void read(Map<TargetIdentifier, Set<TargetingSystem.TargetTag>> targetTagMap, ValueInput input) {
         targetTagMap.clear();
-        if (!nbt.contains("targetTagMap")) {
-            return;
-        }
-        var list = nbt.getList("targetTagMap", Tag.TAG_COMPOUND);
-        for (int i = 0; i < list.size(); i++) {
-            var listEntry = list.getCompound(i);
-            var id = TargetIdentifier.tryParse(listEntry.getString("id"));
+        for (var entryInput : input.childrenListOrEmpty("targetTagMap")) {
+            var id = entryInput.getString("id").flatMap(TargetIdentifier::tryParse);
             if (id.isEmpty()) continue;
-            var tagsList = listEntry.getList("tags", Tag.TAG_BYTE);
             var tags = new HashSet<TargetingSystem.TargetTag>();
-            for (Tag nbtElement : tagsList) {
-                byte ordinal = ((ByteTag) nbtElement).getAsByte();
+            for (byte ordinal : entryInput.listOrEmpty("tags", Codec.BYTE)) {
                 if (ordinal >= 0 && ordinal < TargetingSystem.TargetTag.values().length) {
                     tags.add(TargetingSystem.TargetTag.values()[ordinal]);
                 }

@@ -1,9 +1,8 @@
 package work.nemonet.littlemaidneo.entity.util;
 
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.MaidSoulEntity;
 
@@ -33,34 +32,21 @@ public class MaidManagerImpl implements MaidManager {
     }
 
     @Override
-    public void writeMaidManager(CompoundTag nbt) {
-        write(nbt, this.maidMap.values().stream().toList());
+    public void writeMaidManager(ValueOutput output) {
+        var list = output.childrenList("maidList");
+        for (LMInfo info : this.maidMap.values()) {
+            info.write(list.addChild());
+        }
     }
 
     @Override
-    public void readMaidManager(CompoundTag nbt) {
+    public void readMaidManager(ValueInput input) {
         this.maidMap.clear();
-        var list = new ArrayList<LMInfo>();
-        read(nbt, list);
-        list.forEach(lminfo -> maidMap.put(lminfo.id(), lminfo));
-    }
-
-    public static void write(CompoundTag nbt, List<LMInfo> list) {
-        var listNbt = new ListTag();
-        for (LMInfo info : list) {
-            CompoundTag infoNbt = new CompoundTag();
-            info.write(infoNbt);
-            listNbt.add(infoNbt);
-        }
-        nbt.put("maidList", listNbt);
-    }
-
-    public static void read(CompoundTag nbt, List<LMInfo> list) {
-        var listNbt = nbt.getList("maidList", Tag.TAG_COMPOUND);
-        for (var element : listNbt) {
-            CompoundTag infoNbt = (CompoundTag) element;
-            LMInfo info = LMInfo.read(infoNbt);
-            list.add(info);
+        for (var entry : input.childrenListOrEmpty("maidList")) {
+            LMInfo info = LMInfo.read(entry);
+            if (info != null) {
+                maidMap.put(info.id(), info);
+            }
         }
     }
 
@@ -88,7 +74,7 @@ public class MaidManagerImpl implements MaidManager {
                 .forEach(o -> {
                     var entity = o.get();
                     // エンティティが死亡 or ワールドが読み込まれていない
-                    if (!entity.isAlive() || entity.getServer().getLevel(entity.level().dimension()) == null) {
+                    if (!entity.isAlive() || !(entity.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) || serverLevel.getServer().getLevel(entity.level().dimension()) == null) {
                         if (entity instanceof LittleMaidEntity maid) {
                             updates.put(maid.getUUID(), MaidLMInfo.create(maid, false));
                         } else if (entity instanceof MaidSoulEntity soul) {
@@ -99,5 +85,21 @@ public class MaidManagerImpl implements MaidManager {
         
         // ストリーム処理が完了してから一括で更新
         this.maidMap.putAll(updates);
+    }
+
+    public static void write(ValueOutput output, List<MaidManager.LMInfo> lmInfos) {
+        var list = output.childrenList("maidList");
+        for (MaidManager.LMInfo info : lmInfos) {
+            info.write(list.addChild());
+        }
+    }
+
+    public static void read(ValueInput input, List<MaidManager.LMInfo> lmInfos) {
+        for (var entry : input.childrenListOrEmpty("maidList")) {
+            MaidManager.LMInfo info = MaidManager.LMInfo.read(entry);
+            if (info != null) {
+                lmInfos.add(info);
+            }
+        }
     }
 }

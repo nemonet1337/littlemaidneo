@@ -1,7 +1,7 @@
 package work.nemonet.littlemaidneo.entity.compound;
 
 import net.minecraft.world.entity.Entity;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import work.nemonet.littlemaidneo.maidmodel.IModelCaps;
@@ -30,7 +30,7 @@ public interface IHasMultiModel {
     Optional<IMultiModel> getModel(Layer layer, Part part);
 
     @OnlyIn(Dist.CLIENT)
-    Optional<ResourceLocation> getTexture(Layer layer, Part part, boolean isLight);
+    Optional<Identifier> getTexture(Layer layer, Part part, boolean isLight);
 
     IModelCaps getCaps();
 

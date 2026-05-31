@@ -1,10 +1,10 @@
 package work.nemonet.littlemaidneo.resource.util;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
-public record TexturePair(ResourceLocation texture, ResourceLocation lightTexture) {
+public record TexturePair(Identifier texture, Identifier lightTexture) {
 
-    public ResourceLocation getTexture(boolean isLight) {
+    public Identifier getTexture(boolean isLight) {
         return isLight ? lightTexture : texture;
     }
 }

@@ -46,6 +46,7 @@
   "gui.littlemaidneo.littlemaid.tooltip.change_blood_suck.is_blood_suck": "―現在メイドさんは血に飢え、UNKNOWNのモブまで狩る",
   "gui.littlemaidneo.littlemaid.tooltip.open_maid_manager": "メイドさん管理画面",
   "gui.littlemaidneo.littlemaid.tooltip.setting_work_item_slot": "お仕事アイテムスロット設定―メイドさんは\"このスロットのアイテム\"をチェストに仕舞わない",
+  "gui.littlemaidneo.littlemaid.tooltip.strike_warning": "ストライキ中！砂糖（お給料）をあげてください。",
 
   "gui.littlemaidneo.target_tag.tags.attack_prohibited": "攻撃禁止",
   "gui.littlemaidneo.target_tag.tags.preemptive_attack_prohibited": "先制攻撃禁止",
@@ -64,5 +65,6 @@
 
   "littlemaidneo.configuration.title": "リトルメイドネオ設定",
   "littlemaidneo.configuration.section.littlemaidneo.common.toml": "リトルメイドネオ設定",
-  "littlemaidneo.configuration.section.littlemaidneo.common.toml.title": "リトルメイドネオ設定"
+  "littlemaidneo.configuration.section.littlemaidneo.common.toml.title": "リトルメイドネオ設定",
+  "chat.littlemaidneo.maid_died": "%1$s は %2$s によって死亡しました"
 }

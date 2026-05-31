@@ -2,18 +2,18 @@ package work.nemonet.littlemaidneo.advancement.criterion;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.advancements.critereon.ContextAwarePredicate;
-import net.minecraft.advancements.critereon.EntityPredicate;
-import net.minecraft.advancements.critereon.SimpleCriterionTrigger;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.advancements.criterion.ContextAwarePredicate;
+import net.minecraft.advancements.criterion.EntityPredicate;
+import net.minecraft.advancements.criterion.SimpleCriterionTrigger;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
-import work.nemonet.littlemaidneo.LMRBMod;
+import work.nemonet.littlemaidneo.LittleMaidNeo;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 
 import java.util.Optional;
 
 public class ResurrectMaidCriterion extends SimpleCriterionTrigger<ResurrectMaidCriterion.TriggerInstance> {
-    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(LittleMaidNeo.MODID, "resurrect_maid");
+    public static final Identifier ID = Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, "resurrect_maid");
 
     @Override
     public Codec<TriggerInstance> codec() {

@@ -1,6 +1,6 @@
 package work.nemonet.littlemaidneo.resource.manager;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.api.distmarker.Dist;
 import org.apache.logging.log4j.LogManager;
@@ -20,7 +20,7 @@ public class LMTextureManager {
     private static final Logger LOGGER = LogManager.getLogger();
     private final Map<String, TextureHolder> textures = new HashMap<>();
 
-    public void addTexture(String fileName, String textureName, String modelName, int index, ResourceLocation texturePath) {
+    public void addTexture(String fileName, String textureName, String modelName, int index, Identifier texturePath) {
         TextureHolder textureHolder = textures.computeIfAbsent(textureName.toLowerCase(),
                 k -> new TextureHolder(textureName, modelName));
         if (TextureIndexes.getTextureIndexes(index).isArmor()) {
@@ -39,7 +39,7 @@ public class LMTextureManager {
 
     public Optional<TextureHolder> getTexture(String textureName) {
         TextureHolder textureHolder = textures.get(textureName.toLowerCase());
-        if (FMLEnvironment.dist == Dist.DEDICATED_SERVER && textureHolder == null) {
+        if (FMLEnvironment.getDist() == Dist.DEDICATED_SERVER && textureHolder == null) {
             TextureHolder serverHolder = new TextureHolder(textureName, ResourceHelper.getModelName(textureName));
             textures.put(textureName.toLowerCase(), serverHolder);
             return Optional.of(serverHolder);

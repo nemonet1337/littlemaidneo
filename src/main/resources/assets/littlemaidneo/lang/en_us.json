@@ -46,6 +46,7 @@
   "gui.littlemaidneo.littlemaid.tooltip.change_blood_suck.is_blood_suck": " - Currently the maid is bloodthirsty and even hunt UNKNOWN mobs",
   "gui.littlemaidneo.littlemaid.tooltip.open_maid_manager": "Maid Manager",
   "gui.littlemaidneo.littlemaid.tooltip.setting_work_item_slot": "Work item slot setting - the maid does not store \"items in this slot\" in the chest.",
+  "gui.littlemaidneo.littlemaid.tooltip.strike_warning": "On strike! Give sugar (salary) to resume work.",
 
   "gui.littlemaidneo.target_tag.tags.attack_prohibited": "Attack Prohibited",
   "gui.littlemaidneo.target_tag.tags.preemptive_attack_prohibited": "Preemptive Attack Prohibited",
@@ -64,5 +65,6 @@
 
   "littlemaidneo.configuration.title": "LittleMaidNeo Configs",
   "littlemaidneo.configuration.section.littlemaidneo.common.toml": "LittleMaidNeo Configs",
-  "littlemaidneo.configuration.section.littlemaidneo.common.toml.title": "LittleMaidNeo Configs"
+  "littlemaidneo.configuration.section.littlemaidneo.common.toml.title": "LittleMaidNeo Configs",
+  "chat.littlemaidneo.maid_died": "%1$s died due to %2$s"
 }

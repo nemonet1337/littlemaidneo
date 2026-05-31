@@ -28,15 +28,15 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
-import work.nemonet.littlemaidneo.setup.Registration;
+import work.nemonet.littlemaidneo.setup.ModRegistration;
 import org.jetbrains.annotations.Nullable;
 
 public class SalaryBoxBlock extends BaseEntityBlock {
     public static final MapCodec<SalaryBoxBlock> CODEC = simpleCodec(SalaryBoxBlock::new);
 
-    public static final DirectionProperty FACING = BlockStateProperties.FACING;
+    public static final EnumProperty<Direction> FACING = BlockStateProperties.FACING;
     public static final BooleanProperty OPEN = BlockStateProperties.OPEN;
 
     public SalaryBoxBlock(Properties settings) {
@@ -51,7 +51,7 @@ public class SalaryBoxBlock extends BaseEntityBlock {
 
     @Override
     public InteractionResult useWithoutItem(BlockState state, Level world, BlockPos pos, Player player, BlockHitResult hit) {
-        if (world.isClientSide) {
+        if (world.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
         BlockEntity blockEntity = world.getBlockEntity(pos);
@@ -62,16 +62,12 @@ public class SalaryBoxBlock extends BaseEntityBlock {
     }
 
     @Override
-    public void onRemove(BlockState state, Level world, BlockPos pos, BlockState newState, boolean moved) {
-        if (state.is(newState.getBlock())) {
-            return;
-        }
+    protected void affectNeighborsAfterRemoval(BlockState state, ServerLevel world, BlockPos pos, boolean moved) {
         BlockEntity blockEntity = world.getBlockEntity(pos);
         if (blockEntity instanceof Container container) {
             Containers.dropContents(world, pos, container);
             world.updateNeighbourForOutputSignal(pos, this);
         }
-        super.onRemove(state, world, pos, newState, moved);
     }
 
     @Override
@@ -107,7 +103,7 @@ public class SalaryBoxBlock extends BaseEntityBlock {
     }
 
     @Override
-    public int getAnalogOutputSignal(BlockState state, Level world, BlockPos pos) {
+    protected int getAnalogOutputSignal(BlockState state, Level world, BlockPos pos, Direction direction) {
         return AbstractContainerMenu.getRedstoneSignalFromBlockEntity(world.getBlockEntity(pos));
     }
 
@@ -133,10 +129,10 @@ public class SalaryBoxBlock extends BaseEntityBlock {
 
     @Override
     public @Nullable <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level world, BlockState state, BlockEntityType<T> type) {
-        if (world.isClientSide) {
+        if (world.isClientSide()) {
             return null;
         }
-        return createTickerHelper(type, Registration.SALARY_BOX_BLOCK_ENTITY.get(), SalaryBoxBlockEntity::tick);
+        return createTickerHelper(type, ModRegistration.SALARY_BOX_BLOCK_ENTITY.get(), SalaryBoxBlockEntity::tick);
     }
 
 }

@@ -6,7 +6,7 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.goal.Goal;
-import net.minecraft.world.entity.projectile.Snowball;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.Snowball;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -34,7 +34,7 @@ public class PlaySnowGoal extends Goal {
 
     @Override
     public boolean canUse() {
-        var time = this.mob.level().getDayTime();
+        var time = this.mob.level().getOverworldClockTime();
         time = time % 24000;
         // 朝～昼以外はやらない
         if (time < 0 || 12500 < time) {
@@ -145,9 +145,8 @@ public class PlaySnowGoal extends Goal {
         world.playSound(null, user.getX(), user.getY(), user.getZ(),
                 SoundEvents.SNOWBALL_THROW, SoundSource.NEUTRAL,
                 0.5f, 0.4f / (world.getRandom().nextFloat() * 0.4f + 0.8f));
-        if (!world.isClientSide) {
-            Snowball snowballEntity = new Snowball(world, user);
-            snowballEntity.setItem(Items.SNOWBALL.getDefaultInstance());
+        if (!world.isClientSide()) {
+            Snowball snowballEntity = new Snowball(world, user, Items.SNOWBALL.getDefaultInstance());
             snowballEntity.shootFromRotation(user, user.getXRot(), user.getYHeadRot(), 0.0f, 1.5f, 1.0f);
             world.addFreshEntity(snowballEntity);
         }

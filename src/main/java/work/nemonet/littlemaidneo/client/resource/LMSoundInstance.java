@@ -4,7 +4,7 @@ import net.minecraft.client.resources.sounds.Sound;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.client.sounds.WeighedSoundEvents;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.neoforged.api.distmarker.Dist;
@@ -14,7 +14,7 @@ import net.neoforged.api.distmarker.OnlyIn;
 public class LMSoundInstance implements SoundInstance {
     private final WeighedSoundEvents soundSet;
     private final Sound sound;
-    private final ResourceLocation location;
+    private final Identifier location;
     private final SoundSource source;
     private final float volume;
     private final double x;
@@ -33,8 +33,12 @@ public class LMSoundInstance implements SoundInstance {
         this.z = z;
     }
 
+    public Identifier getLocation() {
+        return location;
+    }
+
     @Override
-    public ResourceLocation getLocation() {
+    public Identifier getIdentifier() {
         return location;
     }
 

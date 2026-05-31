@@ -3,11 +3,10 @@ package work.nemonet.littlemaidneo.api.mode;
 import net.minecraft.world.item.alchemy.Potion;
 import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ShearsItem;
-import net.minecraft.world.item.SwordItem;
 import work.nemonet.littlemaidneo.entity.mode.*;
 import work.nemonet.littlemaidneo.tags.LMTags;
 
@@ -36,7 +35,7 @@ public class Modes {
 
     public static ModeType.Builder<FencerMode> buildFencerMode() {
         return ModeType.<FencerMode>builder((type, maid) -> new FencerMode(type, "Fencer", maid, 1.0f))
-                .addItemMatcher(ItemMatchers.clazz(SwordItem.class), ItemMatcher.Priority.LOWER)
+                .addItemMatcher(stack -> stack.has(DataComponents.WEAPON), ItemMatcher.Priority.LOWER)
                 .addItemMatcher(ItemMatchers.clazz(AxeItem.class), ItemMatcher.Priority.LOWER)
                 .addItemMatcher(ItemMatchers.tag(LMTags.Items.FENCER_MODE), ItemMatcher.Priority.HIGHER);
     }
@@ -86,7 +85,7 @@ public class Modes {
     }
 
     private static void register(String id, ModeType<?> modeType) {
-        ModeManager.INSTANCE.register(ResourceLocation.fromNamespaceAndPath(MODID, id), modeType);
+        ModeManager.INSTANCE.register(Identifier.fromNamespaceAndPath(MODID, id), modeType);
     }
 
 }

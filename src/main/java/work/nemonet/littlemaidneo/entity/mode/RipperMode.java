@@ -1,6 +1,7 @@
 package work.nemonet.littlemaidneo.entity.mode;
 
 import com.google.common.collect.Lists;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
@@ -77,7 +78,7 @@ public class RipperMode extends Mode {
         if (target.distanceToSqr(this.mob) < 2.5f * 2.5f) {
             ItemStack stack = this.mob.getMainHandItem();
             if (((Shearable) target).readyForShearing()) {
-                ((Shearable) target).shear(SoundSource.PLAYERS);
+                ((Shearable) target).shear((ServerLevel) this.mob.level(), SoundSource.PLAYERS, stack);
                 stack.hurtAndBreak(1, this.mob, EquipmentSlot.MAINHAND);
             }
             this.shearable.remove();

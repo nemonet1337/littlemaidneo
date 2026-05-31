@@ -1,10 +1,13 @@
 package work.nemonet.littlemaidneo.client.screen;
 
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -22,8 +25,8 @@ import java.util.stream.Collectors;
 
 @OnlyIn(Dist.CLIENT)
 public class SoundPackSelectScreen<T extends Entity & SoundPlayable> extends Screen {
-    public static final ResourceLocation MODEL_SELECT_GUI_TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(LittleMaidNeo.MODID, "textures/gui/model_select.png");
+    public static final Identifier MODEL_SELECT_GUI_TEXTURE =
+            Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, "textures/gui/model_select.png");
     private static final int GUI_WIDTH = 256;
     private static final int GUI_HEIGHT = 196;
     private final T entity;
@@ -47,7 +50,7 @@ public class SoundPackSelectScreen<T extends Entity & SoundPlayable> extends Scr
 
         FilterPredicate<SoundPackGUI> soundPackFilter = (soundPackGUI, filterText) -> {
             ConfigHolder config = soundPackGUI.getConfigHolder();
-            String combinedText = (config.getPackName() + " " + config.getParentName() + " " + config.getFileName()).toLowerCase();
+            String combinedText = (config.packName() + " " + config.parentName() + " " + config.fileName()).toLowerCase();
             return combinedText.contains(filterText.toLowerCase());
         };
 
@@ -66,29 +69,29 @@ public class SoundPackSelectScreen<T extends Entity & SoundPlayable> extends Scr
     }
 
     @Override
-    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         assert this.minecraft != null;
         int relX = (this.width - GUI_WIDTH) / 2;
         int relY = (this.height - GUI_HEIGHT) / 2;
-        context.blit(MODEL_SELECT_GUI_TEXTURE, relX, relY, 0, 0, GUI_WIDTH, GUI_HEIGHT);
+        context.blit(MODEL_SELECT_GUI_TEXTURE, relX, relY, GUI_WIDTH, GUI_HEIGHT, 0.0f, 0.0f, (float) GUI_WIDTH, (float) GUI_HEIGHT);
 
-        super.render(context, mouseX, mouseY, delta);
-        this.soundPackListGUI.render(context, mouseX, mouseY, delta);
+        super.extractRenderState(context, mouseX, mouseY, delta);
+        this.soundPackListGUI.extractRenderState(context, mouseX, mouseY, delta);
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        return this.soundPackListGUI.mouseClicked(mouseX, mouseY, button);
+    public boolean mouseClicked(MouseButtonEvent event, boolean handled) {
+        return this.soundPackListGUI.mouseClicked(event, handled);
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        return this.soundPackListGUI.mouseReleased(mouseX, mouseY, button);
+    public boolean mouseReleased(MouseButtonEvent event) {
+        return this.soundPackListGUI.mouseReleased(event);
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
-        return this.soundPackListGUI.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+    public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
+        return this.soundPackListGUI.mouseDragged(event, deltaX, deltaY);
     }
 
     @Override
@@ -98,15 +101,15 @@ public class SoundPackSelectScreen<T extends Entity & SoundPlayable> extends Scr
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (super.keyPressed(keyCode, scanCode, modifiers)) return true;
-        return this.soundPackListGUI.keyPressed(keyCode, scanCode, modifiers);
+    public boolean keyPressed(KeyEvent event) {
+        if (super.keyPressed(event)) return true;
+        return this.soundPackListGUI.keyPressed(event);
     }
 
     @Override
-    public boolean charTyped(char chr, int modifiers) {
-        if (this.soundPackListGUI.charTyped(chr, modifiers)) return true;
-        return super.charTyped(chr, modifiers);
+    public boolean charTyped(CharacterEvent event) {
+        if (this.soundPackListGUI.charTyped(event)) return true;
+        return super.charTyped(event);
     }
 
     @Override
@@ -128,12 +131,12 @@ public class SoundPackSelectScreen<T extends Entity & SoundPlayable> extends Scr
         }
 
         @Override
-        public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
-            context.drawString(font, configHolder.getPackName(),
+        public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+            context.text(font, configHolder.packName(),
                     this.x, this.y + 1, 0xffffff, false);
-            context.drawString(font, configHolder.getParentName(),
+            context.text(font, configHolder.parentName(),
                     this.x, this.y + 1 + (font.lineHeight + 1), 0xffffff, false);
-            context.drawString(font, configHolder.getFileName(),
+            context.text(font, configHolder.fileName(),
                     this.x, this.y + 1 + (font.lineHeight + 1) * 2, 0xffffff, false);
             context.fill(this.x, this.y + this.height - 1,
                     this.x + this.width, this.y + this.height, 0xffffffff);

@@ -23,13 +23,13 @@ public class LMConfigManager {
 
     public Optional<ConfigHolder> getTextureSoundConfig(String texturePackName) {
         return configs.values().stream()
-                .filter(ch -> ch.getFileName().equalsIgnoreCase(texturePackName))
+                .filter(ch -> ch.fileName().equalsIgnoreCase(texturePackName))
                 .findAny();
     }
 
     public ConfigHolder getAnyConfig() {
         var list = configs.values().stream()
-                .filter(ch -> ch.getFileName().equalsIgnoreCase("littlemaidmob"))
+                .filter(ch -> ch.fileName().equalsIgnoreCase("littlemaidmob"))
                 .toList();
         if (list.isEmpty()) return EMPTY_CONFIG;
         return list.get(ThreadLocalRandom.current().nextInt(list.size()));

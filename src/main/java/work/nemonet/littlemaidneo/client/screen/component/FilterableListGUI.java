@@ -1,6 +1,9 @@
 package work.nemonet.littlemaidneo.client.screen.component;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -63,9 +66,9 @@ public class FilterableListGUI<T extends GUIElement> extends GUIElement {
     }
 
     @Override
-    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
-        searchInput.render(context, mouseX, mouseY, delta);
-        listGUI.render(context, mouseX, mouseY, delta);
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+        searchInput.extractRenderState(context, mouseX, mouseY, delta);
+        listGUI.extractRenderState(context, mouseX, mouseY, delta);
     }
 
     @Override
@@ -77,22 +80,22 @@ public class FilterableListGUI<T extends GUIElement> extends GUIElement {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (searchInput.mouseClicked(mouseX, mouseY, button)) return true;
-        return listGUI.mouseClicked(mouseX, mouseY, button);
+    public boolean mouseClicked(MouseButtonEvent event, boolean handled) {
+        if (searchInput.mouseClicked(event, handled)) return true;
+        return listGUI.mouseClicked(event, handled);
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        boolean a = searchInput.mouseReleased(mouseX, mouseY, button);
-        boolean b = listGUI.mouseReleased(mouseX, mouseY, button);
+    public boolean mouseReleased(MouseButtonEvent event) {
+        boolean a = searchInput.mouseReleased(event);
+        boolean b = listGUI.mouseReleased(event);
         return a || b;
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
-        if (searchInput.mouseDragged(mouseX, mouseY, button, deltaX, deltaY)) return true;
-        return listGUI.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+    public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
+        if (searchInput.mouseDragged(event, deltaX, deltaY)) return true;
+        return listGUI.mouseDragged(event, deltaX, deltaY);
     }
 
     @Override
@@ -101,15 +104,15 @@ public class FilterableListGUI<T extends GUIElement> extends GUIElement {
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (searchInput.isFocused()) return searchInput.keyPressed(keyCode, scanCode, modifiers);
-        return super.keyPressed(keyCode, scanCode, modifiers);
+    public boolean keyPressed(KeyEvent event) {
+        if (searchInput.isFocused()) return searchInput.keyPressed(event);
+        return super.keyPressed(event);
     }
 
     @Override
-    public boolean charTyped(char chr, int modifiers) {
-        if (searchInput.isFocused()) return searchInput.charTyped(chr, modifiers);
-        return super.charTyped(chr, modifiers);
+    public boolean charTyped(CharacterEvent event) {
+        if (searchInput.isFocused()) return searchInput.charTyped(event);
+        return super.charTyped(event);
     }
 
     @Override

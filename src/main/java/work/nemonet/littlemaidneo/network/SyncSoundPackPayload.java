@@ -3,7 +3,7 @@ package work.nemonet.littlemaidneo.network;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import work.nemonet.littlemaidneo.LittleMaidNeo;
 
 public record SyncSoundPackPayload(
@@ -12,7 +12,7 @@ public record SyncSoundPackPayload(
 ) implements CustomPacketPayload {
 
     public static final CustomPacketPayload.Type<SyncSoundPackPayload> TYPE =
-            new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(LittleMaidNeo.MODID, "sync_sound_pack"));
+            new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, "sync_sound_pack"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, SyncSoundPackPayload> STREAM_CODEC =
             StreamCodec.of(SyncSoundPackPayload::encode, SyncSoundPackPayload::decode);

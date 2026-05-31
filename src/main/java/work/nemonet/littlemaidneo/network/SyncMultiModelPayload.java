@@ -3,7 +3,7 @@ package work.nemonet.littlemaidneo.network;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import work.nemonet.littlemaidneo.LittleMaidNeo;
 import work.nemonet.littlemaidneo.resource.util.ArmorSets;
 import work.nemonet.littlemaidneo.resource.util.TextureColors;
@@ -21,7 +21,7 @@ public record SyncMultiModelPayload(
 ) implements CustomPacketPayload {
 
     public static final CustomPacketPayload.Type<SyncMultiModelPayload> TYPE =
-            new CustomPacketPayload.Type<>(ResourceLocation.fromNamespaceAndPath(LittleMaidNeo.MODID, "sync_multi_model"));
+            new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, "sync_multi_model"));
 
     public static final StreamCodec<RegistryFriendlyByteBuf, SyncMultiModelPayload> STREAM_CODEC =
             StreamCodec.of(SyncMultiModelPayload::encode, SyncMultiModelPayload::decode);

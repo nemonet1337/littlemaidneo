@@ -2,6 +2,7 @@ package work.nemonet.littlemaidneo.entity.util;
 
 import java.util.Optional;
 import java.util.UUID;
+import net.minecraft.world.entity.EntityReference;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.OwnableEntity;
 import net.minecraft.world.entity.TamableAnimal;
@@ -21,7 +22,7 @@ public class TameableUtil {
      * テイムしたことになる
      */
     public static void setTameOwnerUuid(TamableAnimal tameable, UUID id) {
-        tameable.setOwnerUUID(id);
+        tameable.setOwnerReference(EntityReference.of(id));
     }
 
     /**
@@ -29,7 +30,8 @@ public class TameableUtil {
      * 存在しない場合、emptyで返す
      */
     public static Optional<UUID> getTameOwnerUuid(OwnableEntity tameable) {
-        return Optional.ofNullable(tameable.getOwnerUUID());
+        EntityReference<LivingEntity> ref = tameable.getOwnerReference();
+        return ref != null ? Optional.of(ref.getUUID()) : Optional.empty();
     }
 
     /**
@@ -72,7 +74,8 @@ public class TameableUtil {
     }
 
     public static boolean isTameOwner(OwnableEntity tameable, LivingEntity entity) {
-        return entity.getUUID().equals(tameable.getOwnerUUID());
+        EntityReference<LivingEntity> ref = tameable.getOwnerReference();
+        return ref != null && entity.getUUID().equals(ref.getUUID());
     }
 
 }

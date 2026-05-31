@@ -1,12 +1,14 @@
 package work.nemonet.littlemaidneo.entity.compound;
 
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import work.nemonet.littlemaidneo.maidmodel.EntityCaps;
@@ -64,21 +66,25 @@ public class MultiModelCompound implements IHasMultiModel {
                 skinTexHolder.getTexture(color, isContract, true).orElse(null));
     }
 
+    private static final EquipmentSlot[] ARMOR_SLOTS = {EquipmentSlot.FEET, EquipmentSlot.LEGS, EquipmentSlot.CHEST, EquipmentSlot.HEAD};
+
     public void updateArmor() {
-        int index = 0;
-        for (ItemStack stack : entity.getArmorSlots()) {
-            if (4 < index) break;
-            updateArmorPart(Part.getPart(index++), getName(stack.getItem()), getDamagePercent(stack));
+        for (int i = 0; i < ARMOR_SLOTS.length; i++) {
+            ItemStack stack = entity.getItemBySlot(ARMOR_SLOTS[i]);
+            updateArmorPart(Part.getPart(i), getName(stack), getDamagePercent(stack));
         }
     }
 
-    private String getName(Item item) {
-        if (entity.level().isClientSide && item instanceof ArmorItem armorItem) {
-            return armorItem.getMaterial().unwrapKey()
-                    .map(key -> key.location().getPath())
-                    .orElse("unknown").toLowerCase();
+    private String getName(ItemStack stack) {
+        if (entity.level().isClientSide()) {
+            var equippable = stack.get(DataComponents.EQUIPPABLE);
+            if (equippable != null) {
+                return equippable.assetId()
+                        .map(key -> key.identifier().getPath())
+                        .orElse("unknown").toLowerCase();
+            }
         }
-        ResourceLocation location = BuiltInRegistries.ITEM.getKey(item);
+        Identifier location = BuiltInRegistries.ITEM.getKey(stack.getItem());
         return location.toString();
     }
 
@@ -110,12 +116,8 @@ public class MultiModelCompound implements IHasMultiModel {
             updateMain();
         } else {
             armorsTexHolder.setArmor(textureHolder, part);
-            int index = 0;
-            for (ItemStack stack : entity.getArmorSlots()) {
-                if (part.getIndex() == index++) {
-                    updateArmorPart(part, getName(stack.getItem()), getDamagePercent(stack));
-                }
-            }
+            ItemStack stack = entity.getItemBySlot(ARMOR_SLOTS[part.getIndex()]);
+            updateArmorPart(part, getName(stack), getDamagePercent(stack));
         }
     }
 
@@ -142,14 +144,14 @@ public class MultiModelCompound implements IHasMultiModel {
     }
 
     @Override
-    public Optional<ResourceLocation> getTexture(Layer layer, Part part, boolean isLight) {
+    public Optional<Identifier> getTexture(Layer layer, Part part, boolean isLight) {
         if (layer == Layer.SKIN) {
             return Optional.ofNullable(skinTexture.getTexture(isLight));
         } else {
-            ResourceLocation resourceLocation = armorsData.getArmor(part)
+            Identifier Identifier = armorsData.getArmor(part)
                     .orElseThrow(() -> new IllegalStateException("防具データが存在しません"))
                     .getTexture(layer, isLight);
-            return Optional.ofNullable(resourceLocation);
+            return Optional.ofNullable(Identifier);
         }
     }
 
@@ -160,20 +162,13 @@ public class MultiModelCompound implements IHasMultiModel {
 
     @Override
     public boolean isArmorVisible(Part part) {
-        int index = 0;
-        for (ItemStack stack : entity.getArmorSlots()) {
-            if (part.getIndex() == index++ && !stack.isEmpty()) return true;
-        }
-        return false;
+        return !entity.getItemBySlot(ARMOR_SLOTS[part.getIndex()]).isEmpty();
     }
 
     @Override
     public boolean isArmorGlint(Part part) {
-        int index = 0;
-        for (ItemStack stack : entity.getArmorSlots()) {
-            if (part.getIndex() == index++ && !stack.isEmpty()) return stack.isEnchanted();
-        }
-        return false;
+        ItemStack stack = entity.getItemBySlot(ARMOR_SLOTS[part.getIndex()]);
+        return !stack.isEmpty() && stack.isEnchanted();
     }
 
     @Override
@@ -200,39 +195,32 @@ public class MultiModelCompound implements IHasMultiModel {
         return isContract;
     }
 
-    public void writeToNbt(CompoundTag nbt) {
-        nbt.putByte("SkinColor", (byte) getColorMM().getIndex());
-        nbt.putBoolean("IsContract", isContractMM());
-        nbt.putString("SkinTexture", getTextureHolder(Layer.SKIN, Part.HEAD).getTextureName());
+    public void writeToNbt(ValueOutput output) {
+        output.putByte("SkinColor", (byte) getColorMM().getIndex());
+        output.putBoolean("IsContract", isContractMM());
+        output.putString("SkinTexture", getTextureHolder(Layer.SKIN, Part.HEAD).getTextureName());
         for (Part part : Part.values()) {
-            nbt.putString("ArmorTextureInner" + part.getPartName(),
+            output.putString("ArmorTextureInner" + part.getPartName(),
                     getTextureHolder(Layer.INNER, part).getTextureName());
-            nbt.putString("ArmorTextureOuter" + part.getPartName(),
+            output.putString("ArmorTextureOuter" + part.getPartName(),
                     getTextureHolder(Layer.OUTER, part).getTextureName());
         }
     }
 
-    public void readFromNbt(CompoundTag nbt) {
-        if (nbt.contains("SkinColor")) {
-            setColorMM(TextureColors.getColor(nbt.getByte("SkinColor")));
-        }
-        setContractMM(nbt.getBoolean("IsContract"));
+    public void readFromNbt(ValueInput input) {
+        setColorMM(TextureColors.getColor(input.getByteOr("SkinColor", (byte) 0)));
+        setContractMM(input.getBooleanOr("IsContract", false));
         LMTextureManager textureManager = LMTextureManager.INSTANCE;
-        if (nbt.contains("SkinTexture")) {
-            textureManager.getTexture(nbt.getString("SkinTexture"))
-                    .ifPresent(th -> setTextureHolder(th, Layer.SKIN, Part.HEAD));
-        }
+        input.getString("SkinTexture")
+                .ifPresent(name -> textureManager.getTexture(name)
+                        .ifPresent(th -> setTextureHolder(th, Layer.SKIN, Part.HEAD)));
         for (Part part : Part.values()) {
-            String inner = "ArmorTextureInner" + part.getPartName();
-            String outer = "ArmorTextureOuter" + part.getPartName();
-            if (nbt.contains(inner)) {
-                textureManager.getTexture(nbt.getString(inner))
-                        .ifPresent(th -> setTextureHolder(th, Layer.INNER, part));
-            }
-            if (nbt.contains(outer)) {
-                textureManager.getTexture(nbt.getString(outer))
-                        .ifPresent(th -> setTextureHolder(th, Layer.OUTER, part));
-            }
+            input.getString("ArmorTextureInner" + part.getPartName())
+                    .ifPresent(name -> textureManager.getTexture(name)
+                            .ifPresent(th -> setTextureHolder(th, Layer.INNER, part)));
+            input.getString("ArmorTextureOuter" + part.getPartName())
+                    .ifPresent(name -> textureManager.getTexture(name)
+                            .ifPresent(th -> setTextureHolder(th, Layer.OUTER, part)));
         }
     }
 

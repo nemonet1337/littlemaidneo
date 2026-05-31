@@ -1,6 +1,6 @@
 package work.nemonet.littlemaidneo.client.screen.component;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import work.nemonet.littlemaidneo.client.screen.ModelSelectScreen;
 
 import java.util.function.Function;
@@ -31,7 +31,7 @@ public enum ScrollBarStyle {
             int offsetX, int offsetY, int width, int height,
             TextureAddress sliderT, TextureAddress sliderM,
             TextureAddress sliderB, TextureAddress pointer,
-            ResourceLocation texture) {
+            Identifier texture) {
         return new ScrollableListGUI.ScrollBarConfig(
                 offsetX, offsetY, width, height,
                 sliderT, sliderM, sliderB, pointer, texture

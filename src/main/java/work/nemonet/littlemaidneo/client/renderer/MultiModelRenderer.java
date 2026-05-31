@@ -2,11 +2,11 @@ package work.nemonet.littlemaidneo.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.LivingEntityRenderer;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
@@ -20,55 +20,80 @@ import work.nemonet.littlemaidneo.multimodel.layer.MMMatrixStack;
 import static work.nemonet.littlemaidneo.maidmodel.IModelCaps.*;
 
 @OnlyIn(Dist.CLIENT)
-public class MultiModelRenderer<T extends LivingEntity & IHasMultiModel> extends LivingEntityRenderer<T, MultiModel<T>> {
-    private static final ResourceLocation NULL_TEXTURE = ResourceLocation.fromNamespaceAndPath(LittleMaidNeo.MODID, "null");
+public class MultiModelRenderer<T extends LivingEntity & IHasMultiModel>
+        extends LivingEntityRenderer<T, MultiModelRenderState, MultiModel<MultiModelRenderState>> {
+
+    private static final Identifier NULL_TEXTURE = Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, "null");
 
     public MultiModelRenderer(EntityRendererProvider.Context ctx) {
         super(ctx, new MultiModel<>(), 0.5F);
+        this.addLayer(new MultiModelSkinLayer<>(this));
         this.addLayer(new MultiModelArmorLayer<>(this));
         this.addLayer(new MultiModelHeldItemLayer<>(this));
         this.addLayer(new MultiModelLightLayer<>(this));
     }
 
     @Override
-    protected boolean shouldShowName(T entity) {
-        return super.shouldShowName(entity) && (entity.hasCustomName()
-                && entity == Minecraft.getInstance().crosshairPickEntity);
+    public MultiModelRenderState createRenderState() {
+        return new MultiModelRenderState();
     }
 
     @Override
-    protected void setupRotations(T entity, PoseStack poseStack, float ageInTicks, float bodyYaw, float partialTick, float scale) {
-        super.setupRotations(entity, poseStack, ageInTicks, bodyYaw, partialTick, scale);
+    public void extractRenderState(T entity, MultiModelRenderState state, float partialTick) {
+        super.extractRenderState(entity, state, partialTick);
+        state.multiModel = entity;
+        state.entity = entity;
+        state.mainArm = entity.getMainArm();
+        state.mainHandItem = entity.getMainHandItem();
+        state.offHandItem = entity.getOffhandItem();
         entity.getModel(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD)
-                .ifPresent(model -> model.setupTransform(entity.getCaps(),
-                        new MMMatrixStack(poseStack), ageInTicks, bodyYaw, partialTick));
-    }
-
-    @Override
-    protected void scale(T entity, PoseStack poseStack, float partialTick) {
-        entity.getModel(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD)
-                .filter(model -> model instanceof ModelMultiBase)
-                .map(model -> (float) ((ModelMultiBase) model).getCapsValue(caps_ScaleFactor))
-                .ifPresent(scale -> poseStack.scale(scale, scale, scale));
-    }
-
-    @Override
-    public void render(T livingEntity, float entityYaw, float partialTicks, PoseStack poseStack, MultiBufferSource bufferSource, int packedLight) {
-        ProfilerFiller profiler = Minecraft.getInstance().getProfiler();
-        profiler.push("littlemaidneo:mm");
-        livingEntity.getModel(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD)
-                .filter(model -> model instanceof ModelMultiBase)
-                .ifPresent(model -> syncCaps(livingEntity, (ModelMultiBase) model, partialTicks));
+                .filter(m -> m instanceof ModelMultiBase)
+                .ifPresent(m -> syncCaps(entity, (ModelMultiBase) m, partialTick));
         for (IHasMultiModel.Part part : IHasMultiModel.Part.values()) {
-            livingEntity.getModel(IHasMultiModel.Layer.INNER, part)
-                    .filter(model -> model instanceof ModelMultiBase)
-                    .ifPresent(model -> syncCaps(livingEntity, (ModelMultiBase) model, partialTicks));
-            livingEntity.getModel(IHasMultiModel.Layer.OUTER, part)
-                    .filter(model -> model instanceof ModelMultiBase)
-                    .ifPresent(model -> syncCaps(livingEntity, (ModelMultiBase) model, partialTicks));
+            entity.getModel(IHasMultiModel.Layer.INNER, part)
+                    .filter(m -> m instanceof ModelMultiBase)
+                    .ifPresent(m -> syncCaps(entity, (ModelMultiBase) m, partialTick));
+            entity.getModel(IHasMultiModel.Layer.OUTER, part)
+                    .filter(m -> m instanceof ModelMultiBase)
+                    .ifPresent(m -> syncCaps(entity, (ModelMultiBase) m, partialTick));
         }
-        super.render(livingEntity, entityYaw, partialTicks, poseStack, bufferSource, packedLight);
-        profiler.pop();
+    }
+
+    @Override
+    protected boolean shouldShowName(T entity, double distance) {
+        return super.shouldShowName(entity, distance)
+                && entity.hasCustomName()
+                && entity == Minecraft.getInstance().crosshairPickEntity;
+    }
+
+    @Override
+    protected void setupRotations(MultiModelRenderState state, PoseStack poseStack, float bodyYaw, float scale) {
+        super.setupRotations(state, poseStack, bodyYaw, scale);
+        if (state.multiModel == null) return;
+        state.multiModel.getModel(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD)
+                .ifPresent(model -> model.setupTransform(state.multiModel.getCaps(),
+                        new MMMatrixStack(poseStack), state.ageInTicks, bodyYaw, state.partialTick));
+    }
+
+    @Override
+    protected void scale(MultiModelRenderState state, PoseStack poseStack) {
+        if (state.multiModel == null) return;
+        state.multiModel.getModel(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD)
+                .filter(m -> m instanceof ModelMultiBase)
+                .map(m -> (float) ((ModelMultiBase) m).getCapsValue(caps_ScaleFactor))
+                .ifPresent(s -> poseStack.scale(s, s, s));
+    }
+
+    @Override
+    public void submit(MultiModelRenderState state, PoseStack poseStack, SubmitNodeCollector submitNodeCollector, CameraRenderState camera) {
+        super.submit(state, poseStack, submitNodeCollector, camera);
+    }
+
+    @Override
+    public Identifier getTextureLocation(MultiModelRenderState state) {
+        if (state.multiModel == null) return NULL_TEXTURE;
+        return state.multiModel.getTexture(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD, false)
+                .orElse(NULL_TEXTURE);
     }
 
     public void syncCaps(T entity, ModelMultiBase model, float partialTicks) {
@@ -97,11 +122,5 @@ public class MultiModelRenderer<T extends LivingEntity & IHasMultiModel> extends
         model.setCapsValue(caps_aimedBow, false);
         model.setCapsValue(caps_entityIdFactor, 0F);
         model.setCapsValue(caps_ticksExisted, entity.tickCount);
-    }
-
-    @Override
-    public ResourceLocation getTextureLocation(T entity) {
-        return entity.getTexture(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD, false)
-                .orElse(NULL_TEXTURE);
     }
 }

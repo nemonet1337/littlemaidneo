@@ -1,17 +1,17 @@
 package work.nemonet.littlemaidneo;
 
-import net.minecraft.client.gui.screens.MenuScreens;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
-import net.neoforged.neoforge.client.event.AddPackFindersEvent;
+import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
-import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
+import net.neoforged.neoforge.event.AddPackFindersEvent;
 import work.nemonet.littlemaidneo.client.key.LMKeys;
 import work.nemonet.littlemaidneo.client.renderer.MaidModelRenderer;
 import work.nemonet.littlemaidneo.client.renderer.MaidSoulRenderer;
@@ -20,7 +20,7 @@ import work.nemonet.littlemaidneo.client.resource.LMPackProvider;
 import work.nemonet.littlemaidneo.client.screen.LittleMaidScreen;
 import work.nemonet.littlemaidneo.resource.manager.LMTextureManager;
 import work.nemonet.littlemaidneo.resource.util.ResourceHelper;
-import work.nemonet.littlemaidneo.setup.Registration;
+import work.nemonet.littlemaidneo.setup.ModRegistration;
 
 import java.util.Collection;
 
@@ -33,20 +33,22 @@ public class LittleMaidNeoClient {
         modEventBus.addListener(this::onRegisterReloadListeners);
         modEventBus.addListener(this::onRegisterRenderers);
         modEventBus.addListener(this::onRegisterKeyMappings);
+        modEventBus.addListener(this::onRegisterMenuScreens);
     }
 
     private void onClientSetup(FMLClientSetupEvent event) {
-        event.enqueueWork(() -> {
-            MenuScreens.register(Registration.LITTLE_MAID_SCREEN_HANDLER.get(), LittleMaidScreen::new);
-            LMKeys.init();
-        });
+        event.enqueueWork(LMKeys::init);
+    }
+
+    private void onRegisterMenuScreens(RegisterMenuScreensEvent event) {
+        event.register(ModRegistration.LITTLE_MAID_SCREEN_HANDLER.get(), LittleMaidScreen::new);
     }
 
     private void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event) {
-        event.registerEntityRenderer(Registration.MULTI_MODEL_ENTITY.get(), MultiModelRenderer::new);
-        event.registerEntityRenderer(Registration.DUMMY_MODEL_ENTITY.get(), MultiModelRenderer::new);
-        event.registerEntityRenderer(Registration.LITTLE_MAID_ENTITY.get(), MaidModelRenderer::new);
-        event.registerEntityRenderer(Registration.MAID_SOUL_ENTITY.get(), MaidSoulRenderer::new);
+        event.registerEntityRenderer(ModRegistration.MULTI_MODEL_ENTITY.get(), MultiModelRenderer::new);
+        event.registerEntityRenderer(ModRegistration.DUMMY_MODEL_ENTITY.get(), MultiModelRenderer::new);
+        event.registerEntityRenderer(ModRegistration.LITTLE_MAID_ENTITY.get(), MaidModelRenderer::new);
+        event.registerEntityRenderer(ModRegistration.MAID_SOUL_ENTITY.get(), MaidSoulRenderer::new);
     }
 
     private void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
@@ -57,9 +59,10 @@ public class LittleMaidNeoClient {
         event.addRepositorySource(new LMPackProvider());
     }
 
-    private void onRegisterReloadListeners(RegisterClientReloadListenersEvent event) {
-        event.registerReloadListener((ResourceManager resourceManager) -> {
-            Collection<ResourceLocation> resourceLocations = resourceManager
+    private void onRegisterReloadListeners(AddClientReloadListenersEvent event) {
+        event.addListener(Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, "texture_loader"),
+                (net.minecraft.server.packs.resources.ResourceManagerReloadListener) resourceManager -> {
+            Collection<Identifier> resourceLocations = resourceManager
                     .listResources("textures/entity/littlemaid", s -> true)
                     .keySet();
             resourceLocations.forEach(resourcePath -> {

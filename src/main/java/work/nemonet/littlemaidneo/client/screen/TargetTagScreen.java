@@ -5,13 +5,16 @@ import net.neoforged.api.distmarker.OnlyIn;
 
 
 
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -21,7 +24,7 @@ import work.nemonet.littlemaidneo.client.screen.component.*;
 import work.nemonet.littlemaidneo.entity.targeting.TargetIdentifier;
 import work.nemonet.littlemaidneo.entity.targeting.TargetTagManager;
 import work.nemonet.littlemaidneo.entity.targeting.TargetingSystem;
-import work.nemonet.littlemaidneo.network.C2SSetTargetTagsPacket;
+import work.nemonet.littlemaidneo.network.NetworkHandler;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.*;
@@ -80,25 +83,25 @@ public class TargetTagScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         context.fill(0, 0, this.width, this.height, 0x40000000);
 
-        targetTagGui.render(context, mouseX, mouseY, delta);
+        targetTagGui.extractRenderState(context, mouseX, mouseY, delta);
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        return targetTagGui.mouseClicked(mouseX, mouseY, button);
+    public boolean mouseClicked(MouseButtonEvent event, boolean handled) {
+        return targetTagGui.mouseClicked(event, handled);
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
-        return targetTagGui.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+    public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
+        return targetTagGui.mouseDragged(event, deltaX, deltaY);
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        return targetTagGui.mouseReleased(mouseX, mouseY, button);
+    public boolean mouseReleased(MouseButtonEvent event) {
+        return targetTagGui.mouseReleased(event);
     }
 
     @Override
@@ -107,19 +110,19 @@ public class TargetTagScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (super.keyPressed(keyCode, scanCode, modifiers)) {
+    public boolean keyPressed(KeyEvent event) {
+        if (super.keyPressed(event)) {
             return true;
         }
-        return targetTagGui.keyPressed(keyCode, scanCode, modifiers);
+        return targetTagGui.keyPressed(event);
     }
 
     @Override
-    public boolean charTyped(char chr, int modifiers) {
-        if (targetTagGui.charTyped(chr, modifiers)) {
+    public boolean charTyped(CharacterEvent event) {
+        if (targetTagGui.charTyped(event)) {
             return true;
         }
-        return super.charTyped(chr, modifiers);
+        return super.charTyped(event);
     }
 
     @Override
@@ -136,7 +139,7 @@ public class TargetTagScreen extends Screen {
     public <T extends Entity & TargetTagManager> void send(
             Map<TargetIdentifier, Set<TargetingSystem.TargetTag>> updatedTargetTags) {
         // noinspection unchecked
-        C2SSetTargetTagsPacket.sendC2SPacket((T) entity, updatedTargetTags);
+        NetworkHandler.sendSetTargetTagsC2S((T) entity, updatedTargetTags);
     }
 
     public static class TargetTagGUIElement extends GUIElement implements ListGUIElement {
@@ -262,14 +265,14 @@ public class TargetTagScreen extends Screen {
         }
 
         @Override
-        public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
+        public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
             Font textRenderer = Minecraft.getInstance().font;
 
             // エンティティタイプ名を表示
             var entityTypeName = Component.translatable(this.targetIdentifier.getEntityType().getDescriptionId());
             int textWidth = textRenderer.width(entityTypeName);
             if (textWidth <= this.width) {
-                context.drawString(textRenderer, entityTypeName,
+                context.text(textRenderer, entityTypeName,
                         this.x, this.y, 0xFFFFFFFF, true);
             } else {
                 // 長すぎるテキストをスクロール表示
@@ -303,7 +306,7 @@ public class TargetTagScreen extends Screen {
 
                 // クリップ領域を設定してテキストを描画
                 context.enableScissor(this.x, this.y, this.x + displayWidth, this.y + textRenderer.lineHeight);
-                context.drawString(textRenderer, entityTypeNameStr,
+                context.text(textRenderer, entityTypeNameStr,
                         this.x - scrollOffset, this.y, 0xFFFFFFFF, true);
                 context.disableScissor();
             }
@@ -318,7 +321,7 @@ public class TargetTagScreen extends Screen {
             attackButton.setTooltip(Tooltip.create(
                     Component.translatable("gui.littlemaidrebirth.target_tag.tags." + attackState.translationKey)));
             attackButton.setPosition(buttonX, buttonY);
-            attackButton.render(context, mouseX, mouseY, delta);
+            attackButton.extractRenderState(context, mouseX, mouseY, delta);
             buttonX += attackButton.getWidth();
 
             // 武器ボタンの状態を更新
@@ -327,7 +330,7 @@ public class TargetTagScreen extends Screen {
             weaponButton.setTooltip(Tooltip.create(
                     Component.translatable("gui.littlemaidrebirth.target_tag.tags." + weaponState.translationKey)));
             weaponButton.setPosition(buttonX, buttonY);
-            weaponButton.render(context, mouseX, mouseY, delta);
+            weaponButton.extractRenderState(context, mouseX, mouseY, delta);
             buttonX += weaponButton.getWidth();
 
             // 接近ボタンの状態を更新
@@ -336,33 +339,33 @@ public class TargetTagScreen extends Screen {
             approachButton.setTooltip(Tooltip.create(
                     Component.translatable("gui.littlemaidrebirth.target_tag.tags." + approachState.translationKey)));
             approachButton.setPosition(buttonX, buttonY);
-            approachButton.render(context, mouseX, mouseY, delta);
+            approachButton.extractRenderState(context, mouseX, mouseY, delta);
         }
 
         @Override
-        public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        public boolean mouseClicked(MouseButtonEvent event, boolean handled) {
             // ボタンのクリック処理を先にチェック
             for (Button buttonWidget : this.buttons) {
-                if (buttonWidget.mouseClicked(mouseX, mouseY, button)) {
+                if (buttonWidget.mouseClicked(event, handled)) {
                     return true;
                 }
             }
 
-            if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
-                clickable.click(mouseX, mouseY);
+            if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+                clickable.click(event.x(), event.y());
             }
-            return super.mouseClicked(mouseX, mouseY, button);
+            return super.mouseClicked(event, handled);
         }
 
         @Override
-        public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        public boolean mouseReleased(MouseButtonEvent event) {
             // ボタンのクリック処理を先にチェック
             for (Button buttonWidget : this.buttons) {
-                if (buttonWidget.mouseReleased(mouseX, mouseY, button)) {
+                if (buttonWidget.mouseReleased(event)) {
                     return true;
                 }
             }
-            return super.mouseReleased(mouseX, mouseY, button);
+            return super.mouseReleased(event);
         }
 
         @Override

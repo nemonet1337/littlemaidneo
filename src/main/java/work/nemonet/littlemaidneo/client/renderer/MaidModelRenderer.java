@@ -1,84 +1,95 @@
 package work.nemonet.littlemaidneo.client.renderer;
 
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-
-
-
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.MultiBufferSource;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.MobRenderer;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.item.Items;
-import work.nemonet.littlemaidneo.client.renderer.MultiModelArmorLayer;
-import work.nemonet.littlemaidneo.client.renderer.MultiModelHeldItemLayer;
-import work.nemonet.littlemaidneo.client.renderer.MultiModelLightLayer;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import work.nemonet.littlemaidneo.LittleMaidNeo;
+import work.nemonet.littlemaidneo.config.LMRBConfig;
+import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
+import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 import work.nemonet.littlemaidneo.maidmodel.ModelMultiBase;
 import work.nemonet.littlemaidneo.multimodel.layer.MMMatrixStack;
-import work.nemonet.littlemaidneo.LMRBMod;
-import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
-import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 
 import static work.nemonet.littlemaidneo.maidmodel.IModelCaps.*;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-
-/**
- * メイド用レンダラ
- */
 @OnlyIn(Dist.CLIENT)
-public class MaidModelRenderer extends MobRenderer<LittleMaidEntity, LMMultiModel<LittleMaidEntity>> {
-    private static final ResourceLocation NULL_TEXTURE = ResourceLocation.fromNamespaceAndPath(LittleMaidNeo.MODID, "null");
+public class MaidModelRenderer extends MobRenderer<LittleMaidEntity, MaidRenderState, LMMultiModel<MaidRenderState>> {
+
+    private static final Identifier NULL_TEXTURE = Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, "null");
 
     public MaidModelRenderer(EntityRendererProvider.Context ctx) {
         super(ctx, new LMMultiModel<>(), 0.5F);
-        // エラー吐くので<>消した(ゴリ押し)
-        this.addLayer(new MultiModelArmorLayer(this));
-        this.addLayer(new MultiModelHeldItemLayer(this));
-        this.addLayer(new MultiModelLightLayer(this));
-        this.addLayer(new LMHeadFeatureRenderer<>(this, ctx.getModelSet()));
+        this.addLayer(new MultiModelSkinLayer<>(this));
+        this.addLayer(new MultiModelArmorLayer<>(this));
+        this.addLayer(new MultiModelHeldItemLayer<>(this));
+        this.addLayer(new MultiModelLightLayer<>(this));
+        this.addLayer(new LMHeadFeatureRenderer<>(this, ctx.getModelSet(), ctx.getPlayerSkinRenderCache()));
     }
 
     @Override
-    protected void setupRotations(LittleMaidEntity entity, PoseStack matrices, float bodyYaw,
-            float animationProgress, float tickDelta, float scale) {
-        super.setupRotations(entity, matrices, bodyYaw, animationProgress, tickDelta, scale);
+    public MaidRenderState createRenderState() {
+        return new MaidRenderState();
+    }
+
+    @Override
+    public void extractRenderState(LittleMaidEntity entity, MaidRenderState state, float partialTick) {
+        super.extractRenderState(entity, state, partialTick);
+        state.maidEntity = entity;
+        state.multiModel = entity;
+        state.entity = entity;
+        state.mainArm = entity.getMainArm();
+        state.mainHandItem = entity.getMainHandItem();
+        state.offHandItem = entity.getOffhandItem();
         entity.getModel(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD)
-                .ifPresent(model -> model.setupTransform(entity.getCaps(),
-                        new MMMatrixStack(matrices), animationProgress, bodyYaw, tickDelta));
-    }
-
-    @Override
-    protected void scale(LittleMaidEntity entity, PoseStack matrices, float amount) {
-        entity.getModel(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD)
-                .filter(model -> model instanceof ModelMultiBase)
-                .map(model -> (float) ((ModelMultiBase) model).getCapsValue(caps_ScaleFactor))
-                .ifPresent(scale -> matrices.scale(scale, scale, scale));
-    }
-
-    @Override
-    public void render(LittleMaidEntity livingEntity, float entityYaw, float partialTicks, PoseStack matrixStack,
-            MultiBufferSource vertexConsumerProvider, int light) {
-        ProfilerFiller profiler = Minecraft.getInstance().getProfiler();
-        profiler.push("littlemaidmodelloader:mm");
-        livingEntity.getModel(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD)
-                .filter(model -> model instanceof ModelMultiBase)
-                .ifPresent(model -> syncCaps(livingEntity, (ModelMultiBase) model, partialTicks));
+                .filter(m -> m instanceof ModelMultiBase)
+                .ifPresent(m -> syncCaps(entity, (ModelMultiBase) m, partialTick));
         for (IHasMultiModel.Part part : IHasMultiModel.Part.values()) {
-            livingEntity.getModel(IHasMultiModel.Layer.INNER, part)
-                    .filter(model -> model instanceof ModelMultiBase)
-                    .ifPresent(model -> syncCaps(livingEntity, (ModelMultiBase) model, partialTicks));
-            livingEntity.getModel(IHasMultiModel.Layer.OUTER, part)
-                    .filter(model -> model instanceof ModelMultiBase)
-                    .ifPresent(model -> syncCaps(livingEntity, (ModelMultiBase) model, partialTicks));
+            entity.getModel(IHasMultiModel.Layer.INNER, part)
+                    .filter(m -> m instanceof ModelMultiBase)
+                    .ifPresent(m -> syncCaps(entity, (ModelMultiBase) m, partialTick));
+            entity.getModel(IHasMultiModel.Layer.OUTER, part)
+                    .filter(m -> m instanceof ModelMultiBase)
+                    .ifPresent(m -> syncCaps(entity, (ModelMultiBase) m, partialTick));
         }
-        super.render(livingEntity, entityYaw, partialTicks, matrixStack, vertexConsumerProvider, light);
-        profiler.pop();
+    }
+
+    @Override
+    protected void setupRotations(MaidRenderState state, PoseStack matrices, float bodyYaw, float scale) {
+        super.setupRotations(state, matrices, bodyYaw, scale);
+        if (state.maidEntity == null) return;
+        state.maidEntity.getModel(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD)
+                .ifPresent(model -> model.setupTransform(state.maidEntity.getCaps(),
+                        new MMMatrixStack(matrices), state.ageInTicks, bodyYaw, state.partialTick));
+    }
+
+    @Override
+    protected void scale(MaidRenderState state, PoseStack matrices) {
+        if (state.maidEntity == null) return;
+        state.maidEntity.getModel(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD)
+                .filter(m -> m instanceof ModelMultiBase)
+                .map(m -> (float) ((ModelMultiBase) m).getCapsValue(caps_ScaleFactor))
+                .ifPresent(s -> matrices.scale(s, s, s));
+    }
+
+    @Override
+    public void submit(MaidRenderState state, PoseStack poseStack, SubmitNodeCollector submitNodeCollector, CameraRenderState camera) {
+        super.submit(state, poseStack, submitNodeCollector, camera);
+    }
+
+    @Override
+    public Identifier getTextureLocation(MaidRenderState state) {
+        if (state.maidEntity == null) return NULL_TEXTURE;
+        return state.maidEntity.getTexture(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD, false)
+                .orElse(NULL_TEXTURE);
     }
 
     public void syncCaps(LittleMaidEntity entity, ModelMultiBase model, float partialTicks) {
@@ -110,18 +121,11 @@ public class MaidModelRenderer extends MobRenderer<LittleMaidEntity, LMMultiMode
 
         model.setCapsValue(caps_aimedBow, entity.isAimingBow());
         model.setCapsValue(caps_isWait, TameableUtil.isWait(entity)
-                && (LMRBMod.getConfig().client.enableWaitPoseOnMoving
+                && (LMRBConfig.get().client.enableWaitPoseOnMoving
                         || entity.getDeltaMovement().lengthSqr() < 0.01));
         model.setCapsValue(caps_isContract, entity.isContract());
         model.setCapsValue(caps_isBloodsuck, entity.isBloodSuck());
         model.setCapsValue(caps_isClock, entity.getMainHandItem().getItem() == Items.CLOCK
                 || entity.getOffhandItem().getItem() == Items.CLOCK);
     }
-
-    @Override
-    public ResourceLocation getTextureLocation(LittleMaidEntity entity) {
-        return entity.getTexture(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD, false)
-                .orElse(NULL_TEXTURE);
-    }
-
 }

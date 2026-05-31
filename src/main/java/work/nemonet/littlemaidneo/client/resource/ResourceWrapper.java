@@ -3,12 +3,14 @@ package work.nemonet.littlemaidneo.client.resource;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackLocationInfo;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.PackType;
-import net.minecraft.server.packs.metadata.MetadataSectionSerializer;
+import net.minecraft.server.packs.metadata.MetadataSectionType;
+import net.minecraft.server.packs.metadata.pack.PackFormat;
 import net.minecraft.server.packs.metadata.pack.PackMetadataSection;
+import net.minecraft.util.InclusiveRange;
 import net.minecraft.server.packs.resources.IoSupplier;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -29,8 +31,8 @@ import java.util.zip.ZipFile;
 public class ResourceWrapper implements PackResources {
     public static final ResourceWrapper INSTANCE = new ResourceWrapper();
     public static final PackMetadataSection PACK_INFO =
-            new PackMetadataSection(Component.literal("LittleMaid ModelLoader!!!"), 15, java.util.Optional.empty());
-    protected static final HashMap<ResourceLocation, Resource> PATHS = Maps.newHashMap();
+            new PackMetadataSection(Component.literal("LittleMaid ModelLoader!!!"), new InclusiveRange<>(PackFormat.of(15)));
+    protected static final HashMap<Identifier, Resource> PATHS = Maps.newHashMap();
 
     private static final PackLocationInfo LOCATION_INFO = new PackLocationInfo(
             "littlemaidneo",
@@ -46,7 +48,7 @@ public class ResourceWrapper implements PackResources {
 
     @Nullable
     @Override
-    public IoSupplier<InputStream> getResource(PackType type, ResourceLocation location) {
+    public IoSupplier<InputStream> getResource(PackType type, Identifier location) {
         Resource resource = PATHS.get(location);
         if (resource == null) {
             return null;
@@ -69,8 +71,8 @@ public class ResourceWrapper implements PackResources {
 
     @Nullable
     @Override
-    public <T> T getMetadataSection(MetadataSectionSerializer<T> metaReader) {
-        if (metaReader.getMetadataSectionName().equals("pack")) {
+    public <T> T getMetadataSection(MetadataSectionType<T> metaReader) throws java.io.IOException {
+        if (metaReader.name().equals("pack")) {
             return (T) PACK_INFO;
         }
         return null;
@@ -91,7 +93,7 @@ public class ResourceWrapper implements PackResources {
 
     }
 
-    public static void addResourcePath(ResourceLocation resourcePath, String path, Path homePath, boolean isArchive) {
+    public static void addResourcePath(Identifier resourcePath, String path, Path homePath, boolean isArchive) {
         PATHS.put(resourcePath, new Resource(path, homePath, isArchive));
     }
 

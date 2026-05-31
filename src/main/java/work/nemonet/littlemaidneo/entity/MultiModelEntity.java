@@ -1,8 +1,9 @@
 package work.nemonet.littlemaidneo.entity;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EntityType;
@@ -25,7 +26,7 @@ import work.nemonet.littlemaidneo.resource.holder.TextureHolder;
 import work.nemonet.littlemaidneo.resource.manager.LMTextureManager;
 import work.nemonet.littlemaidneo.resource.util.TextureColors;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 import java.util.Optional;
 
@@ -58,20 +59,20 @@ public class MultiModelEntity extends PathfinderMob implements IHasMultiModel, S
     }
 
     @Override
-    public void addAdditionalSaveData(CompoundTag nbt) {
-        super.addAdditionalSaveData(nbt);
-        multiModel.writeToNbt(nbt);
+    public void addAdditionalSaveData(ValueOutput output) {
+        super.addAdditionalSaveData(output);
+        multiModel.writeToNbt(output);
     }
 
     @Override
-    public void readAdditionalSaveData(CompoundTag nbt) {
-        super.readAdditionalSaveData(nbt);
-        multiModel.readFromNbt(nbt);
+    public void readAdditionalSaveData(ValueInput input) {
+        super.readAdditionalSaveData(input);
+        multiModel.readFromNbt(input);
     }
 
     @Override
     public InteractionResult mobInteract(Player player, InteractionHand hand) {
-        if (player.level().isClientSide) {
+        if (player.level().isClientSide()) {
             Minecraft.getInstance().setScreen(new ModelSelectScreen(
                     Component.translatable("screen.littlemaidneo.model_select"), this.level(), this));
             return InteractionResult.SUCCESS;
@@ -95,7 +96,7 @@ public class MultiModelEntity extends PathfinderMob implements IHasMultiModel, S
     }
 
     @Override
-    public Optional<ResourceLocation> getTexture(Layer layer, Part part, boolean isLight) {
+    public Optional<Identifier> getTexture(Layer layer, Part part, boolean isLight) {
         return multiModel.getTexture(layer, part, isLight);
     }
 

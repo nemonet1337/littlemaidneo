@@ -2,14 +2,15 @@ package work.nemonet.littlemaidneo.entity.targeting;
 
 import java.util.Map;
 import java.util.Set;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 
 public interface TargetTagManager {
     Set<TargetingSystem.TargetTag> getTargetTag(TargetIdentifier id);
 
-    void writeTargetTags(CompoundTag nbt);
+    void writeTargetTags(ValueOutput output);
 
-    void readTargetTags(CompoundTag nbt);
+    void readTargetTags(ValueInput input);
 
     Sync getTargetTagsSync();
 

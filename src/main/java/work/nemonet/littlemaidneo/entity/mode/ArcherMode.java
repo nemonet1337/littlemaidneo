@@ -9,7 +9,7 @@ import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import work.nemonet.littlemaidneo.resource.util.LMSounds;
-import work.nemonet.littlemaidneo.LMRBMod;
+import work.nemonet.littlemaidneo.config.LMRBConfig;
 import work.nemonet.littlemaidneo.api.mode.IRangedWeapon;
 import work.nemonet.littlemaidneo.api.mode.ModeType;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
@@ -30,10 +30,17 @@ public class ArcherMode extends AbstractArcherMode<Item> {
                 && super.shouldExecute();
     }
 
-    // TODO 処理の見直し
     @Override
     protected void tickRangedAttack(LivingEntity target, ItemStack itemStack, boolean canSee, double distanceSq,
             float maxRange) {
+        if (!canSee) {
+            if (this.mob.isUsingItem()) {
+                this.mob.stopUsingItem();
+            }
+            this.mob.setChargingCrossbow(false);
+            return;
+        }
+
         if (itemStack.getItem() instanceof BowItem) {
             if (0 < --cool) {
                 return;
@@ -49,6 +56,7 @@ public class ArcherMode extends AbstractArcherMode<Item> {
                         e -> e instanceof LivingEntity living && this.mob.isFriend(living));
                 if (result.isPresent()) {
                     this.cool = 10;
+                    this.mob.stopUsingItem();
                 } else {
                     this.cool = 5;
                     this.mob.stopUsingItem();
@@ -99,7 +107,7 @@ public class ArcherMode extends AbstractArcherMode<Item> {
     protected int getInterval(ItemStack itemStack) {
         return Mth.ceil((itemStack.getItem() instanceof IRangedWeapon rangedWeapon
                 ? rangedWeapon.getInterval_LMRB(itemStack, this.mob)
-                : 20) / LMRBMod.getConfig().work.archerShootRateFactor);
+                : 20) / LMRBConfig.get().work.archerShootRateFactor);
     }
 
     @Override
@@ -107,7 +115,7 @@ public class ArcherMode extends AbstractArcherMode<Item> {
         return (itemStack.getItem() instanceof IRangedWeapon rangedWeapon
                 ? rangedWeapon.getMaxRange_LMRB(itemStack, this.mob)
                 : 16F)
-                * LMRBMod.getConfig().work.archerShootDistanceFactor;
+                * LMRBConfig.get().work.archerShootDistanceFactor;
     }
 
     @Override

@@ -98,7 +98,7 @@ public class CookingMode extends Mode {
     }
 
     public boolean isFuel(ItemStack stack) {
-        return AbstractFurnaceBlockEntity.isFuel(stack);
+        return mob.level().fuelValues().isFuel(stack);
     }
 
     /**
@@ -177,7 +177,9 @@ public class CookingMode extends Mode {
 
     public Optional<? extends AbstractCookingRecipe> getRecipe(ItemStack stack,
             RecipeType<? extends AbstractCookingRecipe> recipeType) {
-        return mob.level().getRecipeManager()
+        var server = mob.level().getServer();
+        if (server == null) return Optional.empty();
+        return server.getRecipeManager()
                 .getRecipeFor(recipeType, new net.minecraft.world.item.crafting.SingleRecipeInput(stack), mob.level())
                 .map(net.minecraft.world.item.crafting.RecipeHolder::value);
     }
@@ -393,13 +395,13 @@ public class CookingMode extends Mode {
     @Override
     public void writeModeData(CompoundTag nbt) {
         if (furnacePos != null)
-            nbt.put("FurnacePos", NbtUtils.writeBlockPos(furnacePos));
+            nbt.putLong("FurnacePos", furnacePos.asLong());
     }
 
     @Override
     public void readModeData(CompoundTag nbt) {
         if (nbt.contains("FurnacePos"))
-            furnacePos = NbtUtils.readBlockPos(nbt, "FurnacePos").orElse(null);
+            furnacePos = BlockPos.of(nbt.getLongOr("FurnacePos", 0L));
     }
 
 }

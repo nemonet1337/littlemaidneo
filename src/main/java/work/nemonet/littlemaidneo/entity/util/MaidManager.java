@@ -2,10 +2,13 @@ package work.nemonet.littlemaidneo.entity.util;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity.MaidSoul;
 import work.nemonet.littlemaidneo.entity.MaidSoulEntity;
@@ -23,9 +26,9 @@ public interface MaidManager {
 
     List<LMInfo> getMaidList();
 
-    void writeMaidManager(CompoundTag nbt);
+    void writeMaidManager(ValueOutput output);
 
-    void readMaidManager(CompoundTag nbt);
+    void readMaidManager(ValueInput input);
 
     List<LittleMaidEntity.MaidSoul> getMaidSouls();
 
@@ -60,40 +63,44 @@ public interface MaidManager {
             return status;
         }
 
-        public void write(CompoundTag infoNbt) {
-            infoNbt.putString("name", name);
-            infoNbt.putString("status", status.name());
-            infoNbt.putUUID("id", id);
-            infoNbt.putIntArray("lastPos", new int[]{lastPos.getX(), lastPos.getY(), lastPos.getZ()});
-            infoNbt.putString("worldId", worldId);
+        public void write(ValueOutput output) {
+            output.putString("name", name);
+            output.putString("status", status.name());
+            output.store("id", UUIDUtil.CODEC, id);
+            output.putIntArray("lastPos", new int[]{lastPos.getX(), lastPos.getY(), lastPos.getZ()});
+            output.putString("worldId", worldId);
             var entityId = getEntityId();
             if (entityId != -1) {
-                infoNbt.putInt("entityId", entityId);
+                output.putInt("entityId", entityId);
             }
         }
 
-        public static LMInfo read(CompoundTag infoNbt) {
-            String name = infoNbt.getString("name");
-            Status status = Status.valueOf(infoNbt.getString("status"));
-            UUID id = infoNbt.getUUID("id");
-            BlockPos lastPos = BlockPos.ZERO;
-            if (infoNbt.contains("lastPos")) {
-                int[] lastPosArray = infoNbt.getIntArray("lastPos");
-                lastPos = new BlockPos(lastPosArray[0], lastPosArray[1], lastPosArray[2]);
+        public static LMInfo read(ValueInput input) {
+            String name = input.getStringOr("name", "");
+            Status status;
+            try {
+                status = Status.valueOf(input.getStringOr("status", Status.ALIVE.name()));
+            } catch (IllegalArgumentException e) {
+                status = Status.ALIVE;
             }
-            String worldId = infoNbt.getString("worldId");
-            int entityId = -1;
-            if (infoNbt.contains("entityId")) {
-                entityId = infoNbt.getInt("entityId");
-            }
+            UUID id = input.read("id", UUIDUtil.CODEC).orElse(null);
+            if (id == null) return null;
+            BlockPos lastPos = input.getIntArray("lastPos")
+                    .filter(a -> a.length >= 3)
+                    .map(a -> new BlockPos(a[0], a[1], a[2]))
+                    .orElse(BlockPos.ZERO);
+            String worldId = input.getStringOr("worldId", "");
+            int entityId = input.getIntOr("entityId", -1);
 
             if (status == Status.ALIVE) {
                 return new MaidLMInfo(id, name, lastPos, worldId, null, entityId);
             } else if (status == Status.SOUL_ENTITY) {
-                var soul = LittleMaidEntity.MaidSoul.fromNbt(infoNbt.getCompound("soul"));
+                var soulNbt = input.read("soul", CompoundTag.CODEC).orElse(null);
+                var soul = soulNbt != null ? LittleMaidEntity.MaidSoul.fromNbt(soulNbt) : null;
                 return new SoulEntityLMInfo(id, name, lastPos, worldId, null, soul, entityId);
             } else {
-                var soul = LittleMaidEntity.MaidSoul.fromNbt(infoNbt.getCompound("soul"));
+                var soulNbt = input.read("soul", CompoundTag.CODEC).orElse(null);
+                var soul = soulNbt != null ? LittleMaidEntity.MaidSoul.fromNbt(soulNbt) : null;
                 return new SoulLMInfo(id, name, soul);
             }
         }
@@ -138,7 +145,7 @@ public interface MaidManager {
 
         public static MaidLMInfo create(LittleMaidEntity maid, boolean loaded) {
             return new MaidLMInfo(maid.getUUID(), maid.getName().getString(), maid.blockPosition(),
-                    maid.level().dimension().location().toString(),
+                    maid.level().dimension().identifier().toString(),
                     loaded ? maid : null, loaded ? maid.getId() : -1);
         }
 
@@ -181,14 +188,14 @@ public interface MaidManager {
 
         public static SoulEntityLMInfo create(MaidSoulEntity soul, boolean loaded) {
             return new SoulEntityLMInfo(soul.getSoul().getUuid(), soul.getSoul().getName(), soul.blockPosition(),
-                    soul.level().dimension().location().toString(),
+                    soul.level().dimension().identifier().toString(),
                     loaded ? soul : null, soul.getSoul(), loaded ? soul.getId() : -1);
         }
 
         @Override
-        public void write(CompoundTag infoNbt) {
-            super.write(infoNbt);
-            infoNbt.put("soul", soul.getNbt());
+        public void write(ValueOutput output) {
+            super.write(output);
+            output.store("soul", CompoundTag.CODEC, soul.getNbt());
         }
 
         @Override
@@ -224,10 +231,10 @@ public interface MaidManager {
         }
 
         @Override
-        public void write(CompoundTag infoNbt) {
-            super.write(infoNbt);
+        public void write(ValueOutput output) {
+            super.write(output);
             if (this.soul != null) {
-                infoNbt.put("soul", soul.getNbt());
+                output.store("soul", CompoundTag.CODEC, soul.getNbt());
             }
         }
 

@@ -1,10 +1,10 @@
 package work.nemonet.littlemaidneo.maidmodel;
 
-import com.google.common.collect.Lists;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.WebBlock;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -13,6 +13,8 @@ import net.minecraft.world.entity.animal.Animal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.HumanoidArm;
+
+import java.util.ArrayList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.util.Mth;
@@ -45,12 +47,22 @@ public class EntityCaps implements IModelCaps {
         register("health", caps_health, (entity, arg) -> (int) entity.getHealth());
         register("ticksExisted", caps_ticksExisted, (entity, arg) -> entity.tickCount);
         register("currentEquippedItem", caps_currentEquippedItem, (entity, arg) -> {
-            List<ItemStack> items = Lists.newArrayList(entity.getAllSlots());
+            List<ItemStack> items = new ArrayList<>();
+            items.add(entity.getMainHandItem());
+            items.add(entity.getOffhandItem());
+            items.add(entity.getItemBySlot(EquipmentSlot.FEET));
+            items.add(entity.getItemBySlot(EquipmentSlot.LEGS));
+            items.add(entity.getItemBySlot(EquipmentSlot.CHEST));
+            items.add(entity.getItemBySlot(EquipmentSlot.HEAD));
             ItemStack item = items.get((Integer) arg[0]);
             return item.isEmpty() ? null : item;
         });
         register("currentArmor", caps_currentArmor, (entity, arg) -> {
-            List<ItemStack> armors = Lists.newArrayList(entity.getArmorSlots());
+            List<ItemStack> armors = new ArrayList<>();
+            armors.add(entity.getItemBySlot(EquipmentSlot.FEET));
+            armors.add(entity.getItemBySlot(EquipmentSlot.LEGS));
+            armors.add(entity.getItemBySlot(EquipmentSlot.CHEST));
+            armors.add(entity.getItemBySlot(EquipmentSlot.HEAD));
             ItemStack armor = armors.get((Integer) arg[0]);
             return armor.isEmpty() ? null : armor;
         });
@@ -61,7 +73,7 @@ public class EntityCaps implements IModelCaps {
         register("currentRightHandItem", caps_currentRightHandItem, (entity, arg) ->
                 entity.getMainArm() == HumanoidArm.RIGHT ? entity.getMainHandItem() : entity.getOffhandItem());
 
-        register("isWet", caps_isWet, (entity, arg) -> entity.isInWaterRainOrBubble());
+        register("isWet", caps_isWet, (entity, arg) -> entity.isInWaterOrRain());
         register("isDead", caps_isDead, (entity, arg) -> !entity.isAlive());
         register("isInWeb", caps_isInWeb, (entity, arg) -> {
             AABB box = entity.getBoundingBox();
@@ -166,8 +178,8 @@ public class EntityCaps implements IModelCaps {
         register("isRidingPlayer", caps_isRidingPlayer, (entity, arg) -> entity.getVehicle() instanceof Player);
 
         register("WorldTotalTime", caps_WorldTotalTime, (entity, arg) -> entity.level().getGameTime());
-        register("WorldTime", caps_WorldTime, (entity, arg) -> entity.level().getDayTime());
-        register("MoonPhase", caps_MoonPhase, (entity, arg) -> entity.level().getMoonPhase());
+        register("WorldTime", caps_WorldTime, (entity, arg) -> entity.level().getGameTime() % 24000L);
+        register("MoonPhase", caps_MoonPhase, (entity, arg) -> (int)(entity.level().getGameTime() / 24000L) % 8);
 
         register("height", caps_height, (entity, arg) -> entity.getBbHeight());
         register("width", caps_width, (entity, arg) -> entity.getBbWidth());

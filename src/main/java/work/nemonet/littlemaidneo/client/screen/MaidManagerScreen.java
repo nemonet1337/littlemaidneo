@@ -6,12 +6,15 @@ import net.neoforged.api.distmarker.OnlyIn;
 
 
 import net.minecraft.ChatFormatting;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -26,8 +29,8 @@ import work.nemonet.littlemaidneo.client.screen.component.ListGUIElement;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.util.MaidManager;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
-import work.nemonet.littlemaidneo.network.C2SCallWaitPacket;
-import work.nemonet.littlemaidneo.network.C2SOpenInventoryPacket;
+import work.nemonet.littlemaidneo.network.C2SCallWaitPayload;
+import work.nemonet.littlemaidneo.network.NetworkHandler;
 
 import java.util.Comparator;
 import java.util.List;
@@ -65,7 +68,7 @@ public class MaidManagerScreen extends Screen {
         };
 
         // LMInfoのリストをGUI要素に変換
-        String currentWorldId = this.minecraft.level.dimension().location().toString();
+        String currentWorldId = this.minecraft.level.dimension().identifier().toString();
 
         List<LMInfoGUIElement> elements = lmInfoList.stream()
                 .map(info -> new LMInfoGUIElement(this.minecraft.font, info))
@@ -86,25 +89,25 @@ public class MaidManagerScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         context.fill(0, 0, this.width, this.height, 0x40000000);
 
-        lmInfoGui.render(context, mouseX, mouseY, delta);
+        lmInfoGui.extractRenderState(context, mouseX, mouseY, delta);
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        return lmInfoGui.mouseClicked(mouseX, mouseY, button);
+    public boolean mouseClicked(MouseButtonEvent event, boolean handled) {
+        return lmInfoGui.mouseClicked(event, handled);
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
-        return lmInfoGui.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+    public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
+        return lmInfoGui.mouseDragged(event, deltaX, deltaY);
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        return lmInfoGui.mouseReleased(mouseX, mouseY, button);
+    public boolean mouseReleased(MouseButtonEvent event) {
+        return lmInfoGui.mouseReleased(event);
     }
 
     @Override
@@ -113,19 +116,19 @@ public class MaidManagerScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (super.keyPressed(keyCode, scanCode, modifiers)) {
+    public boolean keyPressed(KeyEvent event) {
+        if (super.keyPressed(event)) {
             return true;
         }
-        return lmInfoGui.keyPressed(keyCode, scanCode, modifiers);
+        return lmInfoGui.keyPressed(event);
     }
 
     @Override
-    public boolean charTyped(char chr, int modifiers) {
-        if (lmInfoGui.charTyped(chr, modifiers)) {
+    public boolean charTyped(CharacterEvent event) {
+        if (lmInfoGui.charTyped(event)) {
             return true;
         }
-        return super.charTyped(chr, modifiers);
+        return super.charTyped(event);
     }
 
     private static Comparator<LMInfoGUIElement> createSortComparator(String currentWorldId) {
@@ -186,10 +189,10 @@ public class MaidManagerScreen extends Screen {
                         lmInfo.getEntityClient(Minecraft.getInstance().level)
                                 .filter(e -> e instanceof LittleMaidEntity)
                                 .map(e -> (LittleMaidEntity) e)
-                                .ifPresent(e -> C2SCallWaitPacket.sendC2SPacket(e,
+                                .ifPresent(e -> NetworkHandler.sendCallWaitC2S(e,
                                         TameableUtil.isWait(e)
-                                                ? C2SCallWaitPacket.State.CALL
-                                                : C2SCallWaitPacket.State.WAIT));
+                                                ? C2SCallWaitPayload.State.CALL
+                                                : C2SCallWaitPayload.State.WAIT));
                     })
                     .size(30, 20)
                     .build();
@@ -203,7 +206,7 @@ public class MaidManagerScreen extends Screen {
 
             // ワールドの同一性をチェック
             String worldId = lmInfo.getWorldId();
-            if (worldId.isEmpty() || !worldId.equals(client.level.dimension().location().toString())) {
+            if (worldId.isEmpty() || !worldId.equals(client.level.dimension().identifier().toString())) {
                 return false;
             }
 
@@ -226,14 +229,12 @@ public class MaidManagerScreen extends Screen {
             // エンティティが存在し、8ブロック以内の場合のみインベントリを開く
             if (canInteractWithMaid()) {
                 lmInfo.getEntityClient(client.level)
-                        .ifPresent(entity -> {
-                            C2SOpenInventoryPacket.sendC2SPacket(entity);
-                        });
+                        .ifPresent(entity -> NetworkHandler.sendOpenInventoryC2S(entity));
             }
         }
 
         @Override
-        public void render(GuiGraphics context, int mouseX, int mouseY, float delta) {
+        public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
             var client = Minecraft.getInstance();
             if (client == null || client.level == null || client.player == null) {
                 return;
@@ -263,7 +264,7 @@ public class MaidManagerScreen extends Screen {
                         .append(loadedText);
             }
 
-            context.drawString(textRenderer, statusText,
+            context.text(textRenderer, statusText,
                     this.x, this.y + textRenderer.lineHeight, 0xFFCCCCCC, true);
 
             // 3. ワールド名を表示
@@ -284,7 +285,7 @@ public class MaidManagerScreen extends Screen {
                         pos.getX(), pos.getY(), pos.getZ())).copy();
 
                 // 距離計算（同一ワールドの場合のみ）
-                if (worldId.equals(client.level.dimension().location().toString())) {
+                if (worldId.equals(client.level.dimension().identifier().toString())) {
                     double squaredDistance = client.player
                             .distanceToSqr(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5);
                     double distance = Math.sqrt(squaredDistance);
@@ -308,7 +309,7 @@ public class MaidManagerScreen extends Screen {
                         // モード名を表示
                         if (e instanceof LittleMaidEntity littleMaid) {
                             littleMaid.getModeName()
-                                    .ifPresent(modeName -> context.drawString(textRenderer, modeName,
+                                    .ifPresent(modeName -> context.text(textRenderer, modeName,
                                             this.x, this.y + textRenderer.lineHeight * 4,
                                             0xFFFFFFFF, true));
                         }
@@ -317,7 +318,7 @@ public class MaidManagerScreen extends Screen {
                         int entityX = this.x + this.width - 20;
                         int entityY = this.y + this.height - textRenderer.lineHeight;
                         int entitySize = 20;
-                        InventoryScreen.renderEntityInInventoryFollowsMouse(context,
+                        InventoryScreen.extractEntityInInventoryFollowsMouse(context,
                                 entityX - entitySize, entityY - entitySize * 2,
                                 entityX + entitySize, entityY,
                                 entitySize, 0.0625f, mouseX, mouseY, e);
@@ -328,7 +329,7 @@ public class MaidManagerScreen extends Screen {
                 int buttonX = this.x;
                 int buttonY = this.y + this.height - textRenderer.lineHeight - 20;
                 inventoryButton.setPosition(buttonX, buttonY);
-                inventoryButton.render(context, mouseX, mouseY, delta);
+                inventoryButton.extractRenderState(context, mouseX, mouseY, delta);
                 lmInfo.getEntityClient(client.level)
                         .filter(e -> e instanceof LittleMaidEntity)
                         .map(e -> (LittleMaidEntity) e)
@@ -341,30 +342,30 @@ public class MaidManagerScreen extends Screen {
                         });
                 buttonX += inventoryButton.getWidth();
                 callWaitButton.setPosition(buttonX, buttonY);
-                callWaitButton.render(context, mouseX, mouseY, delta);
+                callWaitButton.extractRenderState(context, mouseX, mouseY, delta);
             }
         }
 
         @Override
-        public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        public boolean mouseClicked(MouseButtonEvent event, boolean handled) {
             // インベントリボタンのクリック処理
             if (canInteractWithMaid()
-                    && (inventoryButton.mouseClicked(mouseX, mouseY, button)
-                            || callWaitButton.mouseClicked(mouseX, mouseY, button))) {
+                    && (inventoryButton.mouseClicked(event, handled)
+                            || callWaitButton.mouseClicked(event, handled))) {
                 return true;
             }
-            return super.mouseClicked(mouseX, mouseY, button);
+            return super.mouseClicked(event, handled);
         }
 
         @Override
-        public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        public boolean mouseReleased(MouseButtonEvent event) {
             // インベントリボタンのリリース処理
             if (canInteractWithMaid()
-                    && (inventoryButton.mouseReleased(mouseX, mouseY, button)
-                            || callWaitButton.mouseReleased(mouseX, mouseY, button))) {
+                    && (inventoryButton.mouseReleased(event)
+                            || callWaitButton.mouseReleased(event))) {
                 return true;
             }
-            return super.mouseReleased(mouseX, mouseY, button);
+            return super.mouseReleased(event);
         }
 
         @Override
@@ -384,16 +385,16 @@ public class MaidManagerScreen extends Screen {
         /**
          * 長いテキストをスクロール表示するヘルパーメソッド
          */
-        private void drawScrollingText(GuiGraphics context, Font textRenderer, String text,
+        private void drawScrollingText(GuiGraphicsExtractor context, Font textRenderer, String text,
                 int x, int y, int availableWidth, int color, boolean shadow) {
             drawScrollingText(context, textRenderer, Component.nullToEmpty(text), x, y, availableWidth, color, shadow);
         }
 
-        private void drawScrollingText(GuiGraphics context, Font textRenderer, Component text,
+        private void drawScrollingText(GuiGraphicsExtractor context, Font textRenderer, Component text,
                 int x, int y, int availableWidth, int color, boolean shadow) {
             int textWidth = textRenderer.width(text);
             if (textWidth <= availableWidth) {
-                context.drawString(textRenderer, text, x, y, color, shadow);
+                context.text(textRenderer, text, x, y, color, shadow);
             } else {
                 // 長すぎるテキストをスクロール表示
                 double seconds = Util.getMillis() / 1000.0;
@@ -411,7 +412,7 @@ public class MaidManagerScreen extends Screen {
                 }
 
                 context.enableScissor(x, y, x + displayWidth, y + textRenderer.lineHeight);
-                context.drawString(textRenderer, text, x - scrollOffset, y, color, shadow);
+                context.text(textRenderer, text, x - scrollOffset, y, color, shadow);
                 context.disableScissor();
             }
         }

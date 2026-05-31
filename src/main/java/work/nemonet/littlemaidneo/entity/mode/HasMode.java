@@ -1,7 +1,8 @@
 package work.nemonet.littlemaidneo.entity.mode;
 
 
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import work.nemonet.littlemaidneo.api.mode.Mode;
 
 import java.util.Optional;
@@ -19,11 +20,11 @@ public interface HasMode {
     /**
      * モードの情報をNBTに書き出す
      */
-    void writeModeData(CompoundTag nbt);
+    void writeModeData(ValueOutput output);
 
     /**
      * モードの情報をNBTから読み込む
      */
-    void readModeData(CompoundTag nbt);
+    void readModeData(ValueInput input);
 
 }

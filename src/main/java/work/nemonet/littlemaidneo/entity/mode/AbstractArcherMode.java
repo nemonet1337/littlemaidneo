@@ -98,7 +98,7 @@ public abstract class AbstractArcherMode<T> extends AbstractBattleMode<T> {
         Vec3 start = this.mob.getEyePosition(1F);
         Vec3 end = start.add(toTargetVec.scale(maxRange));
         AABB box = new AABB(start, end).inflate(1D);
-        var result = ProjectileUtil.getEntityHitResult(mob.level(), this.mob, start, end, box, predicate);
+        var result = ProjectileUtil.getEntityHitResult(mob.level(), this.mob, start, end, box, predicate, 1.0f);
         return Optional.ofNullable(result);
     }
 

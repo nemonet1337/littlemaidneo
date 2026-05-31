@@ -4,16 +4,14 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.NbtUtils;
-import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import work.nemonet.littlemaidneo.resource.util.LMSounds;
-import work.nemonet.littlemaidneo.LMRBMod;
+import work.nemonet.littlemaidneo.config.LMRBConfig;
 import work.nemonet.littlemaidneo.entity.util.MovingMode;
 import work.nemonet.littlemaidneo.entity.util.SalaryBoxPosListener;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
@@ -70,7 +68,7 @@ public class LMItemContractable<T extends LittleMaidEntity> extends ItemContract
             if (pos.distToCenterSqr(mob.position()) < farthestPos.distToCenterSqr(mob.position())) {
                 salaryBoxPosSet.remove(farthestPos);
                 salaryBoxPosSet.add(pos);
-                if (this.mob.getCommandSenderWorld() instanceof ServerLevel serverWorld) {
+                if (this.mob.level() instanceof ServerLevel serverWorld) {
                     var particlePos = pos.getCenter();
 
                     serverWorld.sendParticles(ParticleTypes.FIREWORK,
@@ -96,38 +94,33 @@ public class LMItemContractable<T extends LittleMaidEntity> extends ItemContract
     }
 
     @Override
-    public void readContractable(CompoundTag nbt) {
-        super.readContractable(nbt);
+    public void readContractable(ValueInput input) {
+        super.readContractable(input);
 
         salaryBoxPosSet.clear();
-        if (nbt.contains("salaryBoxPosList")) {
-            var boxPosList = nbt.getList("salaryBoxPosList", Tag.TAG_COMPOUND);
-            boxPosList.forEach(posTag -> {
-                if (posTag instanceof CompoundTag posTagCompound) {
-                    NbtUtils.readBlockPos(posTagCompound, "pos").ifPresent(salaryBoxPosSet::add);
-                }
-            });
+        for (var entry : input.childrenListOrEmpty("salaryBoxPosList")) {
+            entry.read("pos", BlockPos.CODEC).ifPresent(salaryBoxPosSet::add);
+        }
+        if (!salaryBoxPosSet.isEmpty()) {
             checkAndFixSalaryBoxPosSize();
         }
     }
 
     @Override
-    public void writeContractable(CompoundTag nbt) {
-        super.writeContractable(nbt);
+    public void writeContractable(ValueOutput output) {
+        super.writeContractable(output);
 
         if (!salaryBoxPosSet.isEmpty()) {
             checkAndFixSalaryBoxPosSize();
-            ListTag salaryBoxPosList = new ListTag();
+            var list = output.childrenList("salaryBoxPosList");
             for (BlockPos pos : salaryBoxPosSet) {
-                var posTag = NbtUtils.writeBlockPos(pos);
-                salaryBoxPosList.add(posTag);
+                list.addChild().store("pos", BlockPos.CODEC, pos);
             }
-            nbt.put("salaryBoxPosList", salaryBoxPosList);
         }
     }
 
     protected int getMaxMemorySalaryBoxPos() {
-        return LMRBMod.getConfig().contract.maxMemorySalaryBoxPos;
+        return LMRBConfig.get().contract.maxMemorySalaryBoxPos;
     }
 
     protected void checkAndFixSalaryBoxPosSize() {

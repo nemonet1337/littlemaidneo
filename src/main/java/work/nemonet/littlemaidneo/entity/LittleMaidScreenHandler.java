@@ -1,8 +1,7 @@
 package work.nemonet.littlemaidneo.entity;
 
-import com.mojang.datafixers.util.Pair;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Inventory;
@@ -11,7 +10,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import work.nemonet.littlemaidneo.entity.util.GuiEntitySupplier;
-import work.nemonet.littlemaidneo.setup.Registration;
+import work.nemonet.littlemaidneo.setup.ModRegistration;
 
 public class LittleMaidScreenHandler extends AbstractContainerMenu implements GuiEntitySupplier<LittleMaidEntity> {
     private final Inventory playerInventory;
@@ -28,7 +27,7 @@ public class LittleMaidScreenHandler extends AbstractContainerMenu implements Gu
 
     public LittleMaidScreenHandler(int syncId, Inventory playerInventory, int entityId, int unpaidDays,
             int workItemSlotSize) {
-        super(Registration.LITTLE_MAID_SCREEN_HANDLER.get(), syncId);
+        super(ModRegistration.LITTLE_MAID_SCREEN_HANDLER.get(), syncId);
         this.playerInventory = playerInventory;
         this.unpaidDays = unpaidDays;
         this.workItemSlotSize = workItemSlotSize;
@@ -250,7 +249,6 @@ public class LittleMaidScreenHandler extends AbstractContainerMenu implements Gu
     }
 
     private void layoutMaidInventorySlots() {
-        ResourceLocation atlas = ResourceLocation.parse("textures/atlas/blocks.png");
         // index 0~17
         addSlotBox(maidInventory, 0, 8, 76, 9, 18, 2, 18);
 
@@ -258,8 +256,8 @@ public class LittleMaidScreenHandler extends AbstractContainerMenu implements Gu
         addSlot(new Slot(handInventory, 0, 116, 44));
         addSlot(new Slot(handInventory, 1, 152, 44) {
             @Override
-            public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
-                return Pair.of(atlas, ResourceLocation.parse("item/empty_armor_slot_shield"));
+            public Identifier getNoItemIcon() {
+                return Identifier.parse("item/empty_armor_slot_shield");
             }
         });
 
@@ -277,8 +275,8 @@ public class LittleMaidScreenHandler extends AbstractContainerMenu implements Gu
             }
 
             @Override
-            public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
-                return Pair.of(atlas, ResourceLocation.parse("item/empty_armor_slot_helmet"));
+            public Identifier getNoItemIcon() {
+                return Identifier.parse("item/empty_armor_slot_helmet");
             }
         });
         addSlot(new Slot(armorInventory, EquipmentSlot.CHEST.getIndex(), 8, 44) {
@@ -293,8 +291,8 @@ public class LittleMaidScreenHandler extends AbstractContainerMenu implements Gu
             }
 
             @Override
-            public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
-                return Pair.of(atlas, ResourceLocation.parse("item/empty_armor_slot_chestplate"));
+            public Identifier getNoItemIcon() {
+                return Identifier.parse("item/empty_armor_slot_chestplate");
             }
         });
         addSlot(new Slot(armorInventory, EquipmentSlot.LEGS.getIndex(), 80, 8) {
@@ -309,8 +307,8 @@ public class LittleMaidScreenHandler extends AbstractContainerMenu implements Gu
             }
 
             @Override
-            public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
-                return Pair.of(atlas, ResourceLocation.parse("item/empty_armor_slot_leggings"));
+            public Identifier getNoItemIcon() {
+                return Identifier.parse("item/empty_armor_slot_leggings");
             }
         });
         addSlot(new Slot(armorInventory, EquipmentSlot.FEET.getIndex(), 80, 44) {
@@ -325,8 +323,8 @@ public class LittleMaidScreenHandler extends AbstractContainerMenu implements Gu
             }
 
             @Override
-            public Pair<ResourceLocation, ResourceLocation> getNoItemIcon() {
-                return Pair.of(atlas, ResourceLocation.parse("item/empty_armor_slot_boots"));
+            public Identifier getNoItemIcon() {
+                return Identifier.parse("item/empty_armor_slot_boots");
             }
         });
     }

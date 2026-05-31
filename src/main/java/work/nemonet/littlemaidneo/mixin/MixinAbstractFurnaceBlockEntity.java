@@ -23,7 +23,7 @@ public abstract class MixinAbstractFurnaceBlockEntity implements AbstractFurnace
     }
 
     @Shadow
-    protected abstract boolean isLit();
+    int litTimeRemaining;
 
     @Override
     public RecipeType<? extends AbstractCookingRecipe> getRecipeType_LM() {
@@ -32,7 +32,7 @@ public abstract class MixinAbstractFurnaceBlockEntity implements AbstractFurnace
 
     @Override
     public boolean isBurningFire_LM() {
-        return isLit();
+        return this.litTimeRemaining > 0;
     }
 
 
