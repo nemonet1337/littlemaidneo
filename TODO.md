@@ -14,11 +14,17 @@
 
 - ✅ Phase 0: docs 新設・CLAUDE.md 参照修正・TODO.md 再構成
 - ✅ Phase 1: R-1（MaidManagerImpl 単一ソース化）/ R-6（Modes テーブル駆動）/ R-8（ResourceHelper・LMFileLoader・ModelHolder）
-- 🟡 Phase 2: R-3 部分（MaidResurrection・BookParameterParser 抽出済。registerGoals/mobInteract/maybeBackOffFromEdge は未）
-- 🟡 Phase 3: R-4 部分（ModeHelpers 抽出・CookingMode/PharmcistMode へ適用済。PathRecalcTimer/移送共通化・醸造登録は未）
-- ⏸ Phase 4-10（Memory/Sensor登録・DataGen・Attachment/Tag/Config・Brain・LookControl・描画/GeckoLib・実機検証）:
-  コンパイル/ランタイム検証必須のため Java25 環境で実施。
+- 🟡 Phase 2: R-3 部分（MaidResurrection・BookParameterParser 抽出済。L239/L1086 等の TODO 解消済）
+  - ⛔ registerGoals→LMGoalInitializer は **匿名内部クラス＋super 呼び出し**のため外部委譲不可（CLAUDE.md 方針）。本体に残す。
+  - ⏸ mobInteract→LMInteractionHandler / maybeBackOffFromEdge→LMSafeMovement は大規模・要ランタイム検証で未。
+- 🟡 Phase 3: R-4 部分（ModeHelpers 抽出・CookingMode/PharmcistMode へ適用済）
+  - ✅ 醸造モード（PharmcistMode）登録（高優先バックログ）。トリガー glass_bottle は要 runClient 確認。
+  - ✅ 赤石迷子バグ緩和（createPath accuracy 0→1）。要 runClient 確認。
+  - ⏸ PathRecalcTimer 抽出・コンテナ間移送共通化・連続発声問題は未。
 - ⏸ R-7（HasMode⇔Mode NBT 統一）: ValueOutput.child() の空コンパウンド pruning 検証が必要なため保留。
+- ⏸ **Phase 4-10（Memory/Sensor登録・DataGen・Data Attachment/Tag/Config同期・Brain・LookControl・描画/GeckoLib）**:
+  いずれも**挙動・セーブ互換・保護コアの回帰がランタイムでしか検証できず**、CI（ビルドのみ）では捕捉不可。
+  Java25 ＋ runClient/runServer 検証環境で 1 フェーズずつ進めるべき領域。blind 実装は高リスクのため未着手。
 
 ---
 
