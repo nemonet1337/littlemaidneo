@@ -8,6 +8,18 @@
 このファイルは「実態と一致する単一バックログ」。各項目は統合プランのフェーズ番号にひも付ける。
 完了した項目は削除する（履歴は不要）。
 
+### 進捗（ブランチ claude/todo-refactoring-plan-C2L1d・要 Java25 ビルド検証）
+> ⚠️ 当環境は Java21 のみ・NeoForge 26.1 マ​ven 到達不可のため **コンパイル/実機検証は未実施**。
+> 以下は静的レビューに基づく実装。マージ前に Java25 環境で `./gradlew build` + `runClient` 必須。
+
+- ✅ Phase 0: docs 新設・CLAUDE.md 参照修正・TODO.md 再構成
+- ✅ Phase 1: R-1（MaidManagerImpl 単一ソース化）/ R-6（Modes テーブル駆動）/ R-8（ResourceHelper・LMFileLoader・ModelHolder）
+- 🟡 Phase 2: R-3 部分（MaidResurrection・BookParameterParser 抽出済。registerGoals/mobInteract/maybeBackOffFromEdge は未）
+- 🟡 Phase 3: R-4 部分（ModeHelpers 抽出・CookingMode/PharmcistMode へ適用済。PathRecalcTimer/移送共通化・醸造登録は未）
+- ⏸ Phase 4-10（Memory/Sensor登録・DataGen・Attachment/Tag/Config・Brain・LookControl・描画/GeckoLib・実機検証）:
+  コンパイル/ランタイム検証必須のため Java25 環境で実施。
+- ⏸ R-7（HasMode⇔Mode NBT 統一）: ValueOutput.child() の空コンパウンド pruning 検証が必要なため保留。
+
 ---
 
 ## 🔍 検証・テスト用チェックリスト（Phase 10 で消化）
