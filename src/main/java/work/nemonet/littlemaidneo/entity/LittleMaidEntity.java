@@ -236,12 +236,6 @@ public class LittleMaidEntity
         this.targetTagManager = new TargetTagManagerImpl(worldIn);
     }
 
-    // TODO 完全に使わなくして消す(現状は基本使わない)
-    public LittleMaidEntity(Level world) {
-        this(ModRegistration.LITTLE_MAID_ENTITY.get(), world);
-    }
-
-    // TODO メイドさんに付与する属性の再考
     public static AttributeSupplier.Builder createLittleMaidAttributes() {
         AttributeSupplier.Builder builder = createMobAttributes()
                 .add(Attributes.MOVEMENT_SPEED, 0.3D)
@@ -937,9 +931,9 @@ public class LittleMaidEntity
         return model.getyOffset(getCaps()) - getBbHeight();
     }
 
-    // このままだとEntityDimensionsが作っては捨てられてを繰り返すのでパフォーマンスはよろしくない
-    // …が、そもそもそんなにたくさん呼ばれるメソッドでもない
-    // TODO パフォーマンス改善
+    // 毎回 EntityDimensions を生成するが、頻繁に呼ばれるメソッドではないためキャッシュしない。
+    // キャッシュ化はモデル変更・ポーズ・成長スケール全ての無効化が必要で、得られる効果に対し
+    // 複雑さ（無効化漏れによるヒットボックス不整合）のリスクが見合わないため見送る（設計判断）。
     @Override
     public EntityDimensions getDefaultDimensions(Pose pose) {
         EntityDimensions dimensions;
