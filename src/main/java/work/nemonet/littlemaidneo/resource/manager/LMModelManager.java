@@ -62,15 +62,8 @@ public class LMModelManager {
         return defaultModel;
     }
 
-    public static class ModelHolder {
-        private final IMultiModel skin;
-        private final IMultiModel inner;
-        private final IMultiModel outer;
-
-        public ModelHolder(IMultiModel skin, IMultiModel inner, IMultiModel outer) {
-            this.skin = skin;
-            this.inner = inner;
-            this.outer = outer;
+    public record ModelHolder(IMultiModel skin, IMultiModel inner, IMultiModel outer) {
+        public ModelHolder {
             if (skin == null || inner == null || outer == null) {
                 throw new IllegalArgumentException("ModelHolderはnull不許容です");
             }

@@ -33,20 +33,16 @@ public class MaidManagerImpl implements MaidManager {
 
     @Override
     public void writeMaidManager(ValueOutput output) {
-        var list = output.childrenList("maidList");
-        for (LMInfo info : this.maidMap.values()) {
-            info.write(list.addChild());
-        }
+        write(output, getMaidList());
     }
 
     @Override
     public void readMaidManager(ValueInput input) {
         this.maidMap.clear();
-        for (var entry : input.childrenListOrEmpty("maidList")) {
-            LMInfo info = LMInfo.read(entry);
-            if (info != null) {
-                maidMap.put(info.id(), info);
-            }
+        List<LMInfo> infos = new ArrayList<>();
+        read(input, infos);
+        for (LMInfo info : infos) {
+            maidMap.put(info.id(), info);
         }
     }
 

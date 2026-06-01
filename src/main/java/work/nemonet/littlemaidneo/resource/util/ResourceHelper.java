@@ -24,17 +24,28 @@ public class ResourceHelper {
     private static final int OLD_ARMOR_1 = 0x11;
     private static final int OLD_ARMOR_2 = 0x12;
 
+    /**
+     * ファイルセパレータを正規化する。アーカイブ内パスは既に '/' 区切りのため変更しない。
+     * （命名結果は従来と不変。{@code replace("\\","/")} の共通化のみ）
+     */
+    private static String normalizePath(String path, boolean isArchive) {
+        return isArchive ? path : path.replace("\\", "/");
+    }
+
+    /** Identifier 用にパス文字列を小文字化し許可文字以外を '-' へ置換する（命名結果は従来と不変）。 */
+    private static String sanitize(String value) {
+        return value.toLowerCase().replaceAll("[^a-z0-9/._\\-]", "-");
+    }
+
     public static String getFileName(String path, boolean isArchive) {
-        String name = path;
-        if (!isArchive) name = name.replace("\\", "/");
+        String name = normalizePath(path, isArchive);
         int lastSplitter = name.lastIndexOf("/");
         if (lastSplitter == -1) return name;
         return name.substring(lastSplitter + 1);
     }
 
     public static Optional<String> getTexturePackName(String path, boolean isArchive) {
-        String name = path;
-        if (!isArchive) name = name.replace("\\", "/");
+        String name = normalizePath(path, isArchive);
         if (path.contains("/littlemaid/") || path.contains("littleMaid")) {
             int lmFolderIndex = path.lastIndexOf("/littlemaid/");
             if (lmFolderIndex == -1) lmFolderIndex = path.lastIndexOf("/littleMaid/");
@@ -54,8 +65,7 @@ public class ResourceHelper {
     }
 
     public static Optional<String> getParentFolderName(String path, boolean isArchive) {
-        String name = path;
-        if (!isArchive) name = name.replace("\\", "/");
+        String name = normalizePath(path, isArchive);
         int lastSplitter = name.lastIndexOf("/");
         if (lastSplitter == -1) return Optional.empty();
         name = name.substring(0, lastSplitter);
@@ -127,14 +137,11 @@ public class ResourceHelper {
     }
 
     public static Identifier getLocation(String packName, String fileName) {
-        packName = packName.toLowerCase().replaceAll("[^a-z0-9/._\\-]", "-");
-        fileName = fileName.toLowerCase().replaceAll("[^a-z0-9/._\\-]", "-");
-        return Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, packName + "/" + fileName);
+        return Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, sanitize(packName) + "/" + sanitize(fileName));
     }
 
     public static Identifier getLocation(String prefix, String packName, String fileName) {
-        packName = packName.toLowerCase().replaceAll("[^a-z0-9/._\\-]", "-");
-        fileName = fileName.toLowerCase().replaceAll("[^a-z0-9/._\\-]", "-");
-        return Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, prefix + "/" + packName + "/" + fileName);
+        return Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID,
+                prefix + "/" + sanitize(packName) + "/" + sanitize(fileName));
     }
 }

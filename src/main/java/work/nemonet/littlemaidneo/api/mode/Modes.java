@@ -1,7 +1,5 @@
 package work.nemonet.littlemaidneo.api.mode;
 
-import net.minecraft.world.item.alchemy.Potion;
-import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.AxeItem;
@@ -10,6 +8,9 @@ import net.minecraft.world.item.ShearsItem;
 import work.nemonet.littlemaidneo.entity.mode.*;
 import work.nemonet.littlemaidneo.tags.LMTags;
 
+import java.util.List;
+import java.util.function.Supplier;
+
 import static work.nemonet.littlemaidneo.LittleMaidNeo.MODID;
 
 /**
@@ -17,20 +18,25 @@ import static work.nemonet.littlemaidneo.LittleMaidNeo.MODID;
  * メイド専用
  */
 public class Modes {
-    public static final ModeType<FencerMode> FENCER_MODE_TYPE;
-    public static final ModeType<ArcherMode> ARCHER_MODE_TYPE;
-    public static final ModeType<CookingMode> COOKING_MODE_TYPE;
-    public static final ModeType<RipperMode> RIPPER_MODE_TYPE;
-    public static final ModeType<TorcherMode> TORCHER_MODE_TYPE;
-    public static final ModeType<HealerMode> HEALER_MODE_TYPE;
 
-    static {
-        FENCER_MODE_TYPE = buildFencerMode().build();
-        ARCHER_MODE_TYPE = buildArcherMode().build();
-        COOKING_MODE_TYPE = buildCookingMode().build();
-        RIPPER_MODE_TYPE = buildRipperMode().build();
-        TORCHER_MODE_TYPE = buildTorcherMode().build();
-        HEALER_MODE_TYPE = buildHealerMode().build();
+    /**
+     * モード ID と定義ビルダーの対応表。
+     * <p>登録順（同 Priority 時のタイブレーク）＝この並び順。順序を変更しないこと。
+     */
+    private static final List<Entry> ENTRIES = List.of(
+            new Entry("fencer", Modes::buildFencerMode),
+            new Entry("archer", Modes::buildArcherMode),
+            new Entry("cooking", Modes::buildCookingMode),
+            new Entry("ripper", Modes::buildRipperMode),
+            new Entry("torcher", Modes::buildTorcherMode),
+            new Entry("healer", Modes::buildHealerMode));
+
+    private record Entry(String id, Supplier<ModeType.Builder<?>> builder) {}
+
+    public static void init() {
+        for (Entry entry : ENTRIES) {
+            register(entry.id(), entry.builder().get().build());
+        }
     }
 
     public static ModeType.Builder<FencerMode> buildFencerMode() {
@@ -73,15 +79,6 @@ public class Modes {
                     return contents != null && contents.potion().isPresent();
                 }, ItemMatcher.Priority.LOWER)
                 .addItemMatcher(ItemMatchers.tag(LMTags.Items.HEALER_MODE), ItemMatcher.Priority.HIGHER);
-    }
-
-    public static void init() {
-        register("fencer", FENCER_MODE_TYPE);
-        register("archer", ARCHER_MODE_TYPE);
-        register("cooking", COOKING_MODE_TYPE);
-        register("ripper", RIPPER_MODE_TYPE);
-        register("torcher", TORCHER_MODE_TYPE);
-        register("healer", HEALER_MODE_TYPE);
     }
 
     private static void register(String id, ModeType<?> modeType) {

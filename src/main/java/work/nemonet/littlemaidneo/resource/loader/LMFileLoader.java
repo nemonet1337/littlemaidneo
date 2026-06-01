@@ -86,8 +86,7 @@ public class LMFileLoader {
             while (true) {
                 ZipEntry entry = zipStream.getNextEntry();
                 if (entry == null) break;
-                loaders.stream().filter(loader -> loader.canLoad(entry.getName(), path, zipStream, true))
-                        .forEach(loader -> loader.load(entry.getName(), path, zipStream, true));
+                applyLoaders(entry.getName(), path, zipStream, true);
             }
         } catch (ZipException e) {
             LOGGER.error("Zipの読み込み中にエラーが発生。 : " + path);
@@ -109,11 +108,19 @@ public class LMFileLoader {
     public void loadFile(Path folderPath, Path path) {
         String relPath = path.toString().replace(folderPath.toString(), "");
         try (InputStream inputStream = Files.newInputStream(path)) {
-            loaders.stream().filter(loader -> loader.canLoad(relPath, folderPath, inputStream, false))
-                    .forEach(loader -> loader.load(relPath, folderPath, inputStream, false));
+            applyLoaders(relPath, folderPath, inputStream, false);
         } catch (Exception e) {
             LOGGER.error("Error! : " + e.getMessage() + " : " + path);
         }
+    }
+
+    /**
+     * 登録済みローダのうち対象を読み込めるものを順に適用する。
+     * （{@code loadArchive}/{@code loadFile} 共通。実行順は従来と不変）
+     */
+    private void applyLoaders(String name, Path basePath, InputStream stream, boolean isArchive) {
+        loaders.stream().filter(loader -> loader.canLoad(name, basePath, stream, isArchive))
+                .forEach(loader -> loader.load(name, basePath, stream, isArchive));
     }
 
     public boolean isArchive(Path path) {
