@@ -79,7 +79,7 @@ LittleMaidNeo は、レガシー Mod 系譜 **LittleMaidRebirth (LMRB)** と **L
 - ユーザーの指示がなくても、記録に値する判断をした場合は自律的に `/doc` スキルで記録する
 - 形式: `docs/{category}/yyyy-mm-dd_{タイトル}.md`
 - カテゴリ: `adr/`（設計判断）, `plan/`（作業プラン）, `research/`（調査メモ）等
-- NeoForge クリーンアップ／統合の進行プラン: `docs/neoforge-cleanup-plan.md`
+- NeoForge クリーンアップ／統合の進行プラン: `docs/plan/2026-06-01_統合リファクタリングプラン.md`（旧 `docs/neoforge-cleanup-plan.md` は廃止）
 
 ## Cross-Environment Workflow
 
@@ -140,4 +140,4 @@ LittleMaidNeo は、レガシー Mod 系譜 **LittleMaidRebirth (LMRB)** と **L
 - レビュー観点: SOLID 原則, Effective Java, Law of Demeter / Tell Don't Ask, OOP アンチパターン
 - `super` 呼び出しを含む override メソッドは外部クラスに委譲できない — 本体に残す
 - 状態を持たないオーケストレーション/ファクトリは static ユーティリティクラスで可（過度なオブジェクト化を避ける）
-- LMML/LMRB 両系譜の融合により薄い抽象・単一実装 interface が蓄積している。整理プランは `docs/neoforge-cleanup-plan.md` を参照
+- LMML/LMRB 両系譜の融合により薄い抽象・単一実装 interface が蓄積している。整理プランは `docs/plan/2026-06-01_統合リファクタリングプラン.md` を参照
