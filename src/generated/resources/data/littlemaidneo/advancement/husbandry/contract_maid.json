@@ -1,0 +1,25 @@
+{
+  "parent": "minecraft:husbandry/root",
+  "criteria": {
+    "contracted_maid": {
+      "trigger": "littlemaidneo:contract_maid"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.husbandry.contract_maid.description"
+    },
+    "icon": {
+      "id": "minecraft:cake"
+    },
+    "title": {
+      "translate": "advancements.husbandry.contract_maid.title"
+    }
+  },
+  "requirements": [
+    [
+      "contracted_maid"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

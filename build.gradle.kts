@@ -102,14 +102,14 @@ neoForge {
             systemProperty("neoforge.enabledGameTestNamespaces", mod_id)
         }
 
-        create("data") {
+        create("clientData") {
             clientData()
+            programArguments.addAll("--mod", mod_id, "--all", "--output", file("build/generated/client/").absolutePath, "--existing", file("src/main/resources/").absolutePath)
+        }
 
-            // example of overriding the workingDirectory set in configureEach above, uncomment if you want to use it
-            // gameDirectory = project.file('run-data')
-
-            // Specify the modid for data generation, where to output the resulting resource, and where to look for existing resources.
-            programArguments.addAll("--mod", mod_id, "--all", "--output", file("src/generated/resources/").absolutePath, "--existing", file("src/main/resources/").absolutePath)
+        create("serverData") {
+            serverData()
+            programArguments.addAll("--mod", mod_id, "--all", "--output", file("build/generated/server/").absolutePath, "--existing", file("src/main/resources/").absolutePath)
         }
     }
 
@@ -175,6 +175,10 @@ publishing {
     }
 }
 
+tasks.withType<ProcessResources> {
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+}
+
 tasks.withType<JavaCompile>().configureEach {
     options.encoding = "UTF-8" // Use the UTF-8 charset for Java compilation
     options.compilerArgs.addAll(listOf("-Xmaxerrs", "500", "-Xmaxwarns", "500"))
@@ -186,4 +190,12 @@ idea {
         isDownloadSources = true
         isDownloadJavadoc = true
     }
+}
+
+tasks.register<Copy>("mergeData") {
+    dependsOn("runClientData", "runServerData")
+    from("build/generated/client")
+    from("build/generated/server")
+    into("src/generated/resources")
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
 }

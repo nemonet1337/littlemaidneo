@@ -1,0 +1,4 @@
+{
+  "type": "minecraft:entity",
+  "random_sequence": "littlemaidneo:entities/little_maid_mob"
+}

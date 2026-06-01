@@ -58,6 +58,9 @@ public class LittleMaidNeo {
         ModRegistration.MEMORY_MODULES.register(modEventBus);
         ModRegistration.SENSORS.register(modEventBus);
 
+        modEventBus.addListener(work.nemonet.littlemaidneo.data.LMDataGenerator::gatherClientData);
+        modEventBus.addListener(work.nemonet.littlemaidneo.data.LMDataGenerator::gatherServerData);
+
         modContainer.registerConfig(ModConfig.Type.COMMON, LMMLConfig.SPEC, "littlemaidneo-lmml-common.toml");
         modContainer.registerConfig(ModConfig.Type.COMMON, LMRBConfig.SPEC, "littlemaidneo-common.toml");
 

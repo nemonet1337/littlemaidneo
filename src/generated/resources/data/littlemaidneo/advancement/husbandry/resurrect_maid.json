@@ -1,0 +1,25 @@
+{
+  "parent": "littlemaidneo:husbandry/contract_maid",
+  "criteria": {
+    "resurrected_maid": {
+      "trigger": "littlemaidneo:resurrect_maid"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.husbandry.resurrect_maid.description"
+    },
+    "icon": {
+      "id": "minecraft:cake"
+    },
+    "title": {
+      "translate": "advancements.husbandry.resurrect_maid.title"
+    }
+  },
+  "requirements": [
+    [
+      "resurrected_maid"
+    ]
+  ],
+  "sends_telemetry_event": true
+}
