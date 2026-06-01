@@ -163,6 +163,8 @@ Memory・Sensor）ベース**へ移行する。
 * ⚠️ 保護コアとは独立だが大規模。挙動（AI の振る舞い）の等価性を実機で検証しながら段階移行する。
 * ⚠️ NBT セーブ互換: Brain の Memory 永続化と既存セーブの読み込み互換に注意（必要ならマイグレーション）。
 * 調査は `mc-api-research` エージェントで Vanilla の Brain/Behavior API（`Villager`/`Piglin`/`Axolotl` 等の実装）を参照。
+* **応用（データ駆動型 AI）**: AI パラメータ（「臆病」「好戦的」等の性格＝重み付けプロファイル）を `Codec` で JSON 定義し、
+  エンティティ生成時に読み込んで Brain の挙動（優先スケジュール・重み）を変化させる設計も視野。DataGen（R-13）と連携可能。
 
 ## 🙂 R-11. メイドさんの首（頭部）の動きを `LookControl` で制御
 
@@ -174,6 +176,10 @@ Memory・Sensor）ベース**へ移行する。
   首の向きを制御する形が自然。R-10 とセットで設計する。
 * まずは **エンティティ側の向き値（yHeadRot 等）の制御に留める**のが低リスク。
   描画側に手を入れる場合は保護コア A の 2 保証（メイドさん正常描画／外部パック無改変ロード）を実機検証する。
+* **視線判定（Raytrace）との同期**: `getDefaultDimensions(Pose)` が返す eyeHeight・ポーズを首振り/視線判定と一致させ、
+  バニラ Raytrace と同期させる（既に Pose 対応の `getDefaultDimensions` は実装済み）。
+  ⚠️ サイズ算出は `maidmodel` のモデル寸法に依存（**読み取りのみ・保護コア A は不変**）。L1084 のコメントどおり
+  毎 tick の `EntityDimensions` 生成はキャッシュ最適化の余地あり。
 
 ### 🟧 R-12. 描画ラッパー層のモダン化（§2 の内部刷新・2 保証前提）
 
@@ -205,6 +211,12 @@ Memory・Sensor）ベース**へ移行する。
 | **DataGen（`GatherDataEvent`）** | ❌ **未導入** | → R-13。loot/tags/recipes/advancements/lang を手動 JSON で保守中。`runData` 未配線 |
 | **Brain / `MemoryModuleType` / `SensorType`** | ❌ 未導入（Goal ベース） | → R-10。MemoryModuleType は DeferredRegister で登録 |
 | GeckoLib / AzureLib | 🟡 条件付き可 | メイドさん本体に導入する場合、**既存外部モデルパックが無改変でロード＆描画できる経路を別途維持**することが条件（保護コア A の 2 保証）。両立が困難なら新規補助エンティティ限定。要 PoC・実機検証 |
+| データ駆動スポーン（`RegisterSpawnPlacementsEvent`/Biome Modifiers） | ✅ 導入済 | `setup/ModSetup` で登録、`data/littlemaidneo/neoforge/biome_modifier/maid_spawn.json`。⚠️ JSON は手書き → R-13 で `BiomeModifierProvider` 自動生成へ寄せられる |
+| ModConfigSpec（TOML） | ✅ 導入済 | `config/LMRBConfig`/`LMMLConfig`。⚠️ 全て `ModConfig.Type.COMMON` ＝**サーバー自動同期なし** → R-16 |
+| EntityDimensions / Pose 動的サイズ | ✅ 導入済 | `LittleMaidEntity#getDefaultDimensions(Pose)` がモデル連動で幅/高さを返す。⚠️ 毎回生成のキャッシュ最適化余地（L1084 コメント）、視線高さ同期は R-11 と関連 |
+| **Entity タグ（`TagKey<EntityType>`）による AI 抽象化** | ❌ **未使用** | `TargetTagManagerImpl` に `instanceof` ハードコード **19 箇所** → R-15 |
+| ICondition（条件付き DataGen） | ❌ 未使用 | DataGen 未導入のため。→ R-13 の一部（他 Mod 連携ドロップ/レシピ） |
+| Codec データ駆動型 AI プロファイル | ❌ 未使用 | → R-10 の応用（性格/重み付け JSON） |
 
 ---
 
@@ -217,6 +229,10 @@ Memory・Sensor）ベース**へ移行する。
   言語は `LanguageProvider`）を登録。出力先は `src/generated/resources/`（CLAUDE.md 既出）。`build.gradle` の `runData` を配線。
 * ⚠️ モード用タグ（`tags/items/{mode}_mode.json`）は `api/mode/Modes` の登録と整合させ、生成元を Java 側に一本化すると
   R-6（Modes テーブル駆動化）と相性が良い。
+* **Biome Modifier も `BiomeModifierProvider` で生成**し、手書き `maid_spawn.json` を Java 側へ一本化
+  （他 Mod 追加バイオームへの対応が容易になる）。スポーン条件は `RegisterSpawnPlacementsEvent` 側で型安全に定義（既存登録を踏襲）。
+* **`ICondition` の活用**: 他 Mod 導入時のみ有効なドロップ（連携アイテム）やレシピ、相互作用プロファイルを
+  条件付きで生成（`data/.../conditions`）。連携先 Mod 非導入時は無効化。
 * ⚠️ 保護コア（外部モデル/ボイスの探索・命名）には JSON が絡まないため影響なし。生成結果が既存 JSON と一致することを差分確認。
 
 ## 🔌 R-14. Data Attachments（`AttachmentType`）の全面活用
@@ -232,7 +248,33 @@ Memory・Sensor）ベース**へ移行する。
 
 ---
 
-## 📝 R-15. `CLAUDE.md` の書き直し（重要）
+## 🏷️ R-15. Entity タグ（`TagKey<EntityType>`）による AI ターゲティングのデータ駆動化
+
+現状 `TargetTagManagerImpl` は **`instanceof` ハードコード 19 箇所**（`Creeper`/`Warden`/`Enemy`/`Piglin`/
+`ZombifiedPiglin`/`EnderMan`/`TamableAnimal`/`Npc`/`Merchant`/`ArmorStand`/家畜系 等）でターゲット可否
+（先制攻撃禁止・接近禁止・攻撃禁止・遠近武器禁止）を決めている。これをタグ駆動へ。
+* 独自タグ `TagKey<EntityType<?>>` を定義（例: `#littlemaidneo:attack_prohibited` / `approach_prohibited` /
+  `preemptive_attack_prohibited` / `ranged_weapon_prohibited` / `melee_weapon_prohibited`）。
+  AI 側は `entity.getType().is(tag)` で判定し、ハードコードを排除。
+* 分類は **DataGen の `TagsProvider` で生成**（R-13 と連携）。バニラタグ（`minecraft:undead`/`arthropod` 等）も活用、
+  他 Mod モブも JSON 側で対象に含められる。
+* §3／R-2 のターゲティング再設計（`TargetTagManager` の Data Attachment 化）と**統合して進める**。
+* ⚠️ 既存のターゲティング挙動（現行の判定結果）を**等価に保つ**こと。既存セーブの `targetTagMap` 互換に注意
+  （ユーザーが GUI で個別設定したタグの読み込み互換）。
+
+## ⚙️ R-16. サーバーコンフィグの自動同期（`ModConfig.Type.SERVER` 移行）
+
+現状 `LMRBConfig`/`LMMLConfig` は **`ModConfig.Type.COMMON`** 登録（`LittleMaidNeo` L59-60）。
+クライアント・サーバーで別管理になり、マルチでは手動コピーが必要（`TODO.md` バックログ「鯖蔵コンフィグの同期」）。
+* サーバー権威であるべき設定（索敵範囲・攻撃力・各機能 ON/OFF 等）を **`ModConfig.Type.SERVER`** へ移し、
+  接続時にクライアントへ自動同期させる。
+* クライアント専用設定（音量 `getVoiceVolume` 等）は `Type.CLIENT`、両者にまたがるものは整理して再分類。
+* ⚠️ 設定分類の変更で TOML ファイル構成が変わる。既存ユーザー設定の移行に配慮。
+  `getVoiceVolume`（保護コア B）は**キー名・範囲を不変**に保つ。
+
+---
+
+## 📝 R-17. `CLAUDE.md` の書き直し（重要）
 
 `CLAUDE.md` は**旧ソースから引っ張ってきた記述が多く、現行実装と乖離している**。実装に合わせて書き直すこと。
 判明済みの乖離（最低限ここは直す）:
@@ -240,7 +282,7 @@ Memory・Sensor）ベース**へ移行する。
   分割パターンを採用」とあるが **これらのクラスは実在しない**（実在は `LMHasInventory`/`LMItemContractable` のみ）。
   → R-3 で実際に抽出後、記述を実態に合わせる。
 * 「現状維持境界」前提の記述（Mixin 注入 interface は統合不可 等）は、本ファイルの新方針（保護2機能以外は解禁）に合わせて更新。
-* リファクタ（R-1〜R-14）の進行に応じて、該当する CLAUDE.md の Architecture / Notes 節を随時更新する。
+* リファクタ（R-1〜R-16）の進行に応じて、該当する CLAUDE.md の Architecture / Notes 節を随時更新する。
 * 現代化ギャップ（Data Attachments / DataGen / Brain）の採用状況も反映する。
 * 作業はリファクタと同期させる（コードを変えたら CLAUDE.md も同コミットで更新するのが望ましい）。
 
