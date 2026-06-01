@@ -160,7 +160,50 @@ Memory・Sensor）ベース**へ移行する。
 
 ---
 
-## 📝 R-13. `CLAUDE.md` の書き直し（重要）
+## 🧱 現代 NeoForge アーキテクチャ採用状況（ギャップ分析）
+
+本 Mod は **既に NeoForge 26.1.2 上**にあり、1.6.4 → 現代の移行は大部分が完了済み。
+以下は「現代化機能の採用状況」と、残ギャップに対する移行タスク。
+
+| 機能 | 状況 | メモ |
+|---|---|---|
+| Modern Payload Networking（`RegisterPayloadHandlersEvent`/`StreamCodec`） | ✅ 導入済 | `network/NetworkHandler`。サウンド/同期パケットも保護コア B として運用中 |
+| Deferred Register / DeferredHolder | ✅ 導入済 | `setup/ModRegistration`（Entity/Block/Item/Menu/CreativeTab 等） |
+| EntityAttributeCreationEvent | ✅ 導入済 | `onEntityAttributeCreation`（CLAUDE.md 記載どおり） |
+| EntityRenderersEvent（RegisterRenderers/LayerDefinitions） | ✅ 導入済 | `LittleMaidNeoClient#onRegisterRenderers`。⚠️ メイドさん本体の描画は外部モデルパック互換（保護コア A）に依存 |
+| Data Components（ItemStack） | ✅ 概ね現代化 | `item/LittleMaidSpawnEggItem` が `DataComponents` 使用。**ItemStack 旧 NBT（`getOrCreateTag` 等）は不使用** |
+| **Data Attachments（`AttachmentType`）** | ❌ **未採用** | → R-14。プレイヤー状態(R-2)/メイド AI ステート(R-11)/魂データ引き継ぎ(R-3) で活用 |
+| **DataGen（`GatherDataEvent`）** | ❌ **未導入** | → R-13。loot/tags/recipes/advancements/lang を手動 JSON で保守中。`runData` 未配線 |
+| **Brain / `MemoryModuleType` / `SensorType`** | ❌ 未導入（Goal ベース） | → R-11。MemoryModuleType は DeferredRegister で登録 |
+| GeckoLib / AzureLib | ⛔ コアには非推奨 | 外部モデルパック描画（保護コア A）と競合。**メイドさん本体モデルには使わない**。新規補助エンティティ限定なら可 |
+
+---
+
+## 🏗️ R-13. DataGen（`GatherDataEvent`）の導入
+
+膨大なインフラ JSON を手書き保守している状態を解消し、Java コードから自動生成する。
+* 対象（現状すべて手動 JSON）: loot table（`salary_box`・`little_maid_mob`）、tags（11 ファイル — モード用 `{mode}_mode.json` 含む）、
+  recipes・advancements（計 6）、lang（`en_us`/`ja_jp`）。
+* 実装: `GatherDataEvent` で `DataProvider`（`LootTableProvider`/`TagsProvider`/`RecipeProvider`/`AdvancementProvider`/
+  言語は `LanguageProvider`）を登録。出力先は `src/generated/resources/`（CLAUDE.md 既出）。`build.gradle` の `runData` を配線。
+* ⚠️ モード用タグ（`tags/items/{mode}_mode.json`）は `api/mode/Modes` の登録と整合させ、生成元を Java 側に一本化すると
+  R-6（Modes テーブル駆動化）と相性が良い。
+* ⚠️ 保護コア（外部モデル/ボイスの探索・命名）には JSON が絡まないため影響なし。生成結果が既存 JSON と一致することを差分確認。
+
+## 🔌 R-14. Data Attachments（`AttachmentType`）の全面活用
+
+現在 `AttachmentType` は未使用。旧 Capability/`IExtendedEntityProperties` 相当の独自ステート付与を Data Attachment へ。
+* **プレイヤー状態（R-2 と統合）**: `MixinServerPlayerEntity`/`MixinPlayerEntity` が注入する `MaidManager`/`TargetTagManager`
+  のステートを `AttachmentType`＋`Codec` に置換。Mixin+interface+Impl を撤廃でき、`instanceof` キャストは Attachment 取得へ。
+* **メイドさんの AI ステート（R-11 と統合）**: 警戒度・各種パラメータなど Brain 化で必要になる永続データを `AttachmentType` で保持。
+* **魂データ引き継ぎ（R-3 と統合）**: `copyOnDeath()` を利用し、メイドさん死亡 → 魂化/復活時のデータ引き継ぎを簡潔化
+  （現状 `MaidSoul` の手動 NBT 受け渡しを置換可能か検討）。
+* メリット: `Codec` 指定だけで NBT 自動保存/読込が完結。手動 `write/read` の記述量削減（R-1 とも連動）。
+* ⚠️ **既存セーブ互換**: 旧 NBT キーからの移行（マイグレーション）と、マルチ同期（必要な Attachment は同期設定）を要検証。
+
+---
+
+## 📝 R-15. `CLAUDE.md` の書き直し（重要）
 
 `CLAUDE.md` は**旧ソースから引っ張ってきた記述が多く、現行実装と乖離している**。実装に合わせて書き直すこと。
 判明済みの乖離（最低限ここは直す）:
@@ -168,7 +211,8 @@ Memory・Sensor）ベース**へ移行する。
   分割パターンを採用」とあるが **これらのクラスは実在しない**（実在は `LMHasInventory`/`LMItemContractable` のみ）。
   → R-3 で実際に抽出後、記述を実態に合わせる。
 * 「現状維持境界」前提の記述（Mixin 注入 interface は統合不可 等）は、本ファイルの新方針（保護2機能以外は解禁）に合わせて更新。
-* リファクタ（R-1〜R-12）の進行に応じて、該当する CLAUDE.md の Architecture / Notes 節を随時更新する。
+* リファクタ（R-1〜R-14）の進行に応じて、該当する CLAUDE.md の Architecture / Notes 節を随時更新する。
+* 現代化ギャップ（Data Attachments / DataGen / Brain）の採用状況も反映する。
 * 作業はリファクタと同期させる（コードを変えたら CLAUDE.md も同コミットで更新するのが望ましい）。
 
 ---
