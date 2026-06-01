@@ -13,7 +13,6 @@ import net.minecraft.world.item.crafting.AbstractCookingRecipe;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.HopperBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.pathfinder.PathComputationType;
@@ -87,14 +86,7 @@ public class CookingMode extends Mode {
     }
 
     public OptionalInt getFuel() {
-        Container inventory = this.mob.getInventory();
-        for (int i = 0; i < inventory.getContainerSize(); ++i) {
-            ItemStack itemstack = inventory.getItem(i);
-            if (isFuel(itemstack)) {
-                return OptionalInt.of(i);
-            }
-        }
-        return OptionalInt.empty();
+        return ModeHelpers.findSlot(this.mob.getInventory(), this::isFuel);
     }
 
     public boolean isFuel(ItemStack stack) {
@@ -121,14 +113,7 @@ public class CookingMode extends Mode {
     }
 
     public Optional<AbstractFurnaceBlockEntity> getFurnaceBlockEntity(BlockPos pos) {
-        if (pos == null) {
-            return Optional.empty();
-        }
-        BlockEntity tile = mob.level().getBlockEntity(pos);
-        if (tile instanceof AbstractFurnaceBlockEntity) {
-            return Optional.of((AbstractFurnaceBlockEntity) tile);
-        }
-        return Optional.empty();
+        return ModeHelpers.getBlockEntity(mob.level(), pos, AbstractFurnaceBlockEntity.class);
     }
 
     // 手持ちのアイテムを焼けるかまどかどうか
@@ -283,14 +268,7 @@ public class CookingMode extends Mode {
     }
 
     public OptionalInt getCookable(RecipeType<? extends AbstractCookingRecipe> recipeType) {
-        Container inventory = this.mob.getInventory();
-        for (int i = 0; i < inventory.getContainerSize(); ++i) {
-            ItemStack slotStack = inventory.getItem(i);
-            if (getRecipe(slotStack, recipeType).isPresent()) {
-                return OptionalInt.of(i);
-            }
-        }
-        return OptionalInt.empty();
+        return ModeHelpers.findSlot(this.mob.getInventory(), stack -> getRecipe(stack, recipeType).isPresent());
     }
 
     private void tryInsertCookable(AbstractFurnaceBlockEntity furnace, Container inventory, int cookableIndex) {

@@ -52,9 +52,8 @@ public class RedstoneTraceGoal extends Goal {
         }
         this.aroundSignalPos.clear();
         getAroundSignalPoses()
-                // 現在位置にあるposは除外する。ただし高度は無視
-                // getBlockPos()で判定してもいいが、実装的に動作しない場合があり得るので安全のためこちらに
-                // TODO getBlockPos()で判定して動作させる
+                // 現在立っている列(X/Z)にある pos は除外する（高度は無視）。
+                // mob.getX()/getZ() の floor は mob.blockPosition() の X/Z と等価。
                 .filter(
                         pos -> Mth.floor(this.mob.getX()) != pos.getX() ||
                                 Mth.floor(this.mob.getZ()) != pos.getZ())
@@ -86,8 +85,11 @@ public class RedstoneTraceGoal extends Goal {
                                         pos.getY()))
                 .ifPresent(pos -> {
                     var navigation = this.mob.getNavigation();
+                    // accuracy=1 で信号ブロックの「隣」を目標にする。
+                    // accuracy=0 だと信号源（レッドストーンブロック/レバー等の立てない位置）へ
+                    // 到達できず経路が完了せず徘徊（迷子）する原因になっていた。
                     if (navigation.moveTo(
-                            navigation.createPath(pos, 0),
+                            navigation.createPath(pos, 1),
                             this.speed.get())) {
                         // Update origin of freedom movement to the vicinity of the signal
                         this.mob.setFreedomPos(pos);

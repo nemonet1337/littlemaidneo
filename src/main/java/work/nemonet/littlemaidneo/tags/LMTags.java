@@ -20,6 +20,7 @@ public class LMTags {
         public static final TagKey<Item> FENCER_MODE = register("fencer_mode");
         public static final TagKey<Item> ARCHER_MODE = register("archer_mode");
         public static final TagKey<Item> COOKING_MODE = register("cooking_mode");
+        public static final TagKey<Item> PHARMCIST_MODE = register("pharmcist_mode");
         public static final TagKey<Item> RIPPER_MODE = register("ripper_mode");
         public static final TagKey<Item> TORCHER_MODE = register("torcher_mode");
         public static final TagKey<Item> HEALER_MODE = register("healer_mode");

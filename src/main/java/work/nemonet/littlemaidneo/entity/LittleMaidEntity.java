@@ -236,12 +236,6 @@ public class LittleMaidEntity
         this.targetTagManager = new TargetTagManagerImpl(worldIn);
     }
 
-    // TODO 完全に使わなくして消す(現状は基本使わない)
-    public LittleMaidEntity(Level world) {
-        this(ModRegistration.LITTLE_MAID_ENTITY.get(), world);
-    }
-
-    // TODO メイドさんに付与する属性の再考
     public static AttributeSupplier.Builder createLittleMaidAttributes() {
         AttributeSupplier.Builder builder = createMobAttributes()
                 .add(Attributes.MOVEMENT_SPEED, 0.3D)
@@ -267,151 +261,7 @@ public class LittleMaidEntity
             ServerLevel world,
             BlockPos pos,
             Player player) {
-        var maidSouls = ((MaidManager) player).getMaidSouls();
-        if (maidSouls.isEmpty()) {
-            return false;
-        }
-        for (LittleMaidEntity.MaidSoul maidSoul : maidSouls) {
-            var maid = ModRegistration.LITTLE_MAID_ENTITY.get().create(world, EntitySpawnReason.TRIGGERED);
-            if (maid != null) {
-                maid.installMaidSoul(maidSoul);
-                maid.snapTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5);
-
-                maid.setMovingMode(MovingMode.ESCORT);
-                TameableUtil.setWait(maid, true);
-                maid.lookAt(
-                        EntityAnchorArgument.Anchor.EYES,
-                        player.getEyePosition());
-                maid.getLookControl().setLookAt(player);
-
-                maid.clearFire();
-                maid.addEffect(
-                        new MobEffectInstance(MobEffects.RESISTANCE, 100, 10));
-
-                world.addFreshEntity(maid);
-
-                LMRBCriteria.RESURRECT_MAID.trigger(
-                        (ServerPlayer) player,
-                        maid);
-            }
-        }
-        ((MaidManager) player).clearMaidSouls();
-
-        world.removeBlock(pos, false);
-        world.playSound(
-                null,
-                pos.getX() + 0.5,
-                pos.getY(),
-                pos.getZ() + 0.5,
-                SoundEvents.FIREWORK_ROCKET_TWINKLE,
-                SoundSource.PLAYERS,
-                1.0f,
-                2.0f);
-        world.playSound(
-                null,
-                pos.getX() + 0.5,
-                pos.getY(),
-                pos.getZ() + 0.5,
-                SoundEvents.FIREWORK_ROCKET_BLAST,
-                SoundSource.PLAYERS,
-                1.0f,
-                2.0f);
-        // TODO パーティクル演出の強化
-        world.sendParticles(
-                ParticleTypes.EXPLOSION,
-                pos.getX() + 0.5,
-                pos.getY() + 0.5,
-                pos.getZ() + 0.5,
-                1,
-                0,
-                0,
-                0,
-                0);
-        float size = 0.5f;
-        int count = 10;
-        double delta = 1.5;
-        world.sendParticles(
-                new DustParticleOptions(0xFF0000, size),
-                pos.getX() + 0.5,
-                pos.getY() + 0.5,
-                pos.getZ() + 0.5,
-                count,
-                delta,
-                delta,
-                delta,
-                0);
-        world.sendParticles(
-                new DustParticleOptions(0xFFA600, size),
-                pos.getX() + 0.5,
-                pos.getY() + 0.5,
-                pos.getZ() + 0.5,
-                count,
-                delta,
-                delta,
-                delta,
-                0);
-        world.sendParticles(
-                new DustParticleOptions(0xFFFF00, size),
-                pos.getX() + 0.5,
-                pos.getY() + 0.5,
-                pos.getZ() + 0.5,
-                count,
-                delta,
-                delta,
-                delta,
-                0);
-        world.sendParticles(
-                new DustParticleOptions(0x00FF00, size),
-                pos.getX() + 0.5,
-                pos.getY() + 0.5,
-                pos.getZ() + 0.5,
-                count,
-                delta,
-                delta,
-                delta,
-                0);
-        world.sendParticles(
-                new DustParticleOptions(0x00FFFF, size),
-                pos.getX() + 0.5,
-                pos.getY() + 0.5,
-                pos.getZ() + 0.5,
-                count,
-                delta,
-                delta,
-                delta,
-                0);
-        world.sendParticles(
-                new DustParticleOptions(0x0000FF, size),
-                pos.getX() + 0.5,
-                pos.getY() + 0.5,
-                pos.getZ() + 0.5,
-                count,
-                delta,
-                delta,
-                delta,
-                0);
-        world.sendParticles(
-                new DustParticleOptions(0x7F00FF, size),
-                pos.getX() + 0.5,
-                pos.getY() + 0.5,
-                pos.getZ() + 0.5,
-                count,
-                delta,
-                delta,
-                delta,
-                0);
-        world.sendParticles(
-                ParticleTypes.HEART,
-                pos.getX() + 0.5,
-                pos.getY() + 0.5,
-                pos.getZ() + 0.5,
-                count,
-                delta,
-                delta,
-                delta,
-                0);
-
-        return true;
+        return MaidResurrection.resurrect(world, pos, player);
     }
 
     // 登録メソッドたち
@@ -1081,9 +931,9 @@ public class LittleMaidEntity
         return model.getyOffset(getCaps()) - getBbHeight();
     }
 
-    // このままだとEntityDimensionsが作っては捨てられてを繰り返すのでパフォーマンスはよろしくない
-    // …が、そもそもそんなにたくさん呼ばれるメソッドでもない
-    // TODO パフォーマンス改善
+    // 毎回 EntityDimensions を生成するが、頻繁に呼ばれるメソッドではないためキャッシュしない。
+    // キャッシュ化はモデル変更・ポーズ・成長スケール全ての無効化が必要で、得られる効果に対し
+    // 複雑さ（無効化漏れによるヒットボックス不整合）のリスクが見合わないため見送る（設計判断）。
     @Override
     public EntityDimensions getDefaultDimensions(Pose pose) {
         EntityDimensions dimensions;
@@ -2676,51 +2526,7 @@ public class LittleMaidEntity
     }
 
     private void applyParametersFromBook(ItemStack stack, Player player) {
-        var content = stack.get(net.minecraft.core.component.DataComponents.WRITABLE_BOOK_CONTENT);
-        if (content == null) return;
-        
-        for (var page : content.pages()) {
-            String text = page.raw();
-            for (String line : text.split("\\r?\\n")) {
-                line = line.trim();
-                if (line.isEmpty() || line.startsWith("#")) continue;
-                int eqIdx = line.indexOf('=');
-                if (eqIdx != -1) {
-                    String key = line.substring(0, eqIdx).trim().toLowerCase();
-                    String value = line.substring(eqIdx + 1).trim();
-                    applyParameter(key, value, player);
-                }
-            }
-        }
-    }
-
-    private void applyParameter(String key, String value, Player player) {
-        switch (key) {
-            case "name" -> {
-                this.setCustomName(net.minecraft.network.chat.Component.literal(value));
-                this.setCustomNameVisible(true);
-            }
-            case "moving" -> {
-                try {
-                    MovingMode mode = MovingMode.valueOf(value.toUpperCase());
-                    this.setMovingMode(mode);
-                    if (mode == MovingMode.FREEDOM) {
-                        this.setFreedomPos(this.blockPosition());
-                    }
-                } catch (IllegalArgumentException e) {
-                    // 無効値は無視
-                }
-            }
-            case "bloodsuck" -> {
-                boolean bloodSuck = Boolean.parseBoolean(value);
-                this.setBloodSuck(bloodSuck);
-            }
-            case "wait" -> {
-                boolean wait = Boolean.parseBoolean(value);
-                TameableUtil.setWait(this, wait);
-                this.setOrderedToSit(wait);
-            }
-        }
+        BookParameterParser.apply(this, stack, player);
     }
 
     protected void showTransAmParticles() {
