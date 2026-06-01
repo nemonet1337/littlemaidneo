@@ -55,6 +55,8 @@ public class LittleMaidNeo {
         ModRegistration.MENUS.register(modEventBus);
         ModRegistration.CREATIVE_TABS.register(modEventBus);
         ModRegistration.BLOCK_ENTITIES.register(modEventBus);
+        ModRegistration.MEMORY_MODULES.register(modEventBus);
+        ModRegistration.SENSORS.register(modEventBus);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, LMMLConfig.SPEC, "littlemaidneo-lmml-common.toml");
         modContainer.registerConfig(ModConfig.Type.COMMON, LMRBConfig.SPEC, "littlemaidneo-common.toml");

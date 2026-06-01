@@ -20,6 +20,8 @@ import net.minecraft.world.level.material.MapColor;
 import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.ai.sensing.SensorType;
 import work.nemonet.littlemaidneo.LittleMaidNeo;
 import work.nemonet.littlemaidneo.block.SalaryBoxBlock;
 import work.nemonet.littlemaidneo.block.SalaryBoxBlockEntity;
@@ -43,6 +45,10 @@ public class ModRegistration {
             DeferredRegister.create(Registries.CREATIVE_MODE_TAB, LittleMaidNeo.MODID);
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
             DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, LittleMaidNeo.MODID);
+    public static final DeferredRegister<MemoryModuleType<?>> MEMORY_MODULES =
+            DeferredRegister.create(Registries.MEMORY_MODULE_TYPE, LittleMaidNeo.MODID);
+    public static final DeferredRegister<SensorType<?>> SENSORS =
+            DeferredRegister.create(Registries.SENSOR_TYPE, LittleMaidNeo.MODID);
 
     // Static instances for safe cross-registry reference during registration
     public static SalaryBoxBlock salaryBoxBlockInstance;

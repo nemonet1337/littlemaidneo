@@ -42,37 +42,36 @@ public class NetworkHandler {
 
     public static void register(RegisterPayloadHandlersEvent event) {
         var registrar = event.registrar("1");
+        final boolean isClient = net.neoforged.fml.loading.FMLEnvironment.getDist() == Dist.CLIENT;
 
         // SyncMultiModel (bidirectional)
-        if (net.neoforged.fml.loading.FMLEnvironment.getDist() == Dist.CLIENT) {
-            registrar.playToClient(
-                    SyncMultiModelPayload.TYPE,
-                    SyncMultiModelPayload.STREAM_CODEC,
-                    work.nemonet.littlemaidneo.client.network.ClientNetworkHandler::handleSyncMultiModelClient);
-        }
-        registrar.playToServer(
+        registrar.playBidirectional(
                 SyncMultiModelPayload.TYPE,
                 SyncMultiModelPayload.STREAM_CODEC,
+                isClient 
+                        ? (payload, context) -> work.nemonet.littlemaidneo.client.network.ClientNetworkHandler.handleSyncMultiModelClient(payload, context)
+                        : (payload, context) -> {},
                 NetworkHandler::handleSyncMultiModelServer);
 
         // SyncSoundPack (bidirectional)
-        if (net.neoforged.fml.loading.FMLEnvironment.getDist() == Dist.CLIENT) {
-            registrar.playToClient(
-                    SyncSoundPackPayload.TYPE,
-                    SyncSoundPackPayload.STREAM_CODEC,
-                    work.nemonet.littlemaidneo.client.network.ClientNetworkHandler::handleSyncSoundPackClient);
-        }
-        registrar.playToServer(
+        registrar.playBidirectional(
                 SyncSoundPackPayload.TYPE,
                 SyncSoundPackPayload.STREAM_CODEC,
+                isClient
+                        ? (payload, context) -> work.nemonet.littlemaidneo.client.network.ClientNetworkHandler.handleSyncSoundPackClient(payload, context)
+                        : (payload, context) -> {},
                 NetworkHandler::handleSyncSoundPackServer);
 
         // LMSound (S2C only)
-        if (net.neoforged.fml.loading.FMLEnvironment.getDist() == Dist.CLIENT) {
+        if (isClient) {
             registrar.playToClient(
                     LMSoundPayload.TYPE,
                     LMSoundPayload.STREAM_CODEC,
-                    work.nemonet.littlemaidneo.client.network.ClientNetworkHandler::handleLMSoundClient);
+                    (payload, context) -> work.nemonet.littlemaidneo.client.network.ClientNetworkHandler.handleLMSoundClient(payload, context));
+        } else {
+            registrar.playToClient(
+                    LMSoundPayload.TYPE,
+                    LMSoundPayload.STREAM_CODEC);
         }
 
         // C2S packets
@@ -102,15 +101,12 @@ public class NetworkHandler {
                 NetworkHandler::handleCallWaitServer);
 
         // SyncSoundConfig (bidirectional)
-        if (net.neoforged.fml.loading.FMLEnvironment.getDist() == Dist.CLIENT) {
-            registrar.playToClient(
-                    SyncSoundConfigPayload.TYPE,
-                    SyncSoundConfigPayload.STREAM_CODEC,
-                    work.nemonet.littlemaidneo.client.network.ClientNetworkHandler::handleSyncSoundConfigClient);
-        }
-        registrar.playToServer(
+        registrar.playBidirectional(
                 SyncSoundConfigPayload.TYPE,
                 SyncSoundConfigPayload.STREAM_CODEC,
+                isClient
+                        ? (payload, context) -> work.nemonet.littlemaidneo.client.network.ClientNetworkHandler.handleSyncSoundConfigClient(payload, context)
+                        : (payload, context) -> {},
                 NetworkHandler::handleSyncSoundConfigServer);
 
         // OpenTargetTagScreen (split C2S / S2C)
@@ -118,11 +114,15 @@ public class NetworkHandler {
                 OpenTargetTagScreenC2SPayload.TYPE,
                 OpenTargetTagScreenC2SPayload.STREAM_CODEC,
                 NetworkHandler::handleOpenTargetTagScreenServer);
-        if (net.neoforged.fml.loading.FMLEnvironment.getDist() == Dist.CLIENT) {
+        if (isClient) {
             registrar.playToClient(
                     OpenTargetTagScreenS2CPayload.TYPE,
                     OpenTargetTagScreenS2CPayload.STREAM_CODEC,
-                    work.nemonet.littlemaidneo.client.network.ClientNetworkHandler::handleOpenTargetTagScreenClient);
+                    (payload, context) -> work.nemonet.littlemaidneo.client.network.ClientNetworkHandler.handleOpenTargetTagScreenClient(payload, context));
+        } else {
+            registrar.playToClient(
+                    OpenTargetTagScreenS2CPayload.TYPE,
+                    OpenTargetTagScreenS2CPayload.STREAM_CODEC);
         }
 
         // OpenMaidManagerScreen (split C2S / S2C)
@@ -130,11 +130,15 @@ public class NetworkHandler {
                 OpenMaidManagerScreenC2SPayload.TYPE,
                 OpenMaidManagerScreenC2SPayload.STREAM_CODEC,
                 NetworkHandler::handleOpenMaidManagerScreenServer);
-        if (net.neoforged.fml.loading.FMLEnvironment.getDist() == Dist.CLIENT) {
+        if (isClient) {
             registrar.playToClient(
                     OpenMaidManagerScreenS2CPayload.TYPE,
                     OpenMaidManagerScreenS2CPayload.STREAM_CODEC,
-                    work.nemonet.littlemaidneo.client.network.ClientNetworkHandler::handleOpenMaidManagerScreenClient);
+                    (payload, context) -> work.nemonet.littlemaidneo.client.network.ClientNetworkHandler.handleOpenMaidManagerScreenClient(payload, context));
+        } else {
+            registrar.playToClient(
+                    OpenMaidManagerScreenS2CPayload.TYPE,
+                    OpenMaidManagerScreenS2CPayload.STREAM_CODEC);
         }
     }
 
