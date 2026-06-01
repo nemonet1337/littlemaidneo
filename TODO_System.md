@@ -165,6 +165,12 @@ Memory・Sensor）ベース**へ移行する。
 * 調査は `mc-api-research` エージェントで Vanilla の Brain/Behavior API（`Villager`/`Piglin`/`Axolotl` 等の実装）を参照。
 * **応用（データ駆動型 AI）**: AI パラメータ（「臆病」「好戦的」等の性格＝重み付けプロファイル）を `Codec` で JSON 定義し、
   エンティティ生成時に読み込んで Brain の挙動（優先スケジュール・重み）を変化させる設計も視野。DataGen（R-13）と連携可能。
+* **具体設計**:
+  - **`SensorType` 自作**: 周囲のアイテム/敵/主人/地形をスキャンし結果を Brain のメモリ（`MemoryModuleType`）へ書き込む。
+  - **`Activity` でモード管理**: `IDLE`（待機）/`FOLLOW`（追従）/`FIGHT`（戦闘）/`WORK`（作業）等を定義し、
+    各 Activity に実行可能な Behavior を優先度付きで割り当てる。
+  - 記憶の揮発（一定時間で忘れる処理）と Activity 切替はバニラ `Brain` に委譲し、Mod 側は純粋な Behavior ロジックに集中。
+  - 既存モード（`HasMode`/`entity/mode/`）は WORK 系 Activity の Behavior へマッピングし `ModeWrapperGoal` を置換。
 
 ## 🙂 R-11. メイドさんの首（頭部）の動きを `LookControl` で制御
 
@@ -192,6 +198,12 @@ Memory・Sensor）ベース**へ移行する。
   のいずれかで互換を保つ。
 * ⚠️ 高リスク。まず実在の外部パック数種で PoC を行い、`runClient` で描画一致を確認してから本適用。
 * ⚠️ `GLCompat`（旧 GL11 → 現代描画）への ASM リダイレクトも、ブリッジ方針と整合させる。
+* 背景: 1.20.1→1.21 で `RenderType`/`VertexFormat` 等に破壊的変更。旧テッセレーター直叩き/手動 GL は不可
+  （現在は `GLCompat`＋`multimodel/layer` が現行パイプラインへブリッジして動作中）。
+* **フル再構築（`EntityRenderer`/`LayerDefinition`/`ModelPart`/`AgeableListModel` ベース）の注意**:
+  バニラ `ModelPart`/`LayerDefinition` へ完全移行すると、**外部 `.class` モデルパックが依存する `maidmodel/` 独自ジオメトリと
+  非互換**になり保護機能①が壊れる。→ フル再構築は「外部パック用に旧描画パスを並行維持する」前提でのみ可。
+  資産（テクスチャ/モデル定義データ）は流用可だが、描画フック一本化は 2 保証を割らない範囲に限定する。
 
 ---
 
@@ -217,6 +229,9 @@ Memory・Sensor）ベース**へ移行する。
 | **Entity タグ（`TagKey<EntityType>`）による AI 抽象化** | ❌ **未使用** | `TargetTagManagerImpl` に `instanceof` ハードコード **19 箇所** → R-15 |
 | ICondition（条件付き DataGen） | ❌ 未使用 | DataGen 未導入のため。→ R-13 の一部（他 Mod 連携ドロップ/レシピ） |
 | Codec データ駆動型 AI プロファイル | ❌ 未使用 | → R-10 の応用（性格/重み付け JSON） |
+| 手動シリアライズ → `Codec`/`StreamCodec` | ✅ **概ね完了** | パケットは全 15 ペイロードが `StreamCodec` 採用、**手動 `FriendlyByteBuf` インデックス追跡型は無し**。NBT も `ValueInput`/`ValueOutput`＋`Codec`。残課題は `addAdditionalSaveData` の per-field 手動 put/get を record+Codec へ集約（→ R-14） |
+| ItemStack 独自データ（旧 NBT 直書き） | ✅ 廃止済 | `getOrCreateTag` 等不使用。独自データは `DataComponentType`＋Record で（`LittleMaidSpawnEggItem` 実績） |
+| レンダリングパイプライン（`RenderType`/`VertexFormat`、1.20.1→1.21 破壊的変更） | 🟢 現行 26.1 で動作中 | 旧 GL 直叩きは `GLCompat`＋`multimodel/layer` が現行パイプラインへブリッジ済み。さらなる現代化は R-12（2 保証前提） |
 
 ---
 
@@ -245,6 +260,10 @@ Memory・Sensor）ベース**へ移行する。
   （現状 `MaidSoul` の手動 NBT 受け渡しを置換可能か検討）。
 * メリット: `Codec` 指定だけで NBT 自動保存/読込が完結。手動 `write/read` の記述量削減（R-1 とも連動）。
 * ⚠️ **既存セーブ互換**: 旧 NBT キーからの移行（マイグレーション）と、マルチ同期（必要な Attachment は同期設定）を要検証。
+* **状態の 2 レイヤー分離（設計指針）**:
+  - 永続データ（モード/主人情報/内部インベントリ/AI 記憶コンテキスト）→ **Data Attachments＋Codec**（自動セーブ）。
+  - 描画・モーションに必要な最小限のステートのみ → **`SynchedEntityData`（`EntityDataAccessor`）**（DataWatcher の正統進化）。
+  現状 `addAdditionalSaveData`（L690-）の per-field 手動 put/get は record+Codec に集約し、手動 NBT の温床を排除する。
 
 ---
 
@@ -285,6 +304,22 @@ Memory・Sensor）ベース**へ移行する。
 * リファクタ（R-1〜R-16）の進行に応じて、該当する CLAUDE.md の Architecture / Notes 節を随時更新する。
 * 現代化ギャップ（Data Attachments / DataGen / Brain）の採用状況も反映する。
 * 作業はリファクタと同期させる（コードを変えたら CLAUDE.md も同コミットで更新するのが望ましい）。
+
+---
+
+## 🧭 リプレース推奨実施順序（フェーズ別ロードマップ）
+
+> 既に現代化済みの基盤（StreamCodec パケット・`ValueInput/Output`＋Codec NBT・DataComponents・DeferredRegister・
+> Biome Modifiers・Payload Networking）の上に、未解消ギャップと記述量削減を段階適用する。
+
+1. **基盤整備**: `DeferredRegister` に `MemoryModuleType`/`SensorType`（/必要なら `ArgumentType`）を追加し 26.1 ライフサイクルで定義（R-10 の前提）。
+2. **DataGen 構築**: loot/tags/lang/biome modifier を Java 出力化し手動 JSON を即廃止（R-13）。R-15 のターゲティング用 Entity タグ生成基盤もここで整える。
+3. **データ構造の決定**: モブ/アイテムのデータを Record＋Codec で定義し、Data Attachments / Data Components へ寄せる（R-14・状態 2 レイヤー分離）。`addAdditionalSaveData` の手動 put/get もここで集約。
+4. **AI（Brain）構築**: 最小の Sensor/Behavior から段階実装（R-10）。R-5 で Goal を整理してから移植、R-15 のタグでターゲティングをデータ駆動化、R-7 でモードの Behavior 化を整合。
+5. **描画/アニメ再結合**: `maidmodel` の資産取得を最新 `ResourceManager` 経由に整理しつつ、保護コア A の 2 保証を守って現行パイプラインへ結合（R-12）。
+
+付随作業（各フェーズで並行可）: R-1〜R-4・R-6・R-8・R-9（記述量削減）、R-11（首の LookControl）、R-16（サーバー Config 同期）。
+仕上げに R-17（`CLAUDE.md` を実態へ更新）。
 
 ---
 
