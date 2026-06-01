@@ -29,7 +29,8 @@ public class Modes {
             new Entry("cooking", Modes::buildCookingMode),
             new Entry("ripper", Modes::buildRipperMode),
             new Entry("torcher", Modes::buildTorcherMode),
-            new Entry("healer", Modes::buildHealerMode));
+            new Entry("healer", Modes::buildHealerMode),
+            new Entry("pharmcist", Modes::buildPharmcistMode));
 
     private record Entry(String id, Supplier<ModeType.Builder<?>> builder) {}
 
@@ -69,6 +70,11 @@ public class Modes {
                         && 9 < ((BlockItem) stack.getItem()).getBlock().defaultBlockState().getLightEmission(),
                         ItemMatcher.Priority.LOWER)
                 .addItemMatcher(ItemMatchers.tag(LMTags.Items.TORCHER_MODE), ItemMatcher.Priority.HIGHER);
+    }
+
+    public static ModeType.Builder<PharmcistMode> buildPharmcistMode() {
+        return ModeType.<PharmcistMode>builder((type, maid) -> new PharmcistMode(type, "Pharmcist", maid))
+                .addItemMatcher(ItemMatchers.tag(LMTags.Items.PHARMCIST_MODE), ItemMatcher.Priority.HIGHER);
     }
 
     public static ModeType.Builder<HealerMode> buildHealerMode() {
