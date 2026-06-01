@@ -9,7 +9,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.PotionContents;
 import net.minecraft.world.item.alchemy.Potions;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BrewingStandBlockEntity;
 import work.nemonet.littlemaidneo.api.mode.Mode;
 import work.nemonet.littlemaidneo.api.mode.ModeType;
@@ -293,14 +292,7 @@ public class PharmcistMode extends Mode {
     }
 
     public Optional<BrewingStandBlockEntity> getBrewingStand(BlockPos pos) {
-        if (pos == null) {
-            return Optional.empty();
-        }
-        BlockEntity tile = mob.level().getBlockEntity(pos);
-        if (tile instanceof BrewingStandBlockEntity) {
-            return Optional.of((BrewingStandBlockEntity) tile);
-        }
-        return Optional.empty();
+        return ModeHelpers.getBlockEntity(mob.level(), pos, BrewingStandBlockEntity.class);
     }
 
     public boolean isNotUsedBrewingStand(BrewingStandBlockEntity tile) {
