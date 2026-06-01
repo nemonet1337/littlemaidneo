@@ -149,7 +149,7 @@ NeoForge 移行および 2MOD 統合プロセスで、クリーンアップ・�
 
 ---
 
-## 🧠 R-11. AI システムを Goal 型から Brain（BehaviorControl）型へ書き換え
+## 🧠 R-10. AI システムを Goal 型から Brain（BehaviorControl）型へ書き換え
 
 **【大規模アーキテクチャ刷新】** 現状のメイドさん AI は `GoalSelector` ベース（`registerGoals()` で登録、
 `entity/goal/` に多数の Goal、§4 の継承チェーン）。これをバニラ新世代の **Brain / `BehaviorControl`（Activity・
@@ -164,18 +164,18 @@ Memory・Sensor）ベース**へ移行する。
 * ⚠️ NBT セーブ互換: Brain の Memory 永続化と既存セーブの読み込み互換に注意（必要ならマイグレーション）。
 * 調査は `mc-api-research` エージェントで Vanilla の Brain/Behavior API（`Villager`/`Piglin`/`Axolotl` 等の実装）を参照。
 
-## 🙂 R-12. メイドさんの首（頭部）の動きを `LookControl` で制御
+## 🙂 R-11. メイドさんの首（頭部）の動きを `LookControl` で制御
 
 メイドさんの首・頭部の向きを `LookControl`（`Mob#getLookControl()`）経由で制御するよう統一する。
 * 現状の頭部向き制御の実装箇所を洗い出し（注視 Goal `LMStareAtHeldItemGoal`・begging の `tickInterestedAngle()`/
   `getInterestedAngle()`（L2200-2215 付近）・モードでの `getLookControl().setLookAt(...)` 呼び出し等）、
   `LookControl` ベースへ寄せて重複・不整合を解消する。
-* R-11（Brain 化）と整合させる: Brain 移行時は `LookAtTargetSink` 相当の Behavior と `LookControl` の連携で
-  首の向きを制御する形が自然。R-11 とセットで設計する。
+* R-10（Brain 化）と整合させる: Brain 移行時は `LookAtTargetSink` 相当の Behavior と `LookControl` の連携で
+  首の向きを制御する形が自然。R-10 とセットで設計する。
 * まずは **エンティティ側の向き値（yHeadRot 等）の制御に留める**のが低リスク。
   描画側に手を入れる場合は保護コア A の 2 保証（メイドさん正常描画／外部パック無改変ロード）を実機検証する。
 
-### 🟧 R-13. 描画ラッパー層のモダン化（§2 の内部刷新・2 保証前提）
+### 🟧 R-12. 描画ラッパー層のモダン化（§2 の内部刷新・2 保証前提）
 
 **【解禁】** `MMMatrixStack`/`MMVertexConsumer`/`MMPose` 等の独自描画ラッパーを、
 バニラ標準型（`PoseStack`/`VertexConsumer`/`MultiBufferSource`）へ寄せて簡素化する。
@@ -201,14 +201,14 @@ Memory・Sensor）ベース**へ移行する。
 | EntityAttributeCreationEvent | ✅ 導入済 | `onEntityAttributeCreation`（CLAUDE.md 記載どおり） |
 | EntityRenderersEvent（RegisterRenderers/LayerDefinitions） | ✅ 導入済 | `LittleMaidNeoClient#onRegisterRenderers`。⚠️ メイドさん本体の描画は外部モデルパック互換（保護コア A）に依存 |
 | Data Components（ItemStack） | ✅ 概ね現代化 | `item/LittleMaidSpawnEggItem` が `DataComponents` 使用。**ItemStack 旧 NBT（`getOrCreateTag` 等）は不使用** |
-| **Data Attachments（`AttachmentType`）** | ❌ **未採用** | → R-15。プレイヤー状態(R-2)/メイド AI ステート(R-11)/魂データ引き継ぎ(R-3) で活用 |
-| **DataGen（`GatherDataEvent`）** | ❌ **未導入** | → R-14。loot/tags/recipes/advancements/lang を手動 JSON で保守中。`runData` 未配線 |
-| **Brain / `MemoryModuleType` / `SensorType`** | ❌ 未導入（Goal ベース） | → R-11。MemoryModuleType は DeferredRegister で登録 |
+| **Data Attachments（`AttachmentType`）** | ❌ **未採用** | → R-14。プレイヤー状態(R-2)/メイド AI ステート(R-10)/魂データ引き継ぎ(R-3) で活用 |
+| **DataGen（`GatherDataEvent`）** | ❌ **未導入** | → R-13。loot/tags/recipes/advancements/lang を手動 JSON で保守中。`runData` 未配線 |
+| **Brain / `MemoryModuleType` / `SensorType`** | ❌ 未導入（Goal ベース） | → R-10。MemoryModuleType は DeferredRegister で登録 |
 | GeckoLib / AzureLib | 🟡 条件付き可 | メイドさん本体に導入する場合、**既存外部モデルパックが無改変でロード＆描画できる経路を別途維持**することが条件（保護コア A の 2 保証）。両立が困難なら新規補助エンティティ限定。要 PoC・実機検証 |
 
 ---
 
-## 🏗️ R-14. DataGen（`GatherDataEvent`）の導入
+## 🏗️ R-13. DataGen（`GatherDataEvent`）の導入
 
 膨大なインフラ JSON を手書き保守している状態を解消し、Java コードから自動生成する。
 * 対象（現状すべて手動 JSON）: loot table（`salary_box`・`little_maid_mob`）、tags（11 ファイル — モード用 `{mode}_mode.json` 含む）、
@@ -219,12 +219,12 @@ Memory・Sensor）ベース**へ移行する。
   R-6（Modes テーブル駆動化）と相性が良い。
 * ⚠️ 保護コア（外部モデル/ボイスの探索・命名）には JSON が絡まないため影響なし。生成結果が既存 JSON と一致することを差分確認。
 
-## 🔌 R-15. Data Attachments（`AttachmentType`）の全面活用
+## 🔌 R-14. Data Attachments（`AttachmentType`）の全面活用
 
 現在 `AttachmentType` は未使用。旧 Capability/`IExtendedEntityProperties` 相当の独自ステート付与を Data Attachment へ。
 * **プレイヤー状態（R-2 と統合）**: `MixinServerPlayerEntity`/`MixinPlayerEntity` が注入する `MaidManager`/`TargetTagManager`
   のステートを `AttachmentType`＋`Codec` に置換。Mixin+interface+Impl を撤廃でき、`instanceof` キャストは Attachment 取得へ。
-* **メイドさんの AI ステート（R-11 と統合）**: 警戒度・各種パラメータなど Brain 化で必要になる永続データを `AttachmentType` で保持。
+* **メイドさんの AI ステート（R-10 と統合）**: 警戒度・各種パラメータなど Brain 化で必要になる永続データを `AttachmentType` で保持。
 * **魂データ引き継ぎ（R-3 と統合）**: `copyOnDeath()` を利用し、メイドさん死亡 → 魂化/復活時のデータ引き継ぎを簡潔化
   （現状 `MaidSoul` の手動 NBT 受け渡しを置換可能か検討）。
 * メリット: `Codec` 指定だけで NBT 自動保存/読込が完結。手動 `write/read` の記述量削減（R-1 とも連動）。
@@ -232,7 +232,7 @@ Memory・Sensor）ベース**へ移行する。
 
 ---
 
-## 📝 R-16. `CLAUDE.md` の書き直し（重要）
+## 📝 R-15. `CLAUDE.md` の書き直し（重要）
 
 `CLAUDE.md` は**旧ソースから引っ張ってきた記述が多く、現行実装と乖離している**。実装に合わせて書き直すこと。
 判明済みの乖離（最低限ここは直す）:
@@ -240,7 +240,7 @@ Memory・Sensor）ベース**へ移行する。
   分割パターンを採用」とあるが **これらのクラスは実在しない**（実在は `LMHasInventory`/`LMItemContractable` のみ）。
   → R-3 で実際に抽出後、記述を実態に合わせる。
 * 「現状維持境界」前提の記述（Mixin 注入 interface は統合不可 等）は、本ファイルの新方針（保護2機能以外は解禁）に合わせて更新。
-* リファクタ（R-1〜R-15）の進行に応じて、該当する CLAUDE.md の Architecture / Notes 節を随時更新する。
+* リファクタ（R-1〜R-14）の進行に応じて、該当する CLAUDE.md の Architecture / Notes 節を随時更新する。
 * 現代化ギャップ（Data Attachments / DataGen / Brain）の採用状況も反映する。
 * 作業はリファクタと同期させる（コードを変えたら CLAUDE.md も同コミットで更新するのが望ましい）。
 
