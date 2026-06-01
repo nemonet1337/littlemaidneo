@@ -2532,51 +2532,7 @@ public class LittleMaidEntity
     }
 
     private void applyParametersFromBook(ItemStack stack, Player player) {
-        var content = stack.get(net.minecraft.core.component.DataComponents.WRITABLE_BOOK_CONTENT);
-        if (content == null) return;
-        
-        for (var page : content.pages()) {
-            String text = page.raw();
-            for (String line : text.split("\\r?\\n")) {
-                line = line.trim();
-                if (line.isEmpty() || line.startsWith("#")) continue;
-                int eqIdx = line.indexOf('=');
-                if (eqIdx != -1) {
-                    String key = line.substring(0, eqIdx).trim().toLowerCase();
-                    String value = line.substring(eqIdx + 1).trim();
-                    applyParameter(key, value, player);
-                }
-            }
-        }
-    }
-
-    private void applyParameter(String key, String value, Player player) {
-        switch (key) {
-            case "name" -> {
-                this.setCustomName(net.minecraft.network.chat.Component.literal(value));
-                this.setCustomNameVisible(true);
-            }
-            case "moving" -> {
-                try {
-                    MovingMode mode = MovingMode.valueOf(value.toUpperCase());
-                    this.setMovingMode(mode);
-                    if (mode == MovingMode.FREEDOM) {
-                        this.setFreedomPos(this.blockPosition());
-                    }
-                } catch (IllegalArgumentException e) {
-                    // 無効値は無視
-                }
-            }
-            case "bloodsuck" -> {
-                boolean bloodSuck = Boolean.parseBoolean(value);
-                this.setBloodSuck(bloodSuck);
-            }
-            case "wait" -> {
-                boolean wait = Boolean.parseBoolean(value);
-                TameableUtil.setWait(this, wait);
-                this.setOrderedToSit(wait);
-            }
-        }
+        BookParameterParser.apply(this, stack, player);
     }
 
     protected void showTransAmParticles() {
