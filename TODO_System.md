@@ -1,142 +1,179 @@
 # LittleMaidNeo — システム統合における技術的困難と重要維持項目 (TODO_System)
 
-今回の NeoForge 移行および 2MOD 統合プロセスにおいて、**単純なクリーンアップ・削除が困難であり、互換性保護や Mixin の構造上「意図的に現状維持」とした部分**、および**リファクタリング時に注意を要した設計上の罠**をここに記録します。
-
-今後のメンテナンスや追加機能実装の際、以下のシステム境界を変更する場合は細心の注意を払ってください。
-
----
-
-## 🚨 1. 外部モデルパック（.class 形式）の動的 ASM リマップ
-* **関連ファイル**: 
-  * [MultiModelClassLoader.java](file:///workspaces/littlemaidneo/src/main/java/work/nemonet/littlemaidneo/resource/classloader/MultiModelClassLoader.java)
-  * [MultiModelClassTransformer.java](file:///workspaces/littlemaidneo/src/main/java/work/nemonet/littlemaidneo/resource/classloader/MultiModelClassTransformer.java)
-  * [EntityLittleMaid.java](file:///workspaces/littlemaidneo/src/main/java/work/nemonet/littlemaidneo/entity/EntityLittleMaid.java) (リマップ用スタブ)
-* **困難だった点**:
-  * 旧 `LittleMaidMob` / `MultiModel` 時代の外部モデルパック（コンパイル済みの `.class` を含む zip）を、実行時に Java のクラスローダと ASM (ClassReader / ClassNode / ClassWriter) を用いて動的に読み込み、NeoForge / 自作パッケージ (`work.nemonet`) 向けにバイトコードレベルでリマップしています。
-  * このインフラは非常に壊れやすく、少しでもパッケージ構成やメソッド名が変わると、外部モデルパックが一切読み込めなくなります。
-* **対処方針**:
-  * このサブシステムは **触らずに完全維持 (Load-bearing)** としています。
+NeoForge 移行および 2MOD 統合プロセスで、クリーンアップ・削除が困難な部分、互換性保護のために
+維持すべき部分、リファクタリング時の設計上の罠をここに記録します。
 
 ---
 
-## 🎨 2. 描画ラッパー層 (`MMMatrixStack` / `MMVertexConsumer` など) の外部互換性保護
-* **関連ファイル**: 
-  * `maidmodel/` パッケージ全般
-  * `maidmodel/compat/GLCompat`
-* **困難だった点**:
-  * バニラや NeoForge の標準型（`PoseStack` や `VertexConsumer`）に統一して描画ラッパー層（`MMMatrixStack`, `MMVertexConsumer`, `MMPose` 等）を削除する計画（Step 8）がありました。
-  * しかし、これらのラッパー型は `ModelMultiBase` などのメソッド引数として直接露出しており、**外部のモデルパック（.class）がこれらのメソッドをオーバーライドしています**。
-  * もし標準型に統一してしまうと、メソッドシグネチャが変わるため外部モデルパック読み込み時に `LinkageError` や `AbstractMethodError` が発生し、互換性が完全に崩壊します。
-* **対処方針**:
-  * 描画ラッパー層はリファクタリングを **中止し、外部互換性を守るために現状維持** としました。
+## 🎯 リファクタリング方針（2026-05-31 更新・最重要）
+
+**絶対に壊してはならないベース Mod 機能は次の 2 つのみ:**
+1. **外部からモデル／テクスチャを読み込む機能**（外部モデルパック `.class` の ASM リマップ読み込み・描画を含む）
+2. **外部からボイスパック（サウンドパック）を読み込む機能**
+
+> この 2 機能が担保され、かつ **Mod 全体の挙動（マルチプレイ同期・セーブ互換を含む）に問題が出ない限り**、
+> 従来「現状維持境界」としていた箇所（後述 §3 / §4 等）も **破壊・再設計して構わない**。
+> 逆に、上記 2 機能の load-bearing 部分（後述「🛡️ 保護コア」）は**シグネチャ・データ形式・命名規則・探索パスを不変**に保つこと。
 
 ---
 
-## 🔀 3. Mixin による Vanilla 注入インターフェースと Impl の結合限界
-* **関連ファイル**:
-  * `entity/mode/HasMode` (および `MixinLivingEntity`)
-  * `entity/targeting/TargetTagManager` (および `MixinPlayerEntity`)
-  * `entity/util/MaidManager` (および `MixinServerPlayerEntity`)
-* **困難だった点**:
-  * これらは一見「1つの実装（Impl）しか持たない薄いインターフェース」に見えるため、統合可能に見えました。
-  * しかし、これらは **Mixin を利用して Vanilla の既存クラス（`PlayerEntity`, `ServerPlayerEntity`）へ多態性契約（Interface）を動的に注入するための境界** です。
-  * インターフェースを削除したり Impl クラスと強引にマージしてしまうと、Mixin 側で Vanilla クラスに実装を追加できなくなり、他のクラス（`ModeWrapperGoal` 等）での `instanceof` による多態性キャストが破綻します。
-* **対処方針**:
-  * Interface と Impl の分離構造は **Mixin の動作要件として必須であるため、統合不可として現状維持** としました。
+## 🛡️ 保護コア（不変厳守 — 上記 2 機能の load-bearing）
+
+### A. 外部モデル／テクスチャ読み込み・描画
+* **ASM リマップ基盤**: `resource/classloader/MultiModelClassLoader`・`MultiModelClassTransformer`、リマップ先スタブ `entity/EntityLittleMaid`、リマップ先パッケージ `work.nemonet.littlemaidneo.maidmodel`（Transformer にハードコード）。
+* **描画ラッパー層**: `maidmodel/` 全般（`ModelMultiBase`・`EntityCaps`・`ModelRenderer` 等）、`maidmodel/compat/GLCompat`、`multimodel/layer/`（`MMMatrixStack`/`MMVertexConsumer`/`MMPose` 等）、`multimodel/IMultiModel`・`maidmodel/IModelCaps`。
+  → 外部モデルパックがこれらの型・メソッドを override するため、**シグネチャ変更は `LinkageError`/`AbstractMethodError` を招く**。
+* **リソース探索／登録**: `resource/loader/LMFileLoader`（`LMMLResources/` 探索順）、`LMMultiModelLoader`/`LMTextureLoader`、`resource/manager/LMModelManager`/`LMTextureManager`（**登録モデル名＝パック探索キー不変**）、`resource/holder/TextureHolder`、`resource/util/ResourceHelper`（命名・Identifier 生成ロジック）。
+
+### B. 外部ボイスパック読み込み・再生
+不変厳守なのは主に「外部パック作者が依存する契約」と「探索・再生フォーマット」:
+* **探索パス／形式**: `LMMLResources/` フォルダ、`.ogg` 探索（`client/resource/loader/LMSoundLoader`）、`.cfg` パース形式（`resource/loader/LMConfigLoader`、`key=value` 例: `se_hurt=pack.parent.file`）、`LMFileLoader`／`LMLoader` 契約。
+* **命名規則**: `resource/util/ResourceHelper`（pack/parent/file 抽出・`getLocation()` の Identifier 生成）、`ConfigHolder`（`packName`/`parentName`/`fileName`/`settings` と `getSoundFileName()` のキー形式）。
+* **サウンド名定数**: `resource/util/LMSounds`（`se_hurt`・`se_attack` 等の文字列＝エンティティ ↔ `.cfg` の契約）。**定数文字列の変更は全既存ボイスパックを壊す**。
+* **再生・橋渡し**: `entity/compound/SoundPlayable`／`SoundPlayableCompound`、`client/resource/manager/LMSoundManager`、`client/resource/LMSoundInstance`、`client/resource/ResourceWrapper`・`LMPackProvider`（MC リソース系への橋渡し）、`resource/manager/LMConfigManager`。
+* **ネットワーク形式**: `network/LMSoundPayload`・`SyncSoundPackPayload`・`SyncSoundConfigPayload` の**パケットフォーマット**（codec）。
+* **音量**: `config/LMMLConfig#getVoiceVolume()`（キー名・範囲）。
+
+> 注: 上記クラスでも「外部契約に関わらない内部実装」は整理可。
+> 例えば `SoundPlayableCompound` の内部リファクタは可だが、`SoundPlayable.play(String)` のシグネチャと
+> `LMSounds.*` 文字列・`.cfg` キー解決の振る舞いは不変に保つ。
 
 ---
 
-## 🧠 4. 多階層 Goal 継承チェーンの縮約に伴うドミノ倒し
-* **関連ファイル**:
-  * `StareAtHeldItemGoal` (旧基底)
-  * `TameableStareAtHeldItemGoal` (旧中間)
-  * [FollowAtHeldItemGoal.java](file:///workspaces/littlemaidneo/src/main/java/work/nemonet/littlemaidneo/entity/goal/FollowAtHeldItemGoal.java)
-  * `LittleMaidEntity.LMStareAtHeldItemGoal` (インナークラス)
-* **困難だった点**:
-  * メイドさん固有の挙動のために、Goal（AI目標）が「汎用 → テイム可能モブ用 → メイド専用」と3段階で継承されている構造がありました。
-  * 中間の抽象基底クラスを単純に削除しようとすると、その基底を継承していた別の Goal（例: `FollowAtHeldItemGoal`）のフィールド（`mob` や `stareAt`）や `super.tick()` 呼び出しが破壊され、広範囲にコンパイルエラーが波及するドミノ倒しが発生しました。
-* **対処方針**:
-  * 単に基底クラスを削除するのではなく、依存していたサブクラス側（`FollowAtHeldItemGoal` 等）も**基底クラスに依存しない完全な自己完結型クラスへ書き換える**（ロジックやフィールドをすべて取り込んで一本化する）ことで解決しました。
+## 🗂️ 旧「現状維持境界」の再分類
+
+### §1. 外部モデルパック（.class）の動的 ASM リマップ — 🛡️ **引き続き保護**
+`MultiModelClassLoader` / `MultiModelClassTransformer` / `EntityLittleMaid`（スタブ）。
+→ これは保護機能①そのもの。**触らない**。
+
+### §2. 描画ラッパー層（`MMMatrixStack`/`MMVertexConsumer` 等）— 🛡️ **引き続き保護**
+`maidmodel/` 全般・`GLCompat`。外部モデルパックが override するため標準型統一は不可。
+→ 保護機能①の一部。**触らない**。
+
+### §3. Mixin による Vanilla 注入 interface と Impl — 🔓 **解禁（保護2機能と無関係）**
+`entity/mode/HasMode`、`entity/targeting/TargetTagManager`（`MixinPlayerEntity`）、`entity/util/MaidManager`（`MixinServerPlayerEntity`）。
+**確認済み: `resource`/`multimodel`/`maidmodel` はこれらに一切依存していない** → モデル/テクスチャ/ボイス読み込みと無関係。
+従来は「Mixin が Vanilla `Player`/`ServerPlayer` へ多態性契約を注入する境界」として現状維持としていたが、
+保護対象外のため**再設計可**。ただし下記の挙動は維持すること:
+* `instanceof MaidManager` / `instanceof TargetTagManager` による Vanilla プレイヤーへのキャスト（`NetworkHandler`・`MaidSoulEntity`・`LittleMaidEntity` 等）。
+* マルチプレイ同期、ディメンション移動時のデータ引き継ぎ（`MixinServerPlayerEntity#restoreFrom` 等）、NBT セーブ互換。
+→ 詳細な解禁タスクは R-2 / R-3 参照。
+
+### §4. 多階層 Goal 継承チェーンの縮約 — 🔓 **解禁（保護2機能と無関係）**
+`StareAtHeldItemGoal`（旧基底）/ `TameableStareAtHeldItemGoal`（旧中間）/ `FollowAtHeldItemGoal` / `LMStareAtHeldItemGoal`。
+中間抽象の削除はドミノ倒しを招くため従来は慎重対応としていたが、保護機能とは無関係。
+→ サブクラスを自己完結化しつつ継承段数を縮約する整理を**進めてよい**（R-5 参照）。挙動（AI 目標の動作）は不変に。
 
 ---
 
-# ✅ 着手可能なリファクタリング候補（統合・記述量削減）
+## ✅ リファクタリング候補（統合・記述量削減）
 
-> 上記 1〜4 の「現状維持」境界を**侵さない範囲**で、なお実施可能なクリーンアップ・共通化・分割のタスク一覧。
-> 大前提: **読み込むモデル／実際のモデル挙動・レンダリングに影響を与えない**こと。
-> 不変厳守: NBT キー名・同期データ・ビット位置・登録モデル名・ローダー実行順序。
-> 検証: 各項目ごとに `./gradlew compileJava` が通ることを確認しながら小さく進める。
+> 大前提: 🛡️ 保護コアのシグネチャ・データ形式・命名規則・探索パスは不変。
+> 検証: 各項目で `./gradlew compileJava` を通し、可能なら `runClient`/`runServer` で
+> 外部モデル読み込み・ボイス再生・マルチ同期を実機確認しながら小さく進める。
 
-## 🟦 R-1. Impl の「インスタンス／static 二重実装」の解消（§3 の境界を侵さず可能）
+### 🟥 R-1. `Impl` 内部の「インスタンス／static 二重実装」解消
+`MaidManagerImpl` / `TargetTagManagerImpl` は同一シリアライズ処理を
+インスタンスメソッドと static メソッドの両方で重複保持。単一ソース化する。
+* `MaidManagerImpl#writeMaidManager/readMaidManager`(L35-51) ⇔ `MaidManagerImpl.write/read`(static, L90-104)
+* `TargetTagManagerImpl#writeTargetTags/readTargetTags`(L127-153) ⇔ `TargetTagManagerImpl.write/read`(static, L135-168)
+* ⚠️ `MaidManager.LMInfo`（sealed）の NBT キー・フィールド構成は不変（セーブ互換）。
 
-§3 のとおり `MaidManager` / `TargetTagManager` の **interface 自体は Mixin 注入契約のため削除不可**。
-一方、Impl 内部には同一シリアライズ処理が **インスタンスメソッドと static メソッドの両方**で重複している。
-interface 境界は維持したまま、Impl 内部の重複だけ単一ソース化できる（挙動・NBT フォーマット不変）。
-* `MaidManagerImpl#writeMaidManager/readMaidManager`（L35-51）⇔ `MaidManagerImpl.write/read`（static, L90-104）
-* `TargetTagManagerImpl#writeTargetTags/readTargetTags`（L127-153）⇔ `TargetTagManagerImpl.write/read`（static, L135-168）
-* 方針: インスタンス側を static 側へ委譲。`NetworkHandler`/`ClientNetworkHandler` は static 版を直接利用中なので呼び出しは維持。
-* ⚠️ `MaidManager.LMInfo`（sealed `MaidLMInfo`/`SoulLMInfo`/`SoulEntityLMInfo`）のフィールド構成・NBT キーは不変（セーブ互換）。
+### 🟥 R-2. §3 Mixin 注入の再設計（interface + Impl の薄い二重構造の解消）
+**【解禁】** 保護機能と無関係になったため、以下いずれかで整理可:
+* (a) **NeoForge Data Attachment（`AttachmentType`）への移行** — Vanilla `Player`/`ServerPlayer` への
+  状態付与を Mixin+interface+Impl から Data Attachment に置換し、`MixinPlayerEntity`/`MixinServerPlayerEntity` と
+  `MaidManager`/`TargetTagManager` interface を撤廃。`instanceof` キャスト箇所は Attachment 取得に置換。
+  ※現状 Data Attachment は未使用（新規導入）。**NBT セーブ互換・マルチ同期・ディメンション移動引き継ぎを要検証**。
+* (b) Data Attachment 導入が重い場合は、最低限 R-1 の内部重複解消に留める。
+* `HasMode`/`HasModeImpl` は **Mixin 非依存**（`LittleMaidEntity` のフィールド合成のみ・`instanceof HasMode` 未使用、
+  `MixinLivingEntity` も存在しない）。→ interface を畳んで具象へ統合し記述量削減してよい。
 
-## 🟦 R-2. `HasMode` / `HasModeImpl` の薄い二重構造（§3 とは別扱い・要再確認）
+### 🟥 R-3. `LittleMaidEntity`（2763 行）の機能分割
+`CLAUDE.md` 記載の `LMGoalInitializer`/`LMSafeMovement`/`LMInteractionHandler`/`MaidResurrection`/`MaidSoul` は
+**実在しない**（実在の委譲先は `LMHasInventory`/`LMItemContractable` のみ）。実際に抽出して乖離を解消する。
+`super` を含む override 本体はクラスに残し、**ロジックのみ委譲**。
+* 復活演出 `resurrectionMaid()`（static, L266-415）→ `MaidResurrection` へ全移動（障壁なし・着手容易）。
+* 本パラメータ適用 `applyParametersFromBook()`（L2678-2724）→ `BookParameterParser` 等へ（障壁なし）。
+* Goal 登録 `registerGoals()`（L420-669）→ Goal 生成を `LMGoalInitializer.init(...)` へ委譲（override 本体は残す）。
+  ⚠️ `initGoals()` は `Mob` コンストラクタ内で呼ばれフィールド未初期化 → ラムダ遅延参照。
+* 右クリック `mobInteract()`（L1639-1870）→ アイテム別分岐を `LMInteractionHandler` へ委譲。
+* 安全移動 `maybeBackOffFromEdge()` 等（L1428-1623）→ 危険判定を `LMSafeMovement` へ抽出。
+* ⚠️ ボイス再生に関わる `play()/playForce()/setConfigHolder()/getConfigHolder()` のシグネチャは不変（保護コア B）。
 
-§3 は `HasMode` を `MixinLivingEntity` 経由の注入境界として列挙しているが、**現状 `MixinLivingEntity` は存在せず**、
-`HasModeImpl` は `LittleMaidEntity` の**フィールド合成（コンポジション）**として保持されているのみ
-（`instanceof HasMode` による多態キャストも未使用）。
-→ Mixin 依存が無いなら interface を畳んで具象へ統合し記述量削減が可能だが、**§3 の記述と実態が食い違う**ため、
-  まず「将来 Mixin で `LivingEntity` に注入する予定があるか」を確認してから判断する（誤って消すと将来の注入計画を壊す）。
-* 確認が取れるまでは保留。確認後に統合する場合、§3 の記述も実態に合わせて更新する。
+### 🟧 R-4. モード具象クラス間の重複ボイラープレート共通化
+* ブロックエンティティ探索＋キャスト: `CookingMode`(L107-132)/`PharmcistMode`(L279-304)/`TorcherMode` → `Optional<T> getBlockEntity(level,pos,Class<T>)`。
+* インベントリ走査でスロット検索: `CookingMode`/`HealerMode`(L65-89)/`PharmcistMode` → `OptionalInt findSlot(Container, Predicate<ItemStack>)`。
+* tick ベース経路再計算タイマー: `CookingMode`(L254-261)/`PharmcistMode`(L87-89)/`RipperMode`(L89-99)/`TorcherMode`(L159-178) → `PathRecalcTimer`。
+* コンテナ間アイテム移送: `CookingMode`(L296-362)/`PharmcistMode`(L159-227) → 「空き/一致スロット探索→検証→移送」共通化。
 
-## 🟦 R-3. `LittleMaidEntity`（2763 行）の機能分割
+### 🟧 R-5. §4 Goal 継承チェーンの整理
+**【解禁】** 中間抽象（`StareAtHeldItemGoal`/`TameableStareAtHeldItemGoal`）の縮約。
+サブクラス（`FollowAtHeldItemGoal`・`LMStareAtHeldItemGoal` 等）を自己完結化しつつ継承段数を減らす。
+⚠️ AI 目標の動作（追従・注視の挙動）は不変に保つこと。
 
-`CLAUDE.md` は `LMGoalInitializer`/`LMSafeMovement`/`LMInteractionHandler`/`MaidResurrection`/`MaidSoul` への
-分割採用と記載しているが、**実際にこれらのクラスは存在しない**（実在の委譲先は `LMHasInventory` / `LMItemContractable` のみ）。
-ドキュメントと実態の乖離を解消しつつ、`super` を含む override 本体はクラスに残し、**ロジックのみ委譲**する。
-* 復活演出 `resurrectionMaid()`（static, L266-415, 約150行）→ `MaidResurrection` ユーティリティへ全移動（障壁なし・着手容易）。
-* 本パラメータ適用 `applyParametersFromBook()`（L2678-2724）→ `BookParameterParser` 等へ抽出（障壁なし）。
-* Goal 登録 `registerGoals()`（L420-669, 約250行）→ 本体は残し Goal 生成を `LMGoalInitializer.init(...)` へ委譲。
-  ⚠️ §4 のとおり Goal 継承チェーンは脆い。**Goal クラス自体の継承構造は変えず**、登録呼び出しの外出しに留める。
-  ⚠️ `initGoals()` は `Mob` コンストラクタ内で呼ばれフィールド未初期化。委譲はラムダ遅延参照（CLAUDE.md 既出）。
-* 右クリック `mobInteract()`（L1639-1870）→ アイテム別分岐を `LMInteractionHandler` へ委譲、override 本体は残す。
-* 安全移動 `maybeBackOffFromEdge()` ほか（L1428-1623）→ 危険判定を `LMSafeMovement` へ抽出、override は残す。
-* 着手順は「障壁なしの static 系（復活演出・本パラメータ）」→「override 委譲系」を推奨。
+### 🟧 R-6. `Modes.java` のモード登録をテーブル駆動化
+「`buildXxxMode()`×6」＋「static 代入」＋「`init()` で `register()`×6」の三重定義を 1 テーブルの一括ループ登録へ。
+**登録 ModeType・ItemMatcher・Priority・登録順は完全維持**。約30行削減。
 
-## 🟦 R-4. モード具象クラス間の重複ボイラープレート共通化
+### 🟧 R-7. `HasMode` ⇔ `Mode` の NBT API 不整合の解消
+`Mode` は `CompoundTag` 直接、`HasModeImpl` は `ValueOutput/ValueInput` のためラッパ発生（`HasModeImpl` L73-75）。
+どちらかへ統一しラッパ除去。**NBT キー（`ModeID`/`ModeData`）・格納形式は不変**。
 
-`entity/mode/` の各モードに同型コードが散在。挙動を変えずに共有ヘルパーへ集約する。
-* ブロックエンティティ探索＋キャスト: `CookingMode`(L107-132), `PharmcistMode`(L279-304), `TorcherMode` → `Optional<T> getBlockEntity(level,pos,Class<T>)`。
-* インベントリ走査でスロット検索: `CookingMode`, `HealerMode`(L65-89), `PharmcistMode` → `OptionalInt findSlot(Container, Predicate<ItemStack>)`。
-* tick ベース経路再計算タイマー: `CookingMode`(L254-261), `PharmcistMode`(L87-89), `RipperMode`(L89-99), `TorcherMode`(L159-178) → `PathRecalcTimer` 小ユーティリティ。
-* コンテナ間アイテム移送: `CookingMode`(L296-362 `tryInsert*`/`tryExtract*`), `PharmcistMode`(L159-227) → 「空き/一致スロット探索→検証→移送」共通化。
+### 🟩 R-8. モデル／ボイスローダー系の内部重複整理（保護コアの命名・探索パス・登録名は不可触）
+* `resource/manager/`（Model/Texture/Config）: `get()` ごとの `toLowerCase()` を登録時 1 回へ集約（**キー文字列自体は不変**）。
+* `resource/util/ResourceHelper`: `getFileName()`/`getParentFolderName()`/`getTexturePackName()` の `replace("\\","/")` を `normalizePath()` へ共通化（**命名結果は不変**）。
+* `resource/loader/LMFileLoader`: `loadArchive()`(L89-90)/`loadFile()`(L112-113) の同一ローダ適用ループを `applyLoaders(...)` へ（**実行順不変**）。
+* `resource/manager/LMModelManager` の内部クラス `ModelHolder`（L65-86）のインライン化／record 化。
 
-## 🟦 R-5. `Modes.java` のモード登録をテーブル駆動化
+### 🟩 R-9. 薄い DTO／補助構造・フラグの整理（低優先・効果小）
+* `resource/util/TexturePair`・`ArmorPart.Builder`（L51-76）の簡素化。
+* `LittleMaidEntity#setLMMFlag/getLMMFlag`（L1933-1946）ビット操作の enum ラッパー化（**ビット位置・同期値は不変厳守**）。
 
-現状は「`buildXxxMode()` × 6」＋「static 初期化で代入」＋「`init()` で `register()` × 6」の三重定義。
-ModeType・matcher を 1 テーブルにまとめ `init()` で一括ループ登録へ。
-**登録される ModeType・ItemMatcher・Priority・登録順は完全維持**（モード判定挙動不変）。約30行削減。
+---
 
-## 🟦 R-6. `HasMode` ⇔ `Mode` の NBT API 不整合の解消
+## 🧠 R-11. AI システムを Goal 型から Brain（BehaviorControl）型へ書き換え
 
-`Mode#writeModeData/readModeData` は `CompoundTag` 直接、`HasModeImpl` は `ValueOutput/ValueInput`。
-このため `HasModeImpl`(L73-75) で毎回 `CompoundTag` 生成→`store("ModeData", CompoundTag.CODEC, …)` のラッパが発生。
-どちらかへ統一しラッパ除去。**NBT キー（`ModeID`/`ModeData`）と格納フォーマットは不変**（セーブ互換）。
+**【大規模アーキテクチャ刷新】** 現状のメイドさん AI は `GoalSelector` ベース（`registerGoals()` で登録、
+`entity/goal/` に多数の Goal、§4 の継承チェーン）。これをバニラ新世代の **Brain / `BehaviorControl`（Activity・
+Memory・Sensor）ベース**へ移行する。
+* R-3（`registerGoals()` の委譲）・R-5（Goal 継承縮約）は本書き換えの**前段または一部置換**として位置づける。
+  Goal を整理してから Brain へ移すか、機能単位で順次 Behavior へ移植するかは要設計判断。
+* 移行対象の洗い出し: `entity/goal/` 配下の全 Goal（追従・戦闘・サルベージ・給料回収・待機・注視等）、
+  `entity/mode/ModeWrapperGoal`（モードを Goal でラップしている箇所）、ターゲティング（`entity/targeting/`）。
+* 設計メモ: `Brain<LittleMaidEntity>` の `MemoryModuleType` / `SensorType` / `Activity` を新規定義。
+  モード（`HasMode`）とターゲティングを Memory/Activity にどうマッピングするか、`ModeWrapperGoal` の置換方針を要検討。
+* ⚠️ 保護コアとは独立だが大規模。挙動（AI の振る舞い）の等価性を実機で検証しながら段階移行する。
+* ⚠️ NBT セーブ互換: Brain の Memory 永続化と既存セーブの読み込み互換に注意（必要ならマイグレーション）。
+* 調査は `mc-api-research` エージェントで Vanilla の Brain/Behavior API（`Villager`/`Piglin`/`Axolotl` 等の実装）を参照。
 
-## 🟩 R-7. モデルローダー系の安全な重複整理（§1・§2 の load-bearing を侵さず）
+## 🙂 R-12. メイドさんの首（頭部）の動きを `LookControl` で制御
 
-ASM・`maidmodel/`・描画ラッパー型・登録モデル名は一切触らない。純粋な内部重複のみ削減。
-* `resource/manager/`（Model/Texture/Config）: `get()` ごとの `toLowerCase()` を**登録時 1 回**へ集約（探索キー自体は不変）。
-* `resource/util/ResourceHelper`: `getFileName()`(L27-32)/`getParentFolderName()`(L56-64)/`getTexturePackName()`(L35-47) の `replace("\\","/")` 正規化を `normalizePath()` へ共通化。
-* `resource/loader/LMFileLoader`: `loadArchive()`(L89-90) と `loadFile()`(L112-113) の同一ローダ適用ループを `applyLoaders(...)` へ（実行順不変）。
-* `resource/manager/LMModelManager` 内部クラス `ModelHolder`（L65-86, skin/inner/outer 三つ組）のインライン化／record 化。
+メイドさんの首・頭部の向きを `LookControl`（`Mob#getLookControl()`）経由で制御するよう統一する。
+* 現状の頭部向き制御の実装箇所を洗い出し（注視 Goal `LMStareAtHeldItemGoal`・begging の `tickInterestedAngle()`/
+  `getInterestedAngle()`（L2200-2215 付近）・モードでの `getLookControl().setLookAt(...)` 呼び出し等）、
+  `LookControl` ベースへ寄せて重複・不整合を解消する。
+* R-11（Brain 化）と整合させる: Brain 移行時は `LookAtTargetSink` 相当の Behavior と `LookControl` の連携で
+  首の向きを制御する形が自然。R-11 とセットで設計する。
+* ⚠️ レンダリング上の頭部追従（モデル描画）は保護コア（描画ラッパー）に触れないよう、
+  **エンティティ側の向き値（yHeadRot 等）を制御するに留め、`maidmodel/` の描画ロジックは変更しない**。
 
-## 🟩 R-8. 薄い DTO／補助構造の整理（低優先・効果小）
+---
 
-* `resource/util/TexturePair`（2 フィールド record）, `ArmorPart.Builder`（L51-76）: 簡素化検討。
-* `LittleMaidEntity` の `setLMMFlag/getLMMFlag`（L1933-1946）ビット操作の enum ラッパー化（**ビット位置・同期値は不変厳守**）。
+## 📝 R-13. `CLAUDE.md` の書き直し（重要）
+
+`CLAUDE.md` は**旧ソースから引っ張ってきた記述が多く、現行実装と乖離している**。実装に合わせて書き直すこと。
+判明済みの乖離（最低限ここは直す）:
+* 「`LittleMaidEntity` は `LMGoalInitializer`/`LMSafeMovement`/`LMInteractionHandler`/`MaidResurrection`/`MaidSoul` への
+  分割パターンを採用」とあるが **これらのクラスは実在しない**（実在は `LMHasInventory`/`LMItemContractable` のみ）。
+  → R-3 で実際に抽出後、記述を実態に合わせる。
+* 「現状維持境界」前提の記述（Mixin 注入 interface は統合不可 等）は、本ファイルの新方針（保護2機能以外は解禁）に合わせて更新。
+* リファクタ（R-1〜R-12）の進行に応じて、該当する CLAUDE.md の Architecture / Notes 節を随時更新する。
+* 作業はリファクタと同期させる（コードを変えたら CLAUDE.md も同コミットで更新するのが望ましい）。
 
 ---
 
 ## ⚠️ 本タスクの対象外（挙動が変わるため別途）
 
-* 一部モードの状態 NBT 未永続化（Archer/Fencer の cooldown、Healer の index 等）は**リロード時挙動を変える修正**のため、
-  本リスト（挙動不変リファクタ）の範囲外。必要なら `TODO.md` のバックログで扱う。
-* §3 の Mixin 注入 interface（`MaidManager` / `TargetTagManager`）の削除・統合は**不可**（multiplayer 同期・`instanceof` キャストが破綻する）。
+* 一部モードの状態 NBT 未永続化（Archer/Fencer の cooldown、Healer の index 等）は**リロード時の挙動を変える修正**のため、
+  記述量削減リファクタとは分けて `TODO.md` のバックログで扱う。
