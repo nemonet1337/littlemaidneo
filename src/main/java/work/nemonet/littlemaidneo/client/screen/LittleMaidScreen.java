@@ -31,10 +31,8 @@ public class LittleMaidScreen
     private StatusIconWidget modeButton;
 
     private static final Identifier GUI = Identifier.fromNamespaceAndPath(
-            "lmreengaged",
+            LittleMaidNeo.MODID,
             "textures/gui/container/littlemaidinventory2.png");
-    private static final Identifier ICONS = Identifier.parse(
-            "textures/gui/icons.png");
     private static final ItemStack ARMOR = Items.LEATHER_CHESTPLATE.getDefaultInstance();
     private static final ItemStack BOOK = Items.BOOK.getDefaultInstance();
     private static final ItemStack NOTE = Items.NOTE_BLOCK.getDefaultInstance();
@@ -459,13 +457,22 @@ public class LittleMaidScreen
         drawArmor(context, 98, 16, Mth.clamp(armor, 0, 10), 5);
     }
 
+    // バニラの textures/gui/icons.png は 1.21 以降のスプライト化で廃止された。
+    // 旧 icons.png への blit に依存していたハート/防具アイコンを、塗りつぶし矩形で再実装する。
+    private static final int HEALTH_BG = 0xFF400A0A;
+    private static final int HEALTH_FULL = 0xFFE03030;
+    private static final int HEALTH_HALF = 0xFF7A1818;
+    private static final int ARMOR_BG = 0xFF1A1A1A;
+    private static final int ARMOR_FULL = 0xFFE0E0E0;
+    private static final int ARMOR_HALF = 0xFF808080;
+
     protected void drawHealth(
             GuiGraphicsExtractor context,
             int x,
             int y,
             float health,
             int rowHeart) {
-        drawIcon(context, x, y, health, rowHeart, 16, 0, 52, 0, 61, 0);
+        drawPointBar(context, x, y, health, rowHeart, HEALTH_BG, HEALTH_FULL, HEALTH_HALF);
     }
 
     protected void drawArmor(
@@ -474,54 +481,25 @@ public class LittleMaidScreen
             int y,
             float health,
             int rowHeart) {
-        drawIcon(context, x, y, health, rowHeart, 16, 9, 34, 9, 25, 9);
+        drawPointBar(context, x, y, health, rowHeart, ARMOR_BG, ARMOR_FULL, ARMOR_HALF);
     }
 
-    protected void drawIcon(
+    private void drawPointBar(
             GuiGraphicsExtractor context,
             int x,
             int y,
             float num,
             int row,
-            int baseU,
-            int baseV,
-            int overU,
-            int overV,
-            int halfU,
-            int halfV) {
+            int bgColor,
+            int fullColor,
+            int halfColor) {
         for (int i = 0; i < row; i++) {
-            context.blit(
-                    ICONS,
-                    x + i * 9,
-                    y,
-                    9,
-                    9,
-                    (float) baseU,
-                    (float) baseV,
-                    9.0f,
-                    9.0f);
+            int ix = x + i * 9;
+            context.fill(ix, y, ix + 8, y + 8, bgColor);
             if (1 < num) {
-                context.blit(
-                        ICONS,
-                        x + i * 9,
-                        y,
-                        9,
-                        9,
-                        (float) overU,
-                        (float) overV,
-                        9.0f,
-                        9.0f);
+                context.fill(ix, y, ix + 8, y + 8, fullColor);
             } else if (0 < num) {
-                context.blit(
-                        ICONS,
-                        x + i * 9,
-                        y,
-                        9,
-                        9,
-                        (float) halfU,
-                        (float) halfV,
-                        9.0f,
-                        9.0f);
+                context.fill(ix, y, ix + 4, y + 8, halfColor);
             }
             num -= 2;
         }
