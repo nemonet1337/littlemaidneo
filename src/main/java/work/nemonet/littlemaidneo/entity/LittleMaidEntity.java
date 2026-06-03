@@ -19,7 +19,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.util.Util;
@@ -27,8 +26,6 @@ import net.minecraft.world.*;
 import net.minecraft.world.damagesource.DamageEffects;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.Entity;
@@ -65,7 +62,6 @@ import net.minecraft.world.item.ArrowItem;
 import net.minecraft.world.item.BowItem;
 import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.ItemUtils;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ProjectileWeaponItem;
 import net.minecraft.world.level.Level;
@@ -174,7 +170,8 @@ public class LittleMaidEntity
             LittleMaidEntity.class,
             EntityDataSerializers.INT);
     // エンチャントの瓶はランダムな経験値を排出するため、その平均値を作成コストとする
-    private static final int EXPERIENCE_BOTTLE_COST = 7;
+    // LMInteractionHandler から参照するためパッケージプライベート
+    static final int EXPERIENCE_BOTTLE_COST = 7;
 
     // 移譲s
     public final LMHasInventory littleMaidInventory = new LMHasInventory();
@@ -1280,6 +1277,11 @@ private float prevInterestedAngle;
         return this.fallDistance;
     }
 
+    // 経験値（Mob.xpReward は protected のため LMInteractionHandler 向けに公開）
+    int getXpReward_LM() {
+        return this.xpReward;
+    }
+
     // リード接続位置。getEyeHeight() ベースで算出するため、モデルごとに eyeHeight が
     // 異なっても（getDefaultDimensions で per-model に設定済み）破綻せず追従する。
     @Override
@@ -1287,228 +1289,10 @@ private float prevInterestedAngle;
         return new Vec3(0.0, this.getEyeHeight() - 0.15f, 1f / 16f);
     }
 
-    // 右クリック処理。継承元の挙動は使わず、所持アイテム別に上から順に分岐する:
-    //   未契約: 雇用アイテム→契約 / それ以外→PASS
-    //   非オーナー: 軽ダメージ＋威嚇 / ストライキ中: 雇用アイテム再契約・砂糖まとめ食いで復帰
-    //   本→パラメタ設定 / ケーキ→バフ / サドル→騎乗 / 牛乳→効果解除 / 金リンゴ→回復
-    //   砂糖→回復＋待機切替 / 羽→Freedom切替 / レッドストーン→Tracer切替 / ガラス瓶→経験値瓶
-    //   バケツ→搾乳 / 火薬→加速 / それ以外→インベントリGUI
-    // InteractionResult: SUCCESS=実行+手振り / CONSUME=実行のみ / PASS=非実行・他動作許可 / FAIL=非実行・他動作不許可
-    // トリガーアイテムのコンフィグ追加対応は機能バックログ（Phase 6）。
+    // 右クリック処理。アイテム別の分岐ロジックは LMInteractionHandler へ委譲（override 本体のみ残す）。
     @Override
     public InteractionResult mobInteract(Player player, InteractionHand hand) {
-        if (player.isShiftKeyDown()) {
-            return InteractionResult.PASS;
-        }
-        ItemStack stack = player.getItemInHand(hand);
-        // オーナーが居ない場合
-        if (TameableUtil.getTameOwnerUuid(this).isEmpty()) {
-            if (stack.is(LMTags.Items.MAIDS_EMPLOYABLE)) {
-                return contract(player, stack, false);
-            }
-            return InteractionResult.PASS;
-        }
-        // オーナーじゃない場合
-        if (TameableUtil.getTameOwnerUuid(this).isPresent() &&
-                !TameableUtil.isTameOwner(this, player)) {
-            if (!this.level().isClientSide()) {
-                player.hurt(this.level().damageSources().mobAttack(this), 1.0f); // 0.5ハートダメージ
-                this.playForce(LMSounds.FIND_TARGET_D);
-                this.swing(InteractionHand.MAIN_HAND);
-                this.level().broadcastEntityEvent(this, (byte) 6); // 怒りエフェクト
-            }
-            return InteractionResult.SUCCESS;
-        }
-        // ストライキ時
-        if (isStrike()) {
-            if (stack.is(LMTags.Items.MAIDS_EMPLOYABLE)) {
-                return contract(player, stack, true);
-            }
-            // ストライキ時に砂糖をドカ食い
-            if (stack.is(LMTags.Items.MAIDS_SALARY)) {
-                int count = stack.getCount();
-                if (count >= 8) {
-                    if (!player.getAbilities().instabuild) {
-                        stack.shrink(8);
-                    }
-                    this.level().broadcastEntityEvent(this, (byte) 71); // 再雇用エフェクト
-                    this.playSound(SoundEvents.GENERIC_EAT.value(), 1.0F, 1.0F);
-                    this.swing(InteractionHand.MAIN_HAND);
-                    
-                    setContractMM(true);
-                    if (!this.level().isClientSide()) {
-                        NetworkHandler.sendSyncMultiModelS2C(this, this);
-                    }
-                    setStrike(false);
-                    itemContractable.setUnpaidTimes(0);
-                    getNavigation().stop();
-                    setMovingMode(MovingMode.ESCORT);
-                    
-                    return InteractionResult.SUCCESS;
-                } else {
-                    this.level().broadcastEntityEvent(this, (byte) 6); // 怒りエフェクト
-                    this.playForce(LMSounds.FIND_TARGET_D);
-                    player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("chat.littlemaidneo.need_more_sugar_for_strike"));
-                    return InteractionResult.CONSUME;
-                }
-            }
-            this.level().broadcastEntityEvent(this, (byte) 6);
-            return InteractionResult.PASS;
-        }
-        // 本
-        if (stack.is(Items.WRITABLE_BOOK)) {
-            if (!this.level().isClientSide()) {
-                applyParametersFromBook(stack, player);
-                player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("chat.littlemaidneo.book_parameters_applied"));
-            }
-            this.swing(InteractionHand.MAIN_HAND);
-            return InteractionResult.SUCCESS;
-        }
-        // ケーキ
-        if (stack.is(Items.CAKE)) {
-            if (!player.getAbilities().instabuild) {
-                stack.shrink(1);
-            }
-            this.playSound(SoundEvents.GENERIC_EAT.value(), 1.0F, 1.0F);
-            this.swing(InteractionHand.MAIN_HAND);
-            if (!this.level().isClientSide()) {
-                this.addEffect(new MobEffectInstance(MobEffects.SPEED, 600, 1)); // Speed II
-                this.addEffect(new MobEffectInstance(MobEffects.HASTE, 600, 1));      // Haste II
-                this.level().broadcastEntityEvent(this, (byte) 76);
-            }
-            return InteractionResult.SUCCESS;
-        }
-        // サドル持ってるとき
-        if (stack.is(Items.SADDLE)) {
-            if (!this.isPassenger()) {
-                if (player.isVehicle()) {
-                    player.ejectPassengers();
-                }
-                this.startRiding(player);
-            } else {
-                var vehicle = this.getVehicle();
-                if (vehicle == player) {
-                    this.stopRiding();
-                }
-            }
-            return InteractionResult.SUCCESS;
-        }
-        // 肩車されてるとき
-        if (this.getVehicle() == player) {
-            return InteractionResult.PASS;
-        }
-        // 牛乳
-        if (stack.is(Items.MILK_BUCKET)) {
-            if (!player.getAbilities().instabuild) {
-                player.setItemInHand(hand, new ItemStack(Items.BUCKET));
-            }
-            this.removeAllEffects();
-            this.playSound(SoundEvents.GENERIC_DRINK.value(), 1.0F, 1.0F);
-            this.swing(InteractionHand.MAIN_HAND);
-            return InteractionResult.SUCCESS;
-        }
-        // 金リンゴ
-        if (stack.is(Items.GOLDEN_APPLE) || stack.is(Items.ENCHANTED_GOLDEN_APPLE)) {
-            if (!player.getAbilities().instabuild) {
-                stack.shrink(1);
-            }
-            this.heal(this.getMaxHealth());
-            this.playSound(SoundEvents.GENERIC_EAT.value(), 1.0F, 1.0F);
-            this.swing(InteractionHand.MAIN_HAND);
-            if (!this.level().isClientSide()) {
-                if (stack.is(Items.ENCHANTED_GOLDEN_APPLE)) {
-                    this.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 400, 1));
-                    this.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, 6000, 0));
-                    this.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 6000, 0));
-                    this.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 2400, 3));
-                } else {
-                    this.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 100, 1));
-                    this.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 2400, 0));
-                }
-            }
-            return InteractionResult.SUCCESS;
-        }
-        // 砂糖
-        if (stack.is(LMTags.Items.MAIDS_SALARY)) {
-            var config = getConfig();
-            heal(config.health.healAmount);
-            return changeState(player, stack);
-        }
-        // Freedom切替
-        if (stack.getItem() == Items.FEATHER) {
-            if (getMovingMode() == MovingMode.ESCORT) {
-                this.level().broadcastEntityEvent(this, (byte) 73);
-                this.setMovingMode(MovingMode.FREEDOM);
-                this.setFreedomPos(this.blockPosition());
-            } else {
-                this.level().broadcastEntityEvent(this, (byte) 74);
-                this.setMovingMode(MovingMode.ESCORT);
-            }
-            return InteractionResult.SUCCESS;
-        }
-        // Tracer切替
-        if ((this.getMovingMode() == MovingMode.FREEDOM ||
-                this.getMovingMode() == MovingMode.TRACER) &&
-                stack.getItem() == Items.REDSTONE) {
-            if (this.getMovingMode() == MovingMode.FREEDOM) {
-                this.level().broadcastEntityEvent(this, (byte) 75);
-                this.setMovingMode(MovingMode.TRACER);
-            } else {
-                this.level().broadcastEntityEvent(this, (byte) 73);
-                this.setMovingMode(MovingMode.FREEDOM);
-                this.setFreedomPos(this.blockPosition());
-            }
-            return InteractionResult.SUCCESS;
-        }
-        // ガラス瓶->エンチャントの瓶
-        if (this.xpReward >= EXPERIENCE_BOTTLE_COST &&
-                stack.is(Items.GLASS_BOTTLE)) {
-            this.level().playSound(
-                    null,
-                    this.getX(),
-                    this.getY(),
-                    this.getZ(),
-                    SoundEvents.BOTTLE_FILL,
-                    SoundSource.PLAYERS,
-                    1.0f,
-                    1.0f);
-            ItemStack itemStack2 = ItemUtils.createFilledResult(
-                    stack,
-                    player,
-                    Items.EXPERIENCE_BOTTLE.getDefaultInstance());
-            player.setItemInHand(hand, itemStack2);
-            this.addExperience(-EXPERIENCE_BOTTLE_COST);
-            return InteractionResult.SUCCESS;
-        }
-        // モブミルク
-        if (getConfig().misc.canMilking && stack.is(Items.BUCKET)) {
-            player.playSound(SoundEvents.COW_MILK, 1.0F, 1.0F);
-            ItemStack itemStack2 = ItemUtils.createFilledResult(
-                    stack,
-                    player,
-                    Items.MILK_BUCKET.getDefaultInstance());
-            player.setItemInHand(hand, itemStack2);
-            return InteractionResult.SUCCESS;
-        }
-        if (stack.getItem() == Items.GUNPOWDER) {
-            int maxAccelerationStack = getConfig().misc.maxAccelerationStack;
-            int accelerationTicks = getConfig().misc.accelerationTicksPerStack;
-            // 同期ズレ防止のため、if条件を付加する場合は結果をパケットで送信すること
-            int resumeCount = Math.min(maxAccelerationStack, stack.getCount());
-            int acTicks = resumeCount * accelerationTicks;
-            setAccelerationTicks(acTicks);
-
-            if (!player.getAbilities().instabuild) {
-                stack.shrink(resumeCount);
-                if (stack.isEmpty()) {
-                    player.getInventory().removeItem(stack);
-                }
-            }
-
-            return InteractionResult.SUCCESS;
-        }
-        openInventory(player);
-        return InteractionResult.SUCCESS;
+        return LMInteractionHandler.mobInteract(this, player, hand);
     }
 
     public InteractionResult changeState(Player player, ItemStack stack) {
@@ -2279,10 +2063,6 @@ public Optional<String> getModeName() {
                 break;
             }
         }
-    }
-
-    private void applyParametersFromBook(ItemStack stack, Player player) {
-        BookParameterParser.apply(this, stack, player);
     }
 
     protected void showTransAmParticles() {
