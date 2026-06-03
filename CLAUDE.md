@@ -115,6 +115,8 @@ LittleMaidNeo は、レガシー Mod 系譜 **LittleMaidRebirth (LMRB)** と **L
 - `LittleMaidEntity` は以下の委譲クラス・コンポーネントに機能が分割されています：
   - `MaidResurrection` (契約期間延長・復活演出の処理)
   - `BookParameterParser` (本アイテムによるパラメタ設定のパース)
+  - `LMInteractionHandler` (`mobInteract` の右クリック・アイテム別分岐の移譲。`@Override` 本体は残し委譲)
+  - `LMSafeMovement` (`maybeBackOffFromEdge` の落下/危険ブロック安全移動の移譲。`calculateFallDamage`/`fallDistance` へは `_LM` ブリッジ経由)
   - `LMHasInventory` (インベントリ処理の移譲)
   - `LMItemContractable` (給料・契約・時間管理の移譲)
   - `HasModeImpl` (モード管理・切り替えの移譲)

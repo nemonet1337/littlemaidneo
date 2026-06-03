@@ -74,19 +74,17 @@
 
 ---
 
-## 🧱 残課題：構造リファクタ（要 Java25 ランタイム検証・blind 実装は高リスク）
+## 🧱 残課題：構造リファクタ
 
-> これらは多数の private メンバへの参照やセーブ互換に関わり、コンパイル/実機検証なしの blind 実装では
-> 回帰を検出できない。Java25 + `runClient`/`runServer` 環境で着手する。
-
-- **R-3 残**: `mobInteract` → `LMInteractionHandler` / `maybeBackOffFromEdge` 系 → `LMSafeMovement` の抽出。
-  ロジック・分岐順序は現状コメントで明文化済み。抽出時は `calculateFallDamage`(protected) 等への
-  パッケージプライベートゲッター追加が必要。
-- **R-7**: `Mode`(CompoundTag) ⇔ `HasModeImpl`(ValueOutput/ValueInput) の NBT API 統一。
-  現状は `HasModeImpl` が `ModeData` を `CompoundTag.CODEC` でラップして橋渡ししており、これは
-  **意図的に維持**している（`ValueOutput.child()` の空コンパウンド pruning により、
-  モード状態を書かないモードで `nowMode` 復元が壊れる懸念があり、ランタイム検証が必要なため）。
-- **R-4 残**: `PathRecalcTimer` 抽出・コンテナ間アイテム移送の共通化（`CookingMode`/`PharmcistMode` 等）。
+- ✅ **R-3 残（完了）**: `mobInteract` → `LMInteractionHandler` / `maybeBackOffFromEdge` 系 → `LMSafeMovement` を抽出。
+  `@Override` 本体は残しロジックのみ委譲。外部参照不可な `calculateFallDamage`(protected)/`fallDistance`/
+  `xpReward`(Mob.protected)/`EXPERIENCE_BOTTLE_COST` は `_LM` ブリッジ・パッケージプライベート化で公開。
+- ⏸ **R-7（意図的に現状維持）**: `Mode`(CompoundTag) ⇔ `HasModeImpl`(ValueOutput/ValueInput) の NBT API 統一。
+  現状は `HasModeImpl` が `ModeData` を `CompoundTag.CODEC` でラップして橋渡ししている。
+  統一は **CI（ビルドのみ）では検出できないランタイムのセーブ破損リスク**を伴うため見送る:
+  `ValueOutput.child()` の空コンパウンド pruning により、モード状態を書かないモードで `nowMode` 復元が
+  静かに壊れる懸念があり、`runClient` でのセーブ往復検証が必須。
+- ⏸ **R-4 残**: `PathRecalcTimer` 抽出・コンテナ間アイテム移送の共通化（`CookingMode`/`PharmcistMode` 等）。
 
 ---
 
