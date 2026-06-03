@@ -1,6 +1,8 @@
 package work.nemonet.littlemaidneo.api.mode;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 
 /**
  * MobのAIモードのクラス
@@ -62,14 +64,14 @@ public abstract class Mode {
     /**
      * ワールド保存時に処理
      */
-    public void writeModeData(CompoundTag nbt) {
+    public void writeModeData(ValueOutput output) {
 
     }
 
     /**
      * ワールド読み込み時に処理
      */
-    public void readModeData(CompoundTag nbt) {
+    public void readModeData(ValueInput input) {
 
     }
 

@@ -48,19 +48,19 @@ public class NetworkHandler {
         registrar.playBidirectional(
                 SyncMultiModelPayload.TYPE,
                 SyncMultiModelPayload.STREAM_CODEC,
+                NetworkHandler::handleSyncMultiModelServer,
                 isClient 
                         ? (payload, context) -> work.nemonet.littlemaidneo.client.network.ClientNetworkHandler.handleSyncMultiModelClient(payload, context)
-                        : (payload, context) -> {},
-                NetworkHandler::handleSyncMultiModelServer);
+                        : (payload, context) -> {});
 
         // SyncSoundPack (bidirectional)
         registrar.playBidirectional(
                 SyncSoundPackPayload.TYPE,
                 SyncSoundPackPayload.STREAM_CODEC,
+                NetworkHandler::handleSyncSoundPackServer,
                 isClient
                         ? (payload, context) -> work.nemonet.littlemaidneo.client.network.ClientNetworkHandler.handleSyncSoundPackClient(payload, context)
-                        : (payload, context) -> {},
-                NetworkHandler::handleSyncSoundPackServer);
+                        : (payload, context) -> {});
 
         // LMSound (S2C only)
         if (isClient) {
@@ -104,10 +104,10 @@ public class NetworkHandler {
         registrar.playBidirectional(
                 SyncSoundConfigPayload.TYPE,
                 SyncSoundConfigPayload.STREAM_CODEC,
+                NetworkHandler::handleSyncSoundConfigServer,
                 isClient
                         ? (payload, context) -> work.nemonet.littlemaidneo.client.network.ClientNetworkHandler.handleSyncSoundConfigClient(payload, context)
-                        : (payload, context) -> {},
-                NetworkHandler::handleSyncSoundConfigServer);
+                        : (payload, context) -> {});
 
         // OpenTargetTagScreen (split C2S / S2C)
         registrar.playToServer(

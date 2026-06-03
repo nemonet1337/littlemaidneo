@@ -5,6 +5,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
@@ -371,15 +373,17 @@ public class CookingMode extends Mode {
     }
 
     @Override
-    public void writeModeData(CompoundTag nbt) {
-        if (furnacePos != null)
-            nbt.putLong("FurnacePos", furnacePos.asLong());
+    public void writeModeData(ValueOutput output) {
+        if (furnacePos != null) {
+            output.putLong("FurnacePos", furnacePos.asLong());
+        }
     }
 
     @Override
-    public void readModeData(CompoundTag nbt) {
-        if (nbt.contains("FurnacePos"))
-            furnacePos = BlockPos.of(nbt.getLongOr("FurnacePos", 0L));
+    public void readModeData(ValueInput input) {
+        input.getLong("FurnacePos").ifPresent(posLong -> {
+            furnacePos = BlockPos.of(posLong);
+        });
     }
 
 }

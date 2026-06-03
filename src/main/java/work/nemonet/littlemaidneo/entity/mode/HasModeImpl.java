@@ -2,7 +2,6 @@ package work.nemonet.littlemaidneo.entity.mode;
 
 import com.google.common.collect.Sets;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
@@ -70,9 +69,7 @@ public class HasModeImpl implements HasMode {
             ModeManager.INSTANCE.getId(nowMode)
                     .ifPresent(identifier -> {
                         output.putString("ModeID", identifier.toString());
-                        CompoundTag modeData = new CompoundTag();
-                        nowMode.writeModeData(modeData);
-                        output.store("ModeData", CompoundTag.CODEC, modeData);
+                        nowMode.writeModeData(output.child("ModeData"));
                     });
         }
     }
@@ -82,17 +79,15 @@ public class HasModeImpl implements HasMode {
         input.getString("ModeID").ifPresent(modeIDStr -> {
             var modeID = Identifier.tryParse(modeIDStr);
             if (modeID != null) {
-                input.read("ModeData", CompoundTag.CODEC).ifPresent(modeData -> {
-                    ModeManager.INSTANCE.getType(modeID)
-                            .flatMap(modeType -> modes.stream()
-                                    .filter(mode -> mode.getModeType() == modeType)
-                                    .findFirst())
-                            .ifPresent(mode -> {
-                                mode.readModeData(modeData);
-                                nowMode = mode;
-                                onModeChange.accept(mode);
-                            });
-                });
+                ModeManager.INSTANCE.getType(modeID)
+                        .flatMap(modeType -> modes.stream()
+                                .filter(mode -> mode.getModeType() == modeType)
+                                .findFirst())
+                        .ifPresent(mode -> {
+                            input.child("ModeData").ifPresent(mode::readModeData);
+                            nowMode = mode;
+                            onModeChange.accept(mode);
+                        });
             }
         });
     }

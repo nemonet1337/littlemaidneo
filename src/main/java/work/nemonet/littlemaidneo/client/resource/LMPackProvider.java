@@ -10,6 +10,7 @@ import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.server.packs.repository.RepositorySource;
 import net.neoforged.api.distmarker.Dist;
 
+import java.util.Optional;
 import java.util.function.Consumer;
 public class LMPackProvider implements RepositorySource {
     public static final PackSource RESOURCE_PACK_SOURCE = PackSource.create(
@@ -23,7 +24,7 @@ public class LMPackProvider implements RepositorySource {
                 "littlemaidneo",
                 title,
                 RESOURCE_PACK_SOURCE,
-                null);
+                Optional.empty());
         PackSelectionConfig selectionConfig = new PackSelectionConfig(
                 true,
                 Pack.Position.TOP,

@@ -106,7 +106,7 @@ public class LittleMaidNeo {
     }
 
     private void onModConfig(ModConfigEvent event) {
-        if (event.getConfig().getSpec() == LMRBConfig.SPEC) {
+        if (event.getConfig().getSpec() == LMRBConfig.SPEC && !(event instanceof ModConfigEvent.Unloading)) {
             LMRBConfig.bake();
         }
     }
