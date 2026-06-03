@@ -2,7 +2,6 @@ package work.nemonet.littlemaidneo.entity;
 
 import com.google.common.collect.Lists;
 import java.util.*;
-import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
@@ -69,20 +68,14 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemUtils;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ProjectileWeaponItem;
-import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.biome.Biome;
-import net.minecraft.world.level.pathfinder.PathType;
-import net.minecraft.world.level.pathfinder.WalkNodeEvaluator;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
-import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
@@ -1270,202 +1263,21 @@ private float prevInterestedAngle;
     }
 
     // 安全移動: 落下/危険ブロックでメイドさんが死なないよう、縁での移動ベクトルを押し戻す。
-    // SELF/PLAYER 由来の移動のみ対象とし、不死・落下無効などのコンフィグ時はスキップする。
+    // ロジックは LMSafeMovement へ委譲（override 本体のみ残す）。
     @Override
     protected Vec3 maybeBackOffFromEdge(Vec3 movement, MoverType type) {
-        if (type != MoverType.SELF && type != MoverType.PLAYER) {
-            return movement;
-        }
-
-        LMRBConfig config = getConfig();
-
-        if (!config.health.immortal &&
-                !getConfig().health.nonMobDamageImmunity &&
-                config.health.enableSafeMove &&
-                this.canClipAtLedge()) {
-            boolean shouldBackByDamage = isDamageSourceEmpty(this.getBoundingBox()) &&
-                    !this.isDamageSourceEmpty(
-                            this.getBoundingBox().move(movement.x, 0, movement.z));
-            boolean shouldBackByFall = !config.health.fallImmunity &&
-                    !isSafeFallHeight(
-                            this.position().add(movement.x, 0, movement.z));
-
-            if (shouldBackByDamage || shouldBackByFall) {
-                BiPredicate<Double, Double> shouldBackPredicate = (x, z) -> false;
-                if (shouldBackByDamage) {
-                    BiPredicate<Double, Double> finalPredicate = shouldBackPredicate;
-                    shouldBackPredicate = (x, z) -> finalPredicate.test(x, z) ||
-                    // 危険物がbox内にある
-                            !this.isDamageSourceEmpty(
-                                    this.getBoundingBox().move(x, 0, z));
-                }
-
-                if (shouldBackByFall) {
-                    BiPredicate<Double, Double> finalPredicate = shouldBackPredicate;
-                    shouldBackPredicate = (x, z) -> finalPredicate.test(x, z) ||
-                    // 足場がbox内にない
-                            this.level().noCollision(
-                                    this,
-                                    this.getBoundingBox()
-                                            .move(x, 0, z)
-                                            .expandTowards(
-                                                    0,
-                                                    -(getDangerHeightThreshold() -
-                                                            fallDistance),
-                                                    0))
-                            ||
-                            // または、すぐ下に足場がなく、危険物がbox内にある
-                            (this.level().noCollision(
-                                    this,
-                                    this.getBoundingBox()
-                                            .move(x, 0, z)
-                                            .expandTowards(0, -maxUpStep(), 0))
-                                    &&
-                                    !this.isDamageSourceEmpty(
-                                            this.getBoundingBox()
-                                                    .move(x, 0, z)
-                                                    .expandTowards(
-                                                            0,
-                                                            -getDangerHeightThreshold(),
-                                                            0)));
-                }
-
-                movement = pushBack(movement, shouldBackPredicate);
-            }
-        }
-
-        return movement;
+        return LMSafeMovement.maybeBackOffFromEdge(this, movement, type);
     }
 
-    private Vec3 pushBack(
-            Vec3 movement,
-            BiPredicate<Double, Double> pushBackPredicate) {
-        double dot = 0.05;
-        double mX = movement.x;
-        double mZ = movement.z;
-        while (mX != 0.0 && pushBackPredicate.test(mX, 0d)) {
-            if (mX < dot && mX >= -dot) {
-                mX = 0.0;
-                continue;
-            }
-            if (mX > 0.0) {
-                mX -= dot;
-                continue;
-            }
-            mX += dot;
-        }
-        while (mZ != 0.0 && pushBackPredicate.test(0d, mZ)) {
-            if (mZ < dot && mZ >= -dot) {
-                mZ = 0.0;
-                continue;
-            }
-            if (mZ > 0.0) {
-                mZ -= dot;
-                continue;
-            }
-            mZ += dot;
-        }
-        while (mX != 0.0 && mZ != 0.0 && pushBackPredicate.test(mX, mZ)) {
-            mX = mX < dot && mX >= -dot ? 0.0 : (mX > 0.0 ? mX - dot : mX + dot);
-            if (mZ < dot && mZ >= -dot) {
-                mZ = 0.0;
-                continue;
-            }
-            if (mZ > 0.0) {
-                mZ -= dot;
-                continue;
-            }
-            mZ += dot;
-        }
-        return new Vec3(mX, movement.y, mZ);
-    }
-
-    private boolean isDamageSourceEmpty(AABB box) {
-        int minX = Mth.floor(box.minX);
-        int maxX = Mth.floor(box.maxX);
-        int minY = Mth.floor(box.minY);
-        int maxY = Mth.floor(box.maxY);
-        int minZ = Mth.floor(box.minZ);
-        int maxZ = Mth.floor(box.maxZ);
-
-        for (int x = 0; x < maxX - minX + 1; x++) {
-            for (int y = 0; y < maxY - minY + 1; y++) {
-                for (int z = 0; z < maxZ - minZ + 1; z++) {
-                    PathType pathNodeType = WalkNodeEvaluator.getPathTypeStatic(
-                            new net.minecraft.world.level.pathfinder.PathfindingContext(
-                                    this.level(),
-                                    this),
-                            new BlockPos(minX + x, minY + y, minZ + z).mutable());
-                    if (pathNodeType == PathType.FIRE ||
-                            pathNodeType == PathType.DAMAGE_CAUTIOUS ||
-                            pathNodeType == PathType.LAVA) {
-                        return false;
-                    }
-                }
-            }
-        }
-        return true;
-    }
-
-    private boolean isSafeFallHeight(Vec3 pos) {
-        BlockHitResult result = this.level().clip(
-                new ClipContext(
-                        pos,
-                        pos.subtract(
-                                0,
-                                getDangerHeightThreshold() - fallDistance + 0.1,
-                                0),
-                        ClipContext.Block.COLLIDER,
-                        ClipContext.Fluid.NONE,
-                        this));
-        if (result.getType() == HitResult.Type.MISS) {
-            return false;
-        }
-        Vec3 hitPos = result.getLocation();
-        if (getDangerHeightThreshold() - fallDistance < pos.y - hitPos.y) {
-            return false;
-        }
-        BlockPos checkPos = new BlockPos(
-                Mth.floor(pos.x),
-                Mth.floor(pos.y - 1),
-                Mth.floor(pos.z));
-        for (int i = 0; i < pos.y - hitPos.y + 1; i++) {
-            PathType pathNodeType = WalkNodeEvaluator.getPathTypeStatic(
-                    new net.minecraft.world.level.pathfinder.PathfindingContext(
-                            this.level(),
-                            this),
-                    checkPos.mutable());
-            if (pathNodeType == PathType.WALKABLE ||
-                    pathNodeType == PathType.BLOCKED) {
-                return true;
-            }
-            if (pathNodeType == PathType.FIRE ||
-                    pathNodeType == PathType.DAMAGE_CAUTIOUS ||
-                    pathNodeType == PathType.LAVA) {
-                return false;
-            }
-            checkPos = checkPos.below();
-        }
-        return false;
-    }
-
-    private boolean canClipAtLedge() {
-        float canClipHeight = getDangerHeightThreshold() + 1.0f;
-        // 着地しているか、落下距離が危険高度未満かつ下に足場があるとき
-        return (this.onGround() ||
-                (this.fallDistance < canClipHeight &&
-                        !this.level().noCollision(
-                                this,
-                                this.getBoundingBox().expandTowards(
-                                        0.0,
-                                        this.fallDistance - canClipHeight,
-                                        0.0))));
-    }
-
-    private float getDangerHeightThreshold() {
-        // マイナスの値も返すことを利用しているため、バージョンアップ/mixinでの仕様変更に注意が必要
+    // --- LMSafeMovement への移譲ブリッジ（protected メソッド / フィールドの同パッケージ公開） ---
+    // 危険高度のしきい値。マイナスの値も返すことを利用しているため、バージョンアップ/mixin での仕様変更に注意。
+    float getDangerHeightThreshold_LM() {
         int fallDamage = calculateFallDamage(0, 1);
         return -fallDamage;
+    }
+
+    double fallDistance_LM() {
+        return this.fallDistance;
     }
 
     // リード接続位置。getEyeHeight() ベースで算出するため、モデルごとに eyeHeight が
