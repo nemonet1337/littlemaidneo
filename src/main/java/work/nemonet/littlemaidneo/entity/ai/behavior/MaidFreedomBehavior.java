@@ -35,6 +35,14 @@ public class MaidFreedomBehavior extends Behavior<LittleMaidEntity> {
         }
     }
 
+    // Behavior の canStillUse 既定は false。override しないと tick()（徘徊ロジック）が
+    // 一度も呼ばれず、契約前の野良メイドさんや FREEDOM モードのメイドさんが歩かない。
+    @Override
+    protected boolean canStillUse(ServerLevel level, LittleMaidEntity entity, long gameTime) {
+        return checkExtraStartConditions(level, entity)
+                && !entity.getBrain().hasMemoryValue(ModRegistration.IS_WAITING.get());
+    }
+
     @Override
     protected void tick(ServerLevel level, LittleMaidEntity entity, long gameTime) {
         if (!entity.getNavigation().isDone()) {
