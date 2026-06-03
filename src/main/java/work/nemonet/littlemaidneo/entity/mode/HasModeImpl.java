@@ -100,7 +100,14 @@ public class HasModeImpl implements HasMode {
     public void tick() {
         // モード無しなら新たな
         if (nowMode == null) {
-            getNewMode().ifPresent(this::changeNewMode);
+            Optional<Mode> fromMainHand = getNewMode();
+            if (fromMainHand.isPresent()) {
+                changeNewMode(fromMainHand.get());
+            } else {
+                // メインハンドにモードアイテムが無くても、インベントリにあれば
+                // メインハンドへ装備してモードを有効化する（武器などを「持たせた」場合の対応）。
+                equipModeItemFromInventory();
+            }
             return;
         }
         if (!isModeContinue()) {
@@ -162,6 +169,23 @@ public class HasModeImpl implements HasMode {
         mode.startModeTask();
         nowMode = mode;
         onModeChange.accept(mode);
+    }
+
+    // インベントリ内のモードアイテムを優先度順に探し、見つかればメインハンドへ
+    // 装備してそのモードを有効化する。
+    private void equipModeItemFromInventory() {
+        var inv = hasInventory.getInventory();
+        // itemMatchers は Priority 降順にソート済み。先にマッチしたものを採用。
+        for (Tuple<ItemMatcher, Mode> tuple : this.itemMatchers) {
+            for (int index = 0; index < inv.getContainerSize(); index++) {
+                ItemStack stack = inv.getItem(index);
+                if (!stack.isEmpty() && tuple.a().isMatch(stack)) {
+                    switchMainHandItem(index);
+                    changeNewMode(tuple.b());
+                    return;
+                }
+            }
+        }
     }
 
     // 現在メインハンドにあるアイテムが有効にするモードを返す
