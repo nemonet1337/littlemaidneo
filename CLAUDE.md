@@ -37,10 +37,14 @@ LittleMaidNeo は、レガシー Mod 系譜 **LittleMaidRebirth (LMRB)** と **L
 - lang: `assets/littlemaidneo/lang/{en_us,ja_jp}.json` — モード名キーは `mode.littlemaidneo.{Name}`
 - タグ: `data/littlemaidneo/tags/items/` — モード用タグは `{mode_name}_mode.json`
 
-### 統合済みの load-bearing インフラ（**削除厳禁**）
+### 絶対不変の保護コア（**削除・破壊的変更厳禁**）
 
-- `resource/classloader/`（`MultiModelClassLoader`・`MultiModelClassTransformer`）と `maidmodel/` パッケージ全体、`maidmodel/compat/GLCompat` は、**外部ユーザー製の旧 LMM/MMM モデルパック（`.class` ファイル）を実行時に ASM でリマップ・GL11→GLCompat 置換して読み込むための互換インフラ**。「レガシー＝不要」に見えるが残すこと。
-- `entity/EntityLittleMaid`（中身ほぼ空のスタブ）も `MultiModelClassTransformer` のリマップ先（`net/blacklab/lmr/entity/EntityLittleMaid` → これ）なので残すこと。
+- **保護コア A: 外部モデル/テクスチャ読み込み・描画 (互換インフラの死守)**
+  - `resource/classloader/`（`MultiModelClassLoader`・`MultiModelClassTransformer`）と `maidmodel/` パッケージ全体、`maidmodel/compat/GLCompat` は、**外部ユーザー製の旧 LMM/MMM モデルパック（`.class` ファイル）を実行時に ASM でリマップ・GL11→GLCompat 置換して読み込むための互換インフラ**です。
+  - `entity/EntityLittleMaid`（中身ほぼ空のスタブ）も `MultiModelClassTransformer` のリマップ先（`net/blacklab/lmr/entity/EntityLittleMaid` → これ）なので残す必要があります。
+  - メイドさん本体の描画システムにおいて、外部パックとの互換性を崩すバニラ `ModelPart` や GeckoLib への本体移行は行わず、独自ラッパー（`MMMatrixStack` 等）と `GLCompat` を用いたブリッジ構造を維持・保護する必要があります（詳細は ADR 0001 を参照）。
+- **保護コア B: 外部ボイスパック読み込み・再生**
+  - `.cfg` 形式、`LMSounds` 定数文字列、命名規則、探索パス（`LMMLResources/`）、およびネットワーク同期パケット形式は、外部ボイスパック（`.cfg` + `.ogg`）を正常に読み込み・再生するために不変を維持します。
 
 ## Environment
 
@@ -107,7 +111,15 @@ LittleMaidNeo は、レガシー Mod 系譜 **LittleMaidRebirth (LMRB)** と **L
 - ブロック探索: `BlockSearch`（非同期 BFS）+ `SearchCondition`（linkable 条件ビルダー）
 - ブロック排他制御: `BlockReservationManager`（`GlobalPos` でディメンション対応）
 - `LMSounds` 定数は `String` 型。`mob.play(LMSounds.COOKING_START)` のように使用
-- `LittleMaidEntity` は分割パターンを採用: `LMGoalInitializer`（AI Goal 登録）, `LMSafeMovement`（安全移動）, `LMInteractionHandler`（操作）, `MaidResurrection`（復活演出）, `MaidSoul`（魂データ）
+- `LittleMaidEntity` は以下の委譲クラス・コンポーネントに機能が分割されています：
+  - `MaidResurrection` (契約期間延長・復活演出の処理)
+  - `BookParameterParser` (本アイテムによるパラメタ設定のパース)
+  - `LMHasInventory` (インベントリ処理の移譲)
+  - `LMItemContractable` (給料・契約・時間管理の移譲)
+  - `HasModeImpl` (モード管理・切り替えの移譲)
+  - `TargetTagManagerImpl` (ターゲットタグ情報の管理)
+  - `TargetingSystem` (他エンティティの友好/敵対ターゲット評価)
+  - `work.nemonet.littlemaidneo.entity.ai.control.MaidLookControl` (首振り最大角度制限のクランプおよび視線・頭部向き制御の一元化)
 - `getNavigation()` は `Mob` に定義（`LivingEntity` ではない）— NeoForge / Mojang マッピングでは Yarn 時代の `MobEntity` → `Mob`
 - `initGoals()` は `Mob` コンストラクタ内で呼ばれる — サブクラスのフィールドは未初期化。外部委譲時はラムダで遅延参照すること
 
