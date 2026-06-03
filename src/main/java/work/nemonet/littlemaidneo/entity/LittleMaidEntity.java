@@ -268,6 +268,12 @@ private float prevInterestedAngle;
         return MaidResurrection.resurrect(world, pos, player);
     }
 
+    // 視線制御の役割分担:
+    //   - 移動 (WALK_TARGET) を消費するのは MoveToTargetSink。MaidFollowOwner/Stare/Freedom が WALK_TARGET を設定するため必須。
+    //   - 頭部向きは GoalSelector の LookAtPlayerGoal / RandomLookAroundGoal が担当し、MaidStareBehavior は
+    //     getLookControl().setLookAt(...) で直接制御する。いずれも最終的に MaidLookControl で角度クランプされる。
+    //   - バニラの LookAtTargetSink は LOOK_TARGET メモリを消費するが、本 Mod では LOOK_TARGET を設定する
+    //     プロデューサが存在せず常に no-op だったため登録しない（孤立した不活性 Behavior の混入を防ぐ）。
     private static final Brain.Provider<LittleMaidEntity> BRAIN_PROVIDER = Brain.<LittleMaidEntity>provider(
             ImmutableList.of(
                     ModRegistration.IS_WAITING.get(),
@@ -284,7 +290,6 @@ private float prevInterestedAngle;
                             new work.nemonet.littlemaidneo.entity.ai.behavior.MaidFollowOwnerBehavior(),
                             new work.nemonet.littlemaidneo.entity.ai.behavior.MaidStareBehavior(),
                             new work.nemonet.littlemaidneo.entity.ai.behavior.MaidFreedomBehavior(),
-                            new net.minecraft.world.entity.ai.behavior.LookAtTargetSink(45, 90),
                             new net.minecraft.world.entity.ai.behavior.MoveToTargetSink()
                     ))
             )
@@ -2355,60 +2360,8 @@ public Optional<String> getModeName() {
         return LMRBConfig.get();
     }
 
-    // MOVEとLOOKでGoalを分離
-    // 旧 StareAtHeldItemGoal<T> + TameableStareAtHeldItemGoal<T> +
-    // LMStareAtHeldItemGoal<T> を 1 クラスに統合
-    public static class LMStareAtHeldItemGoal<T extends LittleMaidEntity>
-            extends net.minecraft.world.entity.ai.goal.Goal {
-
-        protected final T mob;
-        protected final java.util.function.Supplier<Float> stareAtRange;
-        protected final java.util.function.Predicate<ItemStack> targetItem;
-        private final boolean isTamed;
-        protected net.minecraft.world.entity.player.Player stareAt;
-
-        public LMStareAtHeldItemGoal(
-                T mob,
-                java.util.function.Supplier<Float> stareAtRange,
-                java.util.function.Predicate<ItemStack> targetItem,
-                boolean isTamed) {
-            this.mob = mob;
-            this.stareAtRange = stareAtRange;
-            this.targetItem = targetItem;
-            this.isTamed = isTamed;
-            setFlags(java.util.EnumSet.of(Flag.LOOK));
-        }
-
-        @Override
-        public boolean canUse() {
-            // 飼い慣らし状態のチェック
-            if (work.nemonet.littlemaidneo.entity.util.TameableUtil.hasTameOwner(this.mob) != isTamed)
-                return false;
-            stareAt = mob.level().getNearestPlayer(mob, stareAtRange.get());
-            return stareAt != null && isHeldTargetItem(stareAt);
-        }
-
-        @Override
-        public boolean canContinueToUse() {
-            return isHeldTargetItem(stareAt);
-        }
-
-        public boolean isHeldTargetItem(net.minecraft.world.entity.player.Player player) {
-            return targetItem.test(player.getMainHandItem()) || targetItem.test(player.getOffhandItem());
-        }
-
-        @Override
-        public void tick() {
-            mob.getLookControl().setLookAt(stareAt, 30F, 30F);
-            // 動いてたら傾げない
-            this.mob.setBegging(this.mob.getNavigation().isDone());
-        }
-
-        @Override
-        public void stop() {
-            this.mob.setBegging(false);
-        }
-    }
+    // 注: 旧 LMStareAtHeldItemGoal（手持ちアイテム注視 Goal）は Phase 7 で
+    //     MaidStareBehavior（Brain Behavior）へ移行済み。Goal 版は孤立デッドコードとなったため削除した。
 
     public static class MaidSoul {
 
