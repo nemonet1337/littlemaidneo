@@ -20,6 +20,13 @@ public class MaidWaitBehavior extends Behavior<LittleMaidEntity> {
         return true;
     }
 
+    // canStillUse 既定は false のため、override しないと start()/stop() を毎 tick 繰り返し
+    // tick() が呼ばれない。待機中は継続して走らせる。
+    @Override
+    protected boolean canStillUse(ServerLevel level, LittleMaidEntity entity, long gameTime) {
+        return entity.getBrain().hasMemoryValue(ModRegistration.IS_WAITING.get());
+    }
+
     @Override
     protected void start(ServerLevel level, LittleMaidEntity entity, long gameTime) {
         entity.getNavigation().stop();

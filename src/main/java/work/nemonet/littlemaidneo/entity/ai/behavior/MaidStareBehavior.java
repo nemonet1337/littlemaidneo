@@ -40,6 +40,15 @@ public class MaidStareBehavior extends Behavior<LittleMaidEntity> {
         return false;
     }
 
+    // Behavior の canStillUse 既定は false。override しないと tick()（注視・接近ロジック）が
+    // 一度も呼ばれず、砂糖/雇用アイテムを持っても反応しない。
+    // tick() が対象を見失った際に stareTarget=null とするので、それを継続条件に用いる。
+    @Override
+    protected boolean canStillUse(ServerLevel level, LittleMaidEntity entity, long gameTime) {
+        return stareTarget != null
+                && !entity.getBrain().hasMemoryValue(ModRegistration.IS_WAITING.get());
+    }
+
     @Override
     protected void tick(ServerLevel level, LittleMaidEntity entity, long gameTime) {
         if (stareTarget == null) return;

@@ -10,6 +10,7 @@ import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.player.Player;
 import work.nemonet.littlemaidneo.config.LMRBConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
+import work.nemonet.littlemaidneo.entity.util.MovingMode;
 import work.nemonet.littlemaidneo.setup.ModRegistration;
 
 public class MaidFollowOwnerBehavior extends Behavior<LittleMaidEntity> {
@@ -22,7 +23,20 @@ public class MaidFollowOwnerBehavior extends Behavior<LittleMaidEntity> {
 
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, LittleMaidEntity entity) {
-        return true;
+        // ご主人様への追従は護衛（ESCORT）モードのみ。FREEDOM/TRACER では
+        // それぞれ MaidFreedomBehavior / RedstoneTraceGoal が WALK_TARGET を制御するため、
+        // ここで追従すると WALK_TARGET を奪い合い徘徊と追従が競合する（Brain 移行で欠落した条件）。
+        return entity.getMovingMode() == MovingMode.ESCORT;
+    }
+
+    // Behavior の canStillUse 既定は false で、override しないと tick() が一度も呼ばれない
+    // （start() しか実行されない）。本 Behavior はロジックを tick() に持つため必須。
+    // 待機・モード変更に追従させるため毎 tick 条件を再評価する。
+    @Override
+    protected boolean canStillUse(ServerLevel level, LittleMaidEntity entity, long gameTime) {
+        return checkExtraStartConditions(level, entity)
+                && entity.getBrain().hasMemoryValue(ModRegistration.OWNER.get())
+                && !entity.getBrain().hasMemoryValue(ModRegistration.IS_WAITING.get());
     }
 
     @Override
