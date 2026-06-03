@@ -2,10 +2,13 @@ package work.nemonet.littlemaidneo.entity.util;
 
 import java.util.Optional;
 import java.util.UUID;
+import net.minecraft.util.Unit;
 import net.minecraft.world.entity.EntityReference;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.OwnableEntity;
 import net.minecraft.world.entity.TamableAnimal;
+import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
+import work.nemonet.littlemaidneo.setup.ModRegistration;
 
 public class TameableUtil {
 
@@ -54,10 +57,29 @@ public class TameableUtil {
      */
     public static void setWait(TamableAnimal tameable, boolean isWait) {
         tameable.setOrderedToSit(isWait);
+        syncWaitMemory(tameable);
     }
 
     public static void switchWait(TamableAnimal tameable) {
         tameable.setOrderedToSit(!tameable.isOrderedToSit());
+        syncWaitMemory(tameable);
+    }
+
+    /**
+     * 待機状態（orderedToSit）を Brain の IS_WAITING メモリへ即時反映する。
+     * <p>このメモリ同期は {@link work.nemonet.littlemaidneo.entity.ai.sensor.LittleMaidSensor}
+     * が 20 tick ごとに行うため、砂糖などで待機を切り替えた直後の最大 1 秒間は
+     * Behavior が反応せず「待機にならない」ように見える（特にワープ/追従中に顕著）。
+     * 切り替え時にここで直接同期することで遅延を解消する。
+     */
+    private static void syncWaitMemory(TamableAnimal tameable) {
+        if (tameable instanceof LittleMaidEntity maid && !maid.level().isClientSide()) {
+            if (maid.isOrderedToSit()) {
+                maid.getBrain().setMemory(ModRegistration.IS_WAITING.get(), Unit.INSTANCE);
+            } else {
+                maid.getBrain().eraseMemory(ModRegistration.IS_WAITING.get());
+            }
+        }
     }
 
     /**

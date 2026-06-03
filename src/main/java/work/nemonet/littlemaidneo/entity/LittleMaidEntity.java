@@ -270,7 +270,11 @@ private float prevInterestedAngle;
                     ModRegistration.IS_WAITING.get(),
                     ModRegistration.OWNER.get(),
                     MemoryModuleType.WALK_TARGET,
-                    MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE
+                    MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE,
+                    // MoveToTargetSink は PATH メモリを必須要件（VALUE_ABSENT）に持つ。
+                    // 未登録だと checkMemory が常に false を返し MoveToTargetSink が起動せず、
+                    // 各 Behavior が設定した WALK_TARGET が消費されないため移動が一切発生しない。
+                    MemoryModuleType.PATH
             ),
             ImmutableList.of(
                     ModRegistration.LITTLE_MAID_SENSOR.get()
@@ -473,8 +477,13 @@ private float prevInterestedAngle;
 
 
         // 視線
+        // 既定の確率 0.02 では稀にしかプレイヤーを見ないため、メイドさんが
+        // 近くのプレイヤーを目で追うよう確率を引き上げる（プレイヤー優先）。
         this.goalSelector.addGoal(
                 ++priority,
+                new LookAtPlayerGoal(this, Player.class, 8.0F, 0.8F, false));
+        this.goalSelector.addGoal(
+                priority,
                 new LookAtPlayerGoal(this, LivingEntity.class, 8.0F));
         this.goalSelector.addGoal(priority, new RandomLookAroundGoal(this));
 
