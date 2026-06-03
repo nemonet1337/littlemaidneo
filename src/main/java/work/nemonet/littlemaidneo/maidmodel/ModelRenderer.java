@@ -2,7 +2,6 @@ package work.nemonet.littlemaidneo.maidmodel;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Axis;
 import net.minecraft.world.item.ItemStack;
 import work.nemonet.littlemaidneo.maidmodel.compat.GLCompat;
 import work.nemonet.littlemaidneo.multimodel.layer.MMMatrixStack;
@@ -277,39 +276,48 @@ public class ModelRenderer {
     public void setRotatePriority(int pValue) { rotatePriority = pValue; }
 
     protected void setRotation() {
+        // mulPose(Axis.*.rotation(angle)) は回転ごとに Quaternionf を確保する。
+        // pose / normal 行列を単位軸で in-place 回転することで確保を避ける（出力は等価）。
+        PoseStack.Pose entry = poseStack.last();
         switch (rotatePriority) {
             case RotXYZ -> {
-                if (rotateAngleZ != 0.0F) poseStack.mulPose(Axis.ZP.rotation(rotateAngleZ));
-                if (rotateAngleY != 0.0F) poseStack.mulPose(Axis.YP.rotation(rotateAngleY));
-                if (rotateAngleX != 0.0F) poseStack.mulPose(Axis.XP.rotation(rotateAngleX));
+                if (rotateAngleZ != 0.0F) mulRotate(entry, rotateAngleZ, 0.0F, 0.0F, 1.0F);
+                if (rotateAngleY != 0.0F) mulRotate(entry, rotateAngleY, 0.0F, 1.0F, 0.0F);
+                if (rotateAngleX != 0.0F) mulRotate(entry, rotateAngleX, 1.0F, 0.0F, 0.0F);
             }
             case RotXZY -> {
-                if (rotateAngleY != 0.0F) poseStack.mulPose(Axis.YP.rotation(rotateAngleY));
-                if (rotateAngleZ != 0.0F) poseStack.mulPose(Axis.ZP.rotation(rotateAngleZ));
-                if (rotateAngleX != 0.0F) poseStack.mulPose(Axis.XP.rotation(rotateAngleX));
+                if (rotateAngleY != 0.0F) mulRotate(entry, rotateAngleY, 0.0F, 1.0F, 0.0F);
+                if (rotateAngleZ != 0.0F) mulRotate(entry, rotateAngleZ, 0.0F, 0.0F, 1.0F);
+                if (rotateAngleX != 0.0F) mulRotate(entry, rotateAngleX, 1.0F, 0.0F, 0.0F);
             }
             case RotYXZ -> {
-                if (rotateAngleZ != 0.0F) poseStack.mulPose(Axis.ZP.rotation(rotateAngleZ));
-                if (rotateAngleX != 0.0F) poseStack.mulPose(Axis.XP.rotation(rotateAngleX));
-                if (rotateAngleY != 0.0F) poseStack.mulPose(Axis.YP.rotation(rotateAngleY));
+                if (rotateAngleZ != 0.0F) mulRotate(entry, rotateAngleZ, 0.0F, 0.0F, 1.0F);
+                if (rotateAngleX != 0.0F) mulRotate(entry, rotateAngleX, 1.0F, 0.0F, 0.0F);
+                if (rotateAngleY != 0.0F) mulRotate(entry, rotateAngleY, 0.0F, 1.0F, 0.0F);
             }
             case RotYZX -> {
-                if (rotateAngleX != 0.0F) poseStack.mulPose(Axis.XP.rotation(rotateAngleX));
-                if (rotateAngleZ != 0.0F) poseStack.mulPose(Axis.ZP.rotation(rotateAngleZ));
-                if (rotateAngleY != 0.0F) poseStack.mulPose(Axis.YP.rotation(rotateAngleY));
+                if (rotateAngleX != 0.0F) mulRotate(entry, rotateAngleX, 1.0F, 0.0F, 0.0F);
+                if (rotateAngleZ != 0.0F) mulRotate(entry, rotateAngleZ, 0.0F, 0.0F, 1.0F);
+                if (rotateAngleY != 0.0F) mulRotate(entry, rotateAngleY, 0.0F, 1.0F, 0.0F);
             }
             case RotZXY -> {
-                if (rotateAngleY != 0.0F) poseStack.mulPose(Axis.YP.rotation(rotateAngleY));
-                if (rotateAngleX != 0.0F) poseStack.mulPose(Axis.XP.rotation(rotateAngleX));
-                if (rotateAngleZ != 0.0F) poseStack.mulPose(Axis.ZP.rotation(rotateAngleZ));
+                if (rotateAngleY != 0.0F) mulRotate(entry, rotateAngleY, 0.0F, 1.0F, 0.0F);
+                if (rotateAngleX != 0.0F) mulRotate(entry, rotateAngleX, 1.0F, 0.0F, 0.0F);
+                if (rotateAngleZ != 0.0F) mulRotate(entry, rotateAngleZ, 0.0F, 0.0F, 1.0F);
             }
             case RotZYX -> {
-                if (rotateAngleX != 0.0F) poseStack.mulPose(Axis.XP.rotation(rotateAngleX));
-                if (rotateAngleY != 0.0F) poseStack.mulPose(Axis.YP.rotation(rotateAngleY));
-                if (rotateAngleZ != 0.0F) poseStack.mulPose(Axis.ZP.rotation(rotateAngleZ));
+                if (rotateAngleX != 0.0F) mulRotate(entry, rotateAngleX, 1.0F, 0.0F, 0.0F);
+                if (rotateAngleY != 0.0F) mulRotate(entry, rotateAngleY, 0.0F, 1.0F, 0.0F);
+                if (rotateAngleZ != 0.0F) mulRotate(entry, rotateAngleZ, 0.0F, 0.0F, 1.0F);
             }
             default -> { }
         }
+    }
+
+    // pose と normal の両行列を同一の単位軸回転で更新する（PoseStack#mulPose 相当・無確保）。
+    private void mulRotate(PoseStack.Pose entry, float angle, float ax, float ay, float az) {
+        entry.pose().rotate(angle, ax, ay, az);
+        entry.normal().rotate(angle, ax, ay, az);
     }
 
     protected void renderObject(float par1, boolean pRendering) {

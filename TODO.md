@@ -96,13 +96,17 @@
   法線変換をクアッド 1 回に集約（`new Vector3f` 撤廃）／頂点座標を `addVertex(Matrix4f,…)` 委譲（頂点毎 `new Vector4f` 撤廃）／UV の `new Vector4f` はテクスチャ行列有効時のみ。レイヤー（本体/スキン/発光/防具）毎に乗算的に効く。
 - ✅ **P-2（完了）**: `ModelRenderer.renderObject()` でスケール 1 の部品の `push/scale/pop` を省略。
   `PoseStack.pushPose()` の `Pose` 確保（JIT で消えない実コスト）を恒等スケール部品から削減。
+- ✅ **P-3（完了）**: `setRotation()` / `GLCompat.glRotatef()` の `Quaternionf` 確保を撤廃。
+  `mulPose(Axis.*.rotation())` を pose/normal 行列の単位軸 in-place 回転（`mulRotate` ヘルパ）へ置換。
+  回転する部品ごと・毎フレームの確保を削減。回転6ケースの順序は完全保持、出力は数学的に等価。
+- ✅ **P-4（完了）**: `GLCompat` 即時モード（GL_TRIANGLE_STRIP）経路を確保なし化。
+  頂点毎の `Vector3f/Vec2/PositionTextureVertex` とストリップ三角形毎の `TexturedQuad`（+ `calcNormal` の Vector3f×2）を、
+  再利用プリミティブ3頂点リング + 直接バッファ書き出し（`emitStripTriangle`）へ置換。頂点並び・法線計算・「頂点毎 texCoord 必須」挙動まで踏襲。
 
 ### 次段階候補（要 Java25 ローカル `compileJava` + `runClient` 目視検証）
 
 | 優先度 | 項目 | 内容 / 検証ポイント |
 | --- | --- | --- |
-| 中 | P-3: `setRotation()` / `GLCompat.glRotatef()` の `Quaternionf` 撤廃 | `mulPose(Axis.*.rotation())` → `pose().rotateX/Y/Z()` + `normal().rotateX/Y/Z()` の in-place 化。JOML 契約上は出力一致だが**回転6ケースの転記**と全外部モデルの**目視検証**が必須 |
-| 中 | P-4: `GLCompat.combine()` 即時モード経路 | `glBegin/glVertex3f/glTexCoord2f` を使う一部モデルで頂点毎に `Vector3f/Vec2/PositionTextureVertex/TexturedQuad` を確保。三角ストリップのリングバッファ化で削減可（該当モデルのみホット） |
 | 中 | P-5: レイヤー間 `setAngles` 重複計算 | `MultiModelLightLayer` 等が同一モデルへ `animateModel`+`setAngles` を再計算。同フレーム済みフラグで間引けるが、**遅延描画（`submitCustomGeometry`）+ 共有可変フィールド**の順序依存があるため要慎重検証 |
 | 低 | P-6: `renderObject` の `glGetFloat` 行列読み戻し | 部品毎の直 `FloatBuffer` 書き込み。`loadMatrix()` 利用モデルがあるため**遅延化は互換リスク**。費用は小さく現状維持が無難 |
 
