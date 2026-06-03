@@ -87,6 +87,27 @@
 
 ---
 
+## ⚡ 描画パフォーマンス最適化（保護コア A 互換維持・外部 .class モデルそのまま動作）
+
+> 方針: 外部モデルパックが束縛する公開シグネチャ・クラス階層・`GLCompat` API は不変。
+> 描画の「内部実装のみ」を最適化し、出力はアフィン行列前提でビット一致を保つ。
+
+- ✅ **P-1（完了）**: `ModelBoxBase.TexturedQuad.draw()` のフレーム毎アロケーション削減。
+  法線変換をクアッド 1 回に集約（`new Vector3f` 撤廃）／頂点座標を `addVertex(Matrix4f,…)` 委譲（頂点毎 `new Vector4f` 撤廃）／UV の `new Vector4f` はテクスチャ行列有効時のみ。レイヤー（本体/スキン/発光/防具）毎に乗算的に効く。
+- ✅ **P-2（完了）**: `ModelRenderer.renderObject()` でスケール 1 の部品の `push/scale/pop` を省略。
+  `PoseStack.pushPose()` の `Pose` 確保（JIT で消えない実コスト）を恒等スケール部品から削減。
+
+### 次段階候補（要 Java25 ローカル `compileJava` + `runClient` 目視検証）
+
+| 優先度 | 項目 | 内容 / 検証ポイント |
+| --- | --- | --- |
+| 中 | P-3: `setRotation()` / `GLCompat.glRotatef()` の `Quaternionf` 撤廃 | `mulPose(Axis.*.rotation())` → `pose().rotateX/Y/Z()` + `normal().rotateX/Y/Z()` の in-place 化。JOML 契約上は出力一致だが**回転6ケースの転記**と全外部モデルの**目視検証**が必須 |
+| 中 | P-4: `GLCompat.combine()` 即時モード経路 | `glBegin/glVertex3f/glTexCoord2f` を使う一部モデルで頂点毎に `Vector3f/Vec2/PositionTextureVertex/TexturedQuad` を確保。三角ストリップのリングバッファ化で削減可（該当モデルのみホット） |
+| 中 | P-5: レイヤー間 `setAngles` 重複計算 | `MultiModelLightLayer` 等が同一モデルへ `animateModel`+`setAngles` を再計算。同フレーム済みフラグで間引けるが、**遅延描画（`submitCustomGeometry`）+ 共有可変フィールド**の順序依存があるため要慎重検証 |
+| 低 | P-6: `renderObject` の `glGetFloat` 行列読み戻し | 部品毎の直 `FloatBuffer` 書き込み。`loadMatrix()` 利用モデルがあるため**遅延化は互換リスク**。費用は小さく現状維持が無難 |
+
+---
+
 ## ⚠️ 本リファクタの対象外（挙動が変わるため別途）
 
 - 一部モードの状態 NBT 未永続化（Archer/Fencer の cooldown、Healer の index 等）は
