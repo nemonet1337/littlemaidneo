@@ -79,12 +79,11 @@
 - ✅ **R-3 残（完了）**: `mobInteract` → `LMInteractionHandler` / `maybeBackOffFromEdge` 系 → `LMSafeMovement` を抽出。
   `@Override` 本体は残しロジックのみ委譲。外部参照不可な `calculateFallDamage`(protected)/`fallDistance`/
   `xpReward`(Mob.protected)/`EXPERIENCE_BOTTLE_COST` は `_LM` ブリッジ・パッケージプライベート化で公開。
-- ⏸ **R-7（意図的に現状維持）**: `Mode`(CompoundTag) ⇔ `HasModeImpl`(ValueOutput/ValueInput) の NBT API 統一。
-  現状は `HasModeImpl` が `ModeData` を `CompoundTag.CODEC` でラップして橋渡ししている。
-  統一は **CI（ビルドのみ）では検出できないランタイムのセーブ破損リスク**を伴うため見送る:
-  `ValueOutput.child()` の空コンパウンド pruning により、モード状態を書かないモードで `nowMode` 復元が
-  静かに壊れる懸念があり、`runClient` でのセーブ往復検証が必須。
-- ⏸ **R-4 残**: `PathRecalcTimer` 抽出・コンテナ間アイテム移送の共通化（`CookingMode`/`PharmcistMode` 等）。
+- ✅ **R-7（完了）**: `Mode`(CompoundTag) ⇔ `HasModeImpl`(ValueOutput/ValueInput) の NBT API 統一。
+  `Mode` および `CookingMode` の NBT 入出力を `ValueOutput`/`ValueInput` に移行し、`HasModeImpl` での Codec ラッパーを廃止。
+  空コンパウンド pruning 対策として、`ModeData` が存在しない場合でも `ModeID` がロードできれば `nowMode` を復元する堅牢な処理を実装。
+- ⏸ **R-4 残（見送り）**: `PathRecalcTimer` 抽出・コンテナ間アイテム移送の共通化。
+  各タイマーの意味論の違い（`--x<0` は N+1 tick、`x>0` は N tick 周期）による挙動変化のリスク、および int の薄いラッピングにより「薄い単一実装抽象」を増やす負債化を避けるため、あえて見送りが正解と判断。
 
 ---
 

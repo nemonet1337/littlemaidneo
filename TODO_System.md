@@ -118,11 +118,11 @@ NeoForge 移行および 2MOD 統合プロセスで、クリーンアップ・�
 * 安全移動 `maybeBackOffFromEdge()` 等（L1428-1623）→ 危険判定を `LMSafeMovement` へ抽出。
 * ⚠️ ボイス再生に関わる `play()/playForce()/setConfigHolder()/getConfigHolder()` のシグネチャは不変（保護コア B）。
 
-### 🟧 R-4. モード具象クラス間の重複ボイラープレート共通化
-* ブロックエンティティ探索＋キャスト: `CookingMode`(L107-132)/`PharmcistMode`(L279-304)/`TorcherMode` → `Optional<T> getBlockEntity(level,pos,Class<T>)`。
-* インベントリ走査でスロット検索: `CookingMode`/`HealerMode`(L65-89)/`PharmcistMode` → `OptionalInt findSlot(Container, Predicate<ItemStack>)`。
-* tick ベース経路再計算タイマー: `CookingMode`(L254-261)/`PharmcistMode`(L87-89)/`RipperMode`(L89-99)/`TorcherMode`(L159-178) → `PathRecalcTimer`。
-* コンテナ間アイテム移送: `CookingMode`(L296-362)/`PharmcistMode`(L159-227) → 「空き/一致スロット探索→検証→移送」共通化。
+### 🟧 R-4. モード具象クラス間の重複ボイラープレート共通化 — ✅ **一部完了・残りは見送り**
+* ブロックエンティティ探索＋キャスト: `ModeHelpers.getBlockEntity` として抽出完了。
+* インベントリ走査でスロット検索: `ModeHelpers.findSlot` として抽出完了。
+* tick ベース経路再計算タイマー: 各呼び出しのタイマー意味論が異なり（`--x<0` は N+1 tick、`x>0` は N tick 周期）、共通化すると AI のタイミングが変わる恐れがあること、および int を薄くラップするだけで「薄い単一実装抽象」を増やしてしまうため、あえて見送り。
+* コンテナ間アイテム移送: 共通化すると AI の動作タイミングなどに影響する懸念があるため、安全性の観点からあえて見送り。
 
 ### 🟧 R-5. §4 Goal 継承チェーンの整理
 **【解禁】** 中間抽象（`StareAtHeldItemGoal`/`TameableStareAtHeldItemGoal`）の縮約。
@@ -133,9 +133,9 @@ NeoForge 移行および 2MOD 統合プロセスで、クリーンアップ・�
 「`buildXxxMode()`×6」＋「static 代入」＋「`init()` で `register()`×6」の三重定義を 1 テーブルの一括ループ登録へ。
 **登録 ModeType・ItemMatcher・Priority・登録順は完全維持**。約30行削減。
 
-### 🟧 R-7. `HasMode` ⇔ `Mode` の NBT API 不整合の解消
-`Mode` は `CompoundTag` 直接、`HasModeImpl` は `ValueOutput/ValueInput` のためラッパ発生（`HasModeImpl` L73-75）。
-どちらかへ統一しラッパ除去。**NBT キー（`ModeID`/`ModeData`）・格納形式は不変**。
+### 🟧 R-7. `HasMode` ⇔ `Mode` の NBT API 不整合の解消 — ✅ **解消済み**
+`Mode` は `CompoundTag` 直接、`HasModeImpl` は `ValueOutput/ValueInput` のためラッパが発生していたが、`Mode` 側の入出力を `ValueOutput`/`ValueInput` に変更することで統一。ラッパーを廃止した。
+空コンパウンド pruning に対処するため、`ModeData` が存在しない場合でも `ModeID` がロードできれば `nowMode` を復元する堅牢な処理を実装。**NBT キー（`ModeID`/`ModeData`）・格納形式は不変**。
 
 ### 🟩 R-8. モデル／ボイスローダー系の内部重複整理（保護コアの命名・探索パス・登録名は不可触）
 * `resource/manager/`（Model/Texture/Config）: `get()` ごとの `toLowerCase()` を登録時 1 回へ集約（**キー文字列自体は不変**）。
