@@ -57,12 +57,13 @@ public class LittleMaidNeo {
         ModRegistration.BLOCK_ENTITIES.register(modEventBus);
         ModRegistration.MEMORY_MODULES.register(modEventBus);
         ModRegistration.SENSORS.register(modEventBus);
+        ModRegistration.ATTACHMENT_TYPES.register(modEventBus);
 
         modEventBus.addListener(work.nemonet.littlemaidneo.data.LMDataGenerator::gatherClientData);
         modEventBus.addListener(work.nemonet.littlemaidneo.data.LMDataGenerator::gatherServerData);
 
         modContainer.registerConfig(ModConfig.Type.COMMON, LMMLConfig.SPEC, "littlemaidneo-lmml-common.toml");
-        modContainer.registerConfig(ModConfig.Type.COMMON, LMRBConfig.SPEC, "littlemaidneo-common.toml");
+        modContainer.registerConfig(ModConfig.Type.SERVER, LMRBConfig.SPEC, "littlemaidneo-server.toml");
 
         modEventBus.addListener(this::onCommonSetup);
         modEventBus.addListener(this::onRegisterPayloadHandlers);

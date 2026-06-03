@@ -35,12 +35,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.List;
 import java.util.stream.Stream;
 
+import work.nemonet.littlemaidneo.setup.ModRegistration;
+
 @Mixin(ServerPlayer.class)
-public abstract class MixinServerPlayerEntity extends MixinPlayerEntity implements MaidManager {
-
-
-    @Unique
-    private final MaidManager maidManager = new MaidManagerImpl();
+public abstract class MixinServerPlayerEntity extends MixinPlayerEntity {
 
     protected MixinServerPlayerEntity(EntityType<? extends LivingEntity> entityType, Level world) {
         super(entityType, world);
@@ -49,16 +47,18 @@ public abstract class MixinServerPlayerEntity extends MixinPlayerEntity implemen
     @Inject(method = "restoreFrom", at = @At("RETURN"))
     public void onRestoreFrom(ServerPlayer oldPlayer, boolean alive, CallbackInfo ci) {
         // ターゲットタグ
-        var thisSync = this.getTargetTagsSync();
-        var oldSync = ((TargetTagManager) oldPlayer).getTargetTagsSync();
-        thisSync.syncFrom(oldSync);
+        var thisTarget = this.getData(ModRegistration.TARGET_TAG_ATTACHMENT.get());
+        var oldTarget = oldPlayer.getData(ModRegistration.TARGET_TAG_ATTACHMENT.get());
+        thisTarget.getTargetTagsSync().syncFrom(oldTarget.getTargetTagsSync());
 
         // メイドさん管理
         migrateWorldMaidSoulState();
-        this.checkMaidUnload();
+        var thisMaid = this.getData(ModRegistration.MAID_MANAGER_ATTACHMENT.get());
+        var oldMaid = oldPlayer.getData(ModRegistration.MAID_MANAGER_ATTACHMENT.get());
+        thisMaid.checkMaidUnload();
         TagValueOutput output = TagValueOutput.createWithContext(ProblemReporter.DISCARDING, this.registryAccess());
-        ((MaidManager) oldPlayer).writeMaidManager(output);
-        this.readMaidManager(TagValueInput.create(ProblemReporter.DISCARDING, this.registryAccess(), output.buildResult()));
+        oldMaid.writeMaidManager(output);
+        thisMaid.readMaidManager(TagValueInput.create(ProblemReporter.DISCARDING, this.registryAccess(), output.buildResult()));
     }
 
     @Inject(method = "startSleepInBed", at = @At("RETURN"))
@@ -93,20 +93,22 @@ public abstract class MixinServerPlayerEntity extends MixinPlayerEntity implemen
 
     @Inject(method = "readAdditionalSaveData", at = @At("RETURN"))
     private void onReadSP(ValueInput input, CallbackInfo ci) {
-        this.readMaidManager(input);
+        var oldMaids = input.childrenListOrEmpty("maidList");
+        if (!oldMaids.isEmpty()) {
+            this.getData(ModRegistration.MAID_MANAGER_ATTACHMENT.get()).readMaidManager(input);
+        }
         migrateWorldMaidSoulState();
     }
 
     @Inject(method = "addAdditionalSaveData", at = @At("RETURN"))
     private void onWriteSP(ValueOutput output, CallbackInfo ci) {
-        this.checkMaidUnload();
-        this.writeMaidManager(output);
+        this.getData(ModRegistration.MAID_MANAGER_ATTACHMENT.get()).checkMaidUnload();
     }
 
     @Inject(method = "tick", at = @At("HEAD"))
     private void onTick(CallbackInfo ci) {
         if (this.getRandom().nextInt(20) == 0) {
-            this.checkMaidUnload();
+            this.getData(ModRegistration.MAID_MANAGER_ATTACHMENT.get()).checkMaidUnload();
         }
     }
 
@@ -116,53 +118,9 @@ public abstract class MixinServerPlayerEntity extends MixinPlayerEntity implemen
     @Unique
     private void migrateWorldMaidSoulState() {
         WorldMaidSoulState worldMaidSoulState = WorldMaidSoulState.getWorldMaidSoulState((ServerLevel) this.level());
+        var attachment = this.getData(ModRegistration.MAID_MANAGER_ATTACHMENT.get());
         worldMaidSoulState.get(this.getUUID())
-                .forEach(this.maidManager::registerMaid);
+                .forEach(attachment::registerMaid);
         worldMaidSoulState.remove(this.getUUID());
-    }
-
-    @Override
-    public void registerMaid(MaidSoulEntity soul) {
-        this.maidManager.registerMaid(soul);
-    }
-
-    @Override
-    public void registerMaid(LittleMaidEntity maid) {
-        this.maidManager.registerMaid(maid);
-    }
-
-    @Override
-    public void registerMaid(LittleMaidEntity.MaidSoul soul) {
-        this.maidManager.registerMaid(soul);
-    }
-
-    @Override
-    public List<MaidManager.LMInfo> getMaidList() {
-        return this.maidManager.getMaidList();
-    }
-
-    @Override
-    public void writeMaidManager(ValueOutput output) {
-        this.maidManager.writeMaidManager(output);
-    }
-
-    @Override
-    public void readMaidManager(ValueInput input) {
-        this.maidManager.readMaidManager(input);
-    }
-
-    @Override
-    public List<LittleMaidEntity.MaidSoul> getMaidSouls() {
-        return this.maidManager.getMaidSouls();
-    }
-
-    @Override
-    public void clearMaidSouls() {
-        this.maidManager.clearMaidSouls();
-    }
-
-    @Override
-    public void checkMaidUnload() {
-        this.maidManager.checkMaidUnload();
     }
 }

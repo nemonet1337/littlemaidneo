@@ -20,6 +20,19 @@ import net.minecraft.world.level.material.MapColor;
 import net.neoforged.neoforge.common.extensions.IMenuTypeExtension;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.registries.NeoForgeRegistries;
+import net.neoforged.neoforge.attachment.AttachmentType;
+import net.neoforged.neoforge.attachment.IAttachmentSerializer;
+import net.neoforged.neoforge.attachment.IAttachmentHolder;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.level.storage.TagValueInput;
+import net.minecraft.world.level.storage.TagValueOutput;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
+import work.nemonet.littlemaidneo.entity.util.MaidManagerImpl;
+import work.nemonet.littlemaidneo.entity.targeting.TargetTagManagerImpl;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.sensing.SensorType;
 import work.nemonet.littlemaidneo.LittleMaidNeo;
@@ -49,6 +62,45 @@ public class ModRegistration {
             DeferredRegister.create(Registries.MEMORY_MODULE_TYPE, LittleMaidNeo.MODID);
     public static final DeferredRegister<SensorType<?>> SENSORS =
             DeferredRegister.create(Registries.SENSOR_TYPE, LittleMaidNeo.MODID);
+
+    public static final DeferredRegister<AttachmentType<?>> ATTACHMENT_TYPES =
+            DeferredRegister.create(NeoForgeRegistries.Keys.ATTACHMENT_TYPES, LittleMaidNeo.MODID);
+
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<MaidManagerImpl>> MAID_MANAGER_ATTACHMENT =
+            ATTACHMENT_TYPES.register("maid_manager", () -> AttachmentType.builder(MaidManagerImpl::new)
+                    .serialize(new IAttachmentSerializer<MaidManagerImpl>() {
+                        @Override
+                        public MaidManagerImpl read(IAttachmentHolder holder, ValueInput input) {
+                            MaidManagerImpl manager = new MaidManagerImpl();
+                            manager.readMaidManager(input);
+                            return manager;
+                        }
+                        @Override
+                        public boolean write(MaidManagerImpl manager, ValueOutput output) {
+                            manager.writeMaidManager(output);
+                            return true;
+                        }
+                    })
+                    .copyOnDeath()
+                    .build());
+
+    public static final DeferredHolder<AttachmentType<?>, AttachmentType<TargetTagManagerImpl>> TARGET_TAG_ATTACHMENT =
+            ATTACHMENT_TYPES.register("target_tag", () -> AttachmentType.builder(() -> new TargetTagManagerImpl(null))
+                    .serialize(new IAttachmentSerializer<TargetTagManagerImpl>() {
+                        @Override
+                        public TargetTagManagerImpl read(IAttachmentHolder holder, ValueInput input) {
+                            TargetTagManagerImpl manager = new TargetTagManagerImpl(null);
+                            manager.readTargetTags(input);
+                            return manager;
+                        }
+                        @Override
+                        public boolean write(TargetTagManagerImpl manager, ValueOutput output) {
+                            manager.writeTargetTags(output);
+                            return true;
+                        }
+                    })
+                    .copyOnDeath()
+                    .build());
 
     // Static instances for safe cross-registry reference during registration
     public static SalaryBoxBlock salaryBoxBlockInstance;

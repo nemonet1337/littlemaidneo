@@ -19,17 +19,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.targeting.TargetIdentifier;
 import work.nemonet.littlemaidneo.entity.targeting.TargetTagManager;
-import work.nemonet.littlemaidneo.entity.targeting.TargetTagManagerImpl;
-import work.nemonet.littlemaidneo.entity.targeting.TargetingSystem;
+import work.nemonet.littlemaidneo.setup.ModRegistration;
 
 @Mixin(Player.class)
 public abstract class MixinPlayerEntity
     extends LivingEntity
-    implements TargetTagManager
 {
-
-    @Unique
-    private TargetTagManager targetTagManager;
 
     protected MixinPlayerEntity(
         EntityType<? extends LivingEntity> entityType,
@@ -44,37 +39,14 @@ public abstract class MixinPlayerEntity
         GameProfile gameProfile,
         CallbackInfo ci
     ) {
-        this.targetTagManager = new TargetTagManagerImpl(world);
     }
 
     @Inject(method = "readAdditionalSaveData", at = @At("RETURN"))
     public void onRead(ValueInput input, CallbackInfo ci) {
-        this.readTargetTags(input);
-    }
-
-    @Inject(method = "addAdditionalSaveData", at = @At("RETURN"))
-    public void onWrite(ValueOutput output, CallbackInfo ci) {
-        this.writeTargetTags(output);
-    }
-
-    @Override
-    public Set<TargetingSystem.TargetTag> getTargetTag(TargetIdentifier id) {
-        return this.targetTagManager.getTargetTag(id);
-    }
-
-    @Override
-    public void readTargetTags(ValueInput input) {
-        this.targetTagManager.readTargetTags(input);
-    }
-
-    @Override
-    public void writeTargetTags(ValueOutput output) {
-        this.targetTagManager.writeTargetTags(output);
-    }
-
-    @Override
-    public Sync getTargetTagsSync() {
-        return this.targetTagManager.getTargetTagsSync();
+        var oldTags = input.childrenListOrEmpty("targetTagMap");
+        if (!oldTags.isEmpty()) {
+            this.getData(ModRegistration.TARGET_TAG_ATTACHMENT.get()).readTargetTags(input);
+        }
     }
 
     @Override

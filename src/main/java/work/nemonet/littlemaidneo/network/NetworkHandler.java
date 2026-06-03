@@ -29,6 +29,7 @@ import work.nemonet.littlemaidneo.entity.util.MaidManager;
 import work.nemonet.littlemaidneo.entity.util.MaidManagerImpl;
 import work.nemonet.littlemaidneo.entity.util.MovingMode;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
+import work.nemonet.littlemaidneo.setup.ModRegistration;
 import work.nemonet.littlemaidneo.resource.holder.ConfigHolder;
 import work.nemonet.littlemaidneo.resource.manager.LMConfigManager;
 import work.nemonet.littlemaidneo.resource.manager.LMTextureManager;
@@ -414,9 +415,13 @@ public class NetworkHandler {
         ClientPacketDistributor.sendToServer(new OpenTargetTagScreenC2SPayload(entity.getId()));
     }
 
-    public static <T extends Entity & TargetTagManager> void sendOpenTargetTagScreenS2C(T entity, Player player) {
+    public static void sendOpenTargetTagScreenS2C(Entity entity, Player player) {
         TagValueOutput output = TagValueOutput.createWithoutContext(ProblemReporter.DISCARDING);
-        entity.writeTargetTags(output);
+        if (entity instanceof TargetTagManager) {
+            ((TargetTagManager) entity).writeTargetTags(output);
+        } else {
+            entity.getData(ModRegistration.TARGET_TAG_ATTACHMENT.get()).writeTargetTags(output);
+        }
         PacketDistributor.sendToPlayer((ServerPlayer) player,
                 new OpenTargetTagScreenS2CPayload(entity.getId(), output.buildResult()));
     }
@@ -425,15 +430,14 @@ public class NetworkHandler {
         context.enqueueWork(() -> {
             Player player = context.player();
             Entity entity = player.level().getEntity(payload.entityId());
-            if (!(entity instanceof TargetTagManager)
+            if (entity == null || (!(entity instanceof TargetTagManager) && !entity.hasData(ModRegistration.TARGET_TAG_ATTACHMENT.get()))
                     || (entity instanceof TamableAnimal tamable
                             && TameableUtil.getTameOwnerUuid(tamable)
                                      .filter(id -> id.equals(player.getUUID()))
                                      .isEmpty())) {
                 return;
             }
-            // noinspection unchecked
-            sendOpenTargetTagScreenS2C((Entity & TargetTagManager) entity, player);
+            sendOpenTargetTagScreenS2C(entity, player);
         });
     }
 
@@ -446,7 +450,7 @@ public class NetworkHandler {
 
     public static void sendOpenMaidManagerScreenS2C(Player player) {
         TagValueOutput output = TagValueOutput.createWithoutContext(ProblemReporter.DISCARDING);
-        var lmInfos = ((MaidManager) player).getMaidList();
+        var lmInfos = player.getData(ModRegistration.MAID_MANAGER_ATTACHMENT.get()).getMaidList();
         MaidManagerImpl.write(output, lmInfos);
         PacketDistributor.sendToPlayer((ServerPlayer) player, new OpenMaidManagerScreenS2CPayload(output.buildResult()));
     }

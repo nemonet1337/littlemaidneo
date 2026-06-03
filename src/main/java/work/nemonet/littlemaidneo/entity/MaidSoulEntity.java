@@ -45,9 +45,8 @@ public class MaidSoulEntity extends Entity {
                 && this.maidSoul != null) {
             this.maidSoul.getOwnerUUID()
                     .map(id -> ((ServerLevel) this.level()).getEntity(id))
-                    .filter(owner -> owner instanceof MaidManager)
                     .ifPresent(owner -> {
-                        ((MaidManager) owner).registerMaid(this);
+                        owner.getData(ModRegistration.MAID_MANAGER_ATTACHMENT.get()).registerMaid(this);
                         this.maidManagerRegistered = true;
                     });
         }
@@ -157,7 +156,7 @@ public class MaidSoulEntity extends Entity {
     protected void pickupSoul(Player player) {
         player.take(this, 1);
         if (this.level() instanceof ServerLevel serverWorld) {
-            ((MaidManager) player).registerMaid(this.maidSoul);
+            player.getData(ModRegistration.MAID_MANAGER_ATTACHMENT.get()).registerMaid(this.maidSoul);
             serverWorld.playSound(null, this.getX(), this.getY(), this.getZ(),
                     SoundEvents.FIREWORK_ROCKET_TWINKLE, SoundSource.PLAYERS,
                     1.0f, 1.0f);

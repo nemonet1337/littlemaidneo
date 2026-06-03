@@ -788,9 +788,8 @@ public class LittleMaidEntity
     public void tick() {
         if (!this.level().isClientSide() && !this.maidManagerRegistered) {
             TameableUtil.getTameOwner(this)
-                    .filter(owner -> owner instanceof MaidManager)
                     .ifPresent(owner -> {
-                        ((MaidManager) owner).registerMaid(this);
+                        owner.getData(ModRegistration.MAID_MANAGER_ATTACHMENT.get()).registerMaid(this);
                         this.maidManagerRegistered = true;
                     });
         }
@@ -2189,8 +2188,8 @@ public class LittleMaidEntity
     @Override
     public Set<TargetingSystem.TargetTag> getTargetTag(TargetIdentifier id) {
         return TameableUtil.getTameOwner(this)
-                .map(l -> l instanceof TargetTagManager ? (TargetTagManager) l : null)
-                .map(t -> {
+                .map(owner -> {
+                    TargetTagManager t = owner.getData(ModRegistration.TARGET_TAG_ATTACHMENT.get());
                     var otherSync = t.getTargetTagsSync();
                     var thisSync = this.getTargetTagsSync();
                     if (otherSync.hash() != thisSync.hash()) {

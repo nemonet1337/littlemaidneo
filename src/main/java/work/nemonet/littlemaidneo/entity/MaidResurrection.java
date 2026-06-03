@@ -29,7 +29,7 @@ public final class MaidResurrection {
     }
 
     public static boolean resurrect(ServerLevel world, BlockPos pos, Player player) {
-        var maidSouls = ((MaidManager) player).getMaidSouls();
+        var maidSouls = player.getData(ModRegistration.MAID_MANAGER_ATTACHMENT.get()).getMaidSouls();
         if (maidSouls.isEmpty()) {
             return false;
         }
@@ -57,7 +57,7 @@ public final class MaidResurrection {
                         maid);
             }
         }
-        ((MaidManager) player).clearMaidSouls();
+        player.getData(ModRegistration.MAID_MANAGER_ATTACHMENT.get()).clearMaidSouls();
 
         world.removeBlock(pos, false);
         world.playSound(
