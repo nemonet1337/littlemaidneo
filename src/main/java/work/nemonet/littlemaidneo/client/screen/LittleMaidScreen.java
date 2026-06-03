@@ -238,8 +238,8 @@ public class LittleMaidScreen
     @Override
     public void containerTick() {
         super.containerTick();
-        // 少し重たいかもしれないが、screenを開く直前にsetModeNameした場合に取得がズレるので毎tickやる
-        // TODO 取得ずれを防ぐ方法を考える
+        // モード名は SynchedEntityData(MODE_NAME) でサーバーから遅延同期されるため、
+        // 開いた直後の値が古いことがある。毎 tick 取り直すことで表示の追従ズレを防ぐ（コストは軽微）。
         stateText = getStateText();
         updateStatusIcons();
     }

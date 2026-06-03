@@ -11,8 +11,8 @@ import work.nemonet.littlemaidneo.entity.util.HasInventory;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-// クライアント側では概ね役に立たない
-// TODO クライアント側でも活用するか、無理なら動かさずに何とかする方法を考える
+// 給料消費・契約・ストライキ判定はサーバー権威。クライアント側では実カウントを進めず、
+// 表示に必要な値（未払い日数など）は openInventory のパケットや SynchedEntityData 経由で受け取る方針。
 public class ItemContractable<T extends LivingEntity & HasInventory> implements Contractable {
     protected final T mob;
     protected final Supplier<Integer> maxConsumeInterval;

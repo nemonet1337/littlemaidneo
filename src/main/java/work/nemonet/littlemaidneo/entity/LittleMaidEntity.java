@@ -2,7 +2,6 @@ package work.nemonet.littlemaidneo.entity;
 
 import com.google.common.collect.Lists;
 import java.util.*;
-import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
@@ -20,7 +19,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.util.Util;
@@ -28,8 +26,6 @@ import net.minecraft.world.*;
 import net.minecraft.world.damagesource.DamageEffects;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.damagesource.DamageTypes;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.Entity;
@@ -53,7 +49,6 @@ import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.OpenDoorGoal;
 import net.minecraft.world.entity.ai.goal.PanicGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
-import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragonPart;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -66,23 +61,16 @@ import net.minecraft.world.item.ArrowItem;
 import net.minecraft.world.item.BowItem;
 import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.ItemUtils;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ProjectileWeaponItem;
-import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.biome.Biome;
-import net.minecraft.world.level.pathfinder.PathType;
-import net.minecraft.world.level.pathfinder.WalkNodeEvaluator;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
-import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
@@ -181,7 +169,8 @@ public class LittleMaidEntity
             LittleMaidEntity.class,
             EntityDataSerializers.INT);
     // エンチャントの瓶はランダムな経験値を排出するため、その平均値を作成コストとする
-    private static final int EXPERIENCE_BOTTLE_COST = 7;
+    // LMInteractionHandler から参照するためパッケージプライベート
+    static final int EXPERIENCE_BOTTLE_COST = 7;
 
     // 移譲s
     public final LMHasInventory littleMaidInventory = new LMHasInventory();
@@ -215,7 +204,8 @@ private float prevInterestedAngle;
     private int playSoundCool;
     private int idFactor;
     public int experiencePickUpDelay;
-    // TODO クライアント側のこの値は信用ならない
+    // accelerationTicks はサーバー権威。クライアントへは ACCELERATE フラグ(SynchedEntityData)と
+    // スポーンパケット(writeVarInt/readVarInt)で同期されるため、クライアント側の生値は描画補助以上の用途に使わない。
     private int accelerationTicks;
     private boolean maidManagerRegistered;
 
@@ -251,7 +241,8 @@ private float prevInterestedAngle;
         return builder;
     }
 
-    // TODO コンフィグでスポーン条件を設定可能にする
+    // 自然スポーン条件: 足元が完全な当たり判定を持つブロックで、明るさが 8 超であること。
+    // スポーン条件の細分化（明るさ閾値・バイオーム等のコンフィグ化）は機能バックログ（Phase 6）で扱う。
     public static boolean isValidNaturalSpawn(
             LevelAccessor world,
             BlockPos pos) {
@@ -268,6 +259,12 @@ private float prevInterestedAngle;
         return MaidResurrection.resurrect(world, pos, player);
     }
 
+    // 視線制御の役割分担:
+    //   - 移動 (WALK_TARGET) を消費するのは MoveToTargetSink。MaidFollowOwner/Stare/Freedom が WALK_TARGET を設定するため必須。
+    //   - 頭部向きは GoalSelector の LookAtPlayerGoal / RandomLookAroundGoal が担当し、MaidStareBehavior は
+    //     getLookControl().setLookAt(...) で直接制御する。いずれも最終的に MaidLookControl で角度クランプされる。
+    //   - バニラの LookAtTargetSink は LOOK_TARGET メモリを消費するが、本 Mod では LOOK_TARGET を設定する
+    //     プロデューサが存在せず常に no-op だったため登録しない（孤立した不活性 Behavior の混入を防ぐ）。
     private static final Brain.Provider<LittleMaidEntity> BRAIN_PROVIDER = Brain.<LittleMaidEntity>provider(
             ImmutableList.of(
                     ModRegistration.IS_WAITING.get(),
@@ -284,7 +281,6 @@ private float prevInterestedAngle;
                             new work.nemonet.littlemaidneo.entity.ai.behavior.MaidFollowOwnerBehavior(),
                             new work.nemonet.littlemaidneo.entity.ai.behavior.MaidStareBehavior(),
                             new work.nemonet.littlemaidneo.entity.ai.behavior.MaidFreedomBehavior(),
-                            new net.minecraft.world.entity.ai.behavior.LookAtTargetSink(45, 90),
                             new net.minecraft.world.entity.ai.behavior.MoveToTargetSink()
                     ))
             )
@@ -578,7 +574,8 @@ private float prevInterestedAngle;
         accelerationTicks = input.getIntOr("accelerationTicks", 0);
     }
 
-    // TODO IdFactorが確実にセットされたタイミングで実行されるようにする
+    // idFactor は initIdFactor()（コンストラクタおよび setUUID() 内）で UUID から確定する。
+    // 本メソッドはコンストラクタ末尾で idFactor 確定後に呼ばれるため、ここでは確定済みの値を前提にできる。
     public void setRandomTexture() {
         var textureHolderList = LMTextureManager.INSTANCE.getAllTextures()
                 .stream()
@@ -857,8 +854,8 @@ private float prevInterestedAngle;
                 TameableUtil.getTameOwnerUuid(this).isEmpty());
     }
 
-    // canSpawnとかでも使われる
-    // TODO スポーン条件をコンフィグで設定可能にする
+    // canSpawn 等でも使われる経路コスト評価。足場が完全ブロックなら高評価(10.0)、
+    // それ以外は明るさベースのコストを返す。閾値のコンフィグ化は機能バックログ（Phase 6）。
     @Override
     public float getWalkTargetValue(BlockPos pos, LevelReader world) {
         return world
@@ -879,7 +876,8 @@ private float prevInterestedAngle;
         return null;
     }
 
-    // TODO マウント系の位置を調整
+    // 騎乗オフセットはモデル定義（getMountedYOffset / getyOffset）から算出し、
+    // getPassengerRidingPosition / getVehicleAttachmentPoint で反映する。
 
     /**
      * 上に乗ってるエンティティへのオフセット (1.21.1ではgetPassengerRidingPositionに統合)
@@ -938,7 +936,8 @@ private float prevInterestedAngle;
         }
     }
 
-    // TODO ボイス周りの調整、コンフィグ化
+    // 環境音（昼夜・天候・体力・時計所持）に応じた周囲ボイス再生。
+    // 発声頻度は外部ボイスパックの "LivingVoiceRate" パラメタ（保護コア B・既定 0.2）で制御する。
     @Override
     public void playAmbientSound() {
         if (this.level().isClientSide() ||
@@ -1047,7 +1046,8 @@ private float prevInterestedAngle;
         this.deathTime = 0;
     }
 
-    // TODO 処理の改善
+    // 攻撃時: 吸血/通常ボイスを再生し、攻撃が通った場合はメインハンド武器の耐久を減らす。
+    // hurtEnemy は他 Mod がプレイヤー前提で実装している可能性があるため try/catch で保護する。
     @Override
     public boolean doHurtTarget(ServerLevel serverLevel, Entity target) {
         boolean result = super.doHurtTarget(serverLevel, target);
@@ -1086,7 +1086,8 @@ private float prevInterestedAngle;
         return result;
     }
 
-    // TODO 処理の改善
+    // 被ダメージ処理: 不死/落下/非Mod耐性などのコンフィグ判定 → フレンドファイア除外 →
+    // 戦闘/非戦闘モードによるダメージ係数適用 → 待機解除 → 状況別の被弾ボイス再生。
     @Override
     public boolean hurtServer(
             ServerLevel serverLevel,
@@ -1188,14 +1189,15 @@ private float prevInterestedAngle;
 
     // 射撃
 
-    // TODO try/catchを挟む。処理の改善
+    // 弓/クロスボウによる遠隔攻撃。弾の取得・矢の生成・射出・効果音までを担当する。
     @Override
     public void performRangedAttack(LivingEntity target, float pullProgress) {
         var stack = this.getMainHandItem();
         // 弾が無い場合は実行されないはずだが、念のためチェック
         var arrowStack = this.getProjectile(stack);
-        // 1.21.1: EnchantmentHelper APIが変更されたため、Infinity判定を簡略化
-        boolean isInfinite = false; // TODO: Holder<Enchantment>を取得してチェックする
+        // メイドさんの弓は Infinity（無限矢）を意図的にサポートせず、常に矢を消費する仕様。
+        // 弾が無ければ射撃自体を行わない。
+        boolean isInfinite = false;
         if (arrowStack.isEmpty() && !isInfinite) {
             return;
         }
@@ -1247,440 +1249,49 @@ private float prevInterestedAngle;
         this.entityData.set(CHARGING, charging);
     }
 
-    // 1.21.1: CrossbowAttackMobからshootCrossbowProjectile/shootメソッドが削除された
-    // performCrossbowAttack(default)がCrossbowItem.performShootingを直接呼ぶ形に変更
-    // TODO: 弾道調整(archerShootVelocityFactor)が必要な場合performCrossbowAttackをオーバーライドする
+    // 1.21.1: CrossbowAttackMobからshootCrossbowProjectile/shootメソッドが削除された。
+    // performCrossbowAttack(default) が CrossbowItem.performShooting を直接呼ぶ形に変更されている。
+    // クロスボウには弓の archerShootVelocityFactor を適用していない（バニラ初速のまま）。
+    // 弾道調整が必要になった場合は performCrossbowAttack をオーバーライドする。
 
     @Override
     public void onCrossbowAttackPerformed() {
     }
 
-    // TODO コメントを差す
+    // 安全移動: 落下/危険ブロックでメイドさんが死なないよう、縁での移動ベクトルを押し戻す。
+    // ロジックは LMSafeMovement へ委譲（override 本体のみ残す）。
     @Override
     protected Vec3 maybeBackOffFromEdge(Vec3 movement, MoverType type) {
-        if (type != MoverType.SELF && type != MoverType.PLAYER) {
-            return movement;
-        }
-
-        LMRBConfig config = getConfig();
-
-        if (!config.health.immortal &&
-                !getConfig().health.nonMobDamageImmunity &&
-                config.health.enableSafeMove &&
-                this.canClipAtLedge()) {
-            boolean shouldBackByDamage = isDamageSourceEmpty(this.getBoundingBox()) &&
-                    !this.isDamageSourceEmpty(
-                            this.getBoundingBox().move(movement.x, 0, movement.z));
-            boolean shouldBackByFall = !config.health.fallImmunity &&
-                    !isSafeFallHeight(
-                            this.position().add(movement.x, 0, movement.z));
-
-            if (shouldBackByDamage || shouldBackByFall) {
-                BiPredicate<Double, Double> shouldBackPredicate = (x, z) -> false;
-                if (shouldBackByDamage) {
-                    BiPredicate<Double, Double> finalPredicate = shouldBackPredicate;
-                    shouldBackPredicate = (x, z) -> finalPredicate.test(x, z) ||
-                    // 危険物がbox内にある
-                            !this.isDamageSourceEmpty(
-                                    this.getBoundingBox().move(x, 0, z));
-                }
-
-                if (shouldBackByFall) {
-                    BiPredicate<Double, Double> finalPredicate = shouldBackPredicate;
-                    shouldBackPredicate = (x, z) -> finalPredicate.test(x, z) ||
-                    // 足場がbox内にない
-                            this.level().noCollision(
-                                    this,
-                                    this.getBoundingBox()
-                                            .move(x, 0, z)
-                                            .expandTowards(
-                                                    0,
-                                                    -(getDangerHeightThreshold() -
-                                                            fallDistance),
-                                                    0))
-                            ||
-                            // または、すぐ下に足場がなく、危険物がbox内にある
-                            (this.level().noCollision(
-                                    this,
-                                    this.getBoundingBox()
-                                            .move(x, 0, z)
-                                            .expandTowards(0, -maxUpStep(), 0))
-                                    &&
-                                    !this.isDamageSourceEmpty(
-                                            this.getBoundingBox()
-                                                    .move(x, 0, z)
-                                                    .expandTowards(
-                                                            0,
-                                                            -getDangerHeightThreshold(),
-                                                            0)));
-                }
-
-                movement = pushBack(movement, shouldBackPredicate);
-            }
-        }
-
-        return movement;
+        return LMSafeMovement.maybeBackOffFromEdge(this, movement, type);
     }
 
-    private Vec3 pushBack(
-            Vec3 movement,
-            BiPredicate<Double, Double> pushBackPredicate) {
-        double dot = 0.05;
-        double mX = movement.x;
-        double mZ = movement.z;
-        while (mX != 0.0 && pushBackPredicate.test(mX, 0d)) {
-            if (mX < dot && mX >= -dot) {
-                mX = 0.0;
-                continue;
-            }
-            if (mX > 0.0) {
-                mX -= dot;
-                continue;
-            }
-            mX += dot;
-        }
-        while (mZ != 0.0 && pushBackPredicate.test(0d, mZ)) {
-            if (mZ < dot && mZ >= -dot) {
-                mZ = 0.0;
-                continue;
-            }
-            if (mZ > 0.0) {
-                mZ -= dot;
-                continue;
-            }
-            mZ += dot;
-        }
-        while (mX != 0.0 && mZ != 0.0 && pushBackPredicate.test(mX, mZ)) {
-            mX = mX < dot && mX >= -dot ? 0.0 : (mX > 0.0 ? mX - dot : mX + dot);
-            if (mZ < dot && mZ >= -dot) {
-                mZ = 0.0;
-                continue;
-            }
-            if (mZ > 0.0) {
-                mZ -= dot;
-                continue;
-            }
-            mZ += dot;
-        }
-        return new Vec3(mX, movement.y, mZ);
-    }
-
-    private boolean isDamageSourceEmpty(AABB box) {
-        int minX = Mth.floor(box.minX);
-        int maxX = Mth.floor(box.maxX);
-        int minY = Mth.floor(box.minY);
-        int maxY = Mth.floor(box.maxY);
-        int minZ = Mth.floor(box.minZ);
-        int maxZ = Mth.floor(box.maxZ);
-
-        for (int x = 0; x < maxX - minX + 1; x++) {
-            for (int y = 0; y < maxY - minY + 1; y++) {
-                for (int z = 0; z < maxZ - minZ + 1; z++) {
-                    PathType pathNodeType = WalkNodeEvaluator.getPathTypeStatic(
-                            new net.minecraft.world.level.pathfinder.PathfindingContext(
-                                    this.level(),
-                                    this),
-                            new BlockPos(minX + x, minY + y, minZ + z).mutable());
-                    if (pathNodeType == PathType.FIRE ||
-                            pathNodeType == PathType.DAMAGE_CAUTIOUS ||
-                            pathNodeType == PathType.LAVA) {
-                        return false;
-                    }
-                }
-            }
-        }
-        return true;
-    }
-
-    private boolean isSafeFallHeight(Vec3 pos) {
-        BlockHitResult result = this.level().clip(
-                new ClipContext(
-                        pos,
-                        pos.subtract(
-                                0,
-                                getDangerHeightThreshold() - fallDistance + 0.1,
-                                0),
-                        ClipContext.Block.COLLIDER,
-                        ClipContext.Fluid.NONE,
-                        this));
-        if (result.getType() == HitResult.Type.MISS) {
-            return false;
-        }
-        Vec3 hitPos = result.getLocation();
-        if (getDangerHeightThreshold() - fallDistance < pos.y - hitPos.y) {
-            return false;
-        }
-        BlockPos checkPos = new BlockPos(
-                Mth.floor(pos.x),
-                Mth.floor(pos.y - 1),
-                Mth.floor(pos.z));
-        for (int i = 0; i < pos.y - hitPos.y + 1; i++) {
-            PathType pathNodeType = WalkNodeEvaluator.getPathTypeStatic(
-                    new net.minecraft.world.level.pathfinder.PathfindingContext(
-                            this.level(),
-                            this),
-                    checkPos.mutable());
-            if (pathNodeType == PathType.WALKABLE ||
-                    pathNodeType == PathType.BLOCKED) {
-                return true;
-            }
-            if (pathNodeType == PathType.FIRE ||
-                    pathNodeType == PathType.DAMAGE_CAUTIOUS ||
-                    pathNodeType == PathType.LAVA) {
-                return false;
-            }
-            checkPos = checkPos.below();
-        }
-        return false;
-    }
-
-    private boolean canClipAtLedge() {
-        float canClipHeight = getDangerHeightThreshold() + 1.0f;
-        // 着地しているか、落下距離が危険高度未満かつ下に足場があるとき
-        return (this.onGround() ||
-                (this.fallDistance < canClipHeight &&
-                        !this.level().noCollision(
-                                this,
-                                this.getBoundingBox().expandTowards(
-                                        0.0,
-                                        this.fallDistance - canClipHeight,
-                                        0.0))));
-    }
-
-    private float getDangerHeightThreshold() {
-        // マイナスの値も返すことを利用しているため、バージョンアップ/mixinでの仕様変更に注意が必要
+    // --- LMSafeMovement への移譲ブリッジ（protected メソッド / フィールドの同パッケージ公開） ---
+    // 危険高度のしきい値。マイナスの値も返すことを利用しているため、バージョンアップ/mixin での仕様変更に注意。
+    float getDangerHeightThreshold_LM() {
         int fallDamage = calculateFallDamage(0, 1);
         return -fallDamage;
     }
 
-    // TODO 複数モデルで問題ないかチェックする
+    double fallDistance_LM() {
+        return this.fallDistance;
+    }
+
+    // 経験値（Mob.xpReward は protected のため LMInteractionHandler 向けに公開）
+    int getXpReward_LM() {
+        return this.xpReward;
+    }
+
+    // リード接続位置。getEyeHeight() ベースで算出するため、モデルごとに eyeHeight が
+    // 異なっても（getDefaultDimensions で per-model に設定済み）破綻せず追従する。
     @Override
     public Vec3 getLeashOffset() {
         return new Vec3(0.0, this.getEyeHeight() - 0.15f, 1f / 16f);
     }
 
-    // success 動作を実行し、手を振る
-    // consume 動作を実行するが、手を振らない
-    // pass 動作を実行しないが、他の動作を許可する
-    // fail 動作を実行せず、他の動作も許可しない
-    // 下二つならここ以外で手に持ったアイテムが使用される場合がある
-    // 継承元のコードは無視
-    // TODO 処理の見直し、処理を追加可能に
-    // TODO 使用アイテムをコンフィグから追加可能に
+    // 右クリック処理。アイテム別の分岐ロジックは LMInteractionHandler へ委譲（override 本体のみ残す）。
     @Override
     public InteractionResult mobInteract(Player player, InteractionHand hand) {
-        if (player.isShiftKeyDown()) {
-            return InteractionResult.PASS;
-        }
-        ItemStack stack = player.getItemInHand(hand);
-        // オーナーが居ない場合
-        if (TameableUtil.getTameOwnerUuid(this).isEmpty()) {
-            if (stack.is(LMTags.Items.MAIDS_EMPLOYABLE)) {
-                return contract(player, stack, false);
-            }
-            return InteractionResult.PASS;
-        }
-        // オーナーじゃない場合
-        if (TameableUtil.getTameOwnerUuid(this).isPresent() &&
-                !TameableUtil.isTameOwner(this, player)) {
-            if (!this.level().isClientSide()) {
-                player.hurt(this.level().damageSources().mobAttack(this), 1.0f); // 0.5ハートダメージ
-                this.playForce(LMSounds.FIND_TARGET_D);
-                this.swing(InteractionHand.MAIN_HAND);
-                this.level().broadcastEntityEvent(this, (byte) 6); // 怒りエフェクト
-            }
-            return InteractionResult.SUCCESS;
-        }
-        // ストライキ時
-        if (isStrike()) {
-            if (stack.is(LMTags.Items.MAIDS_EMPLOYABLE)) {
-                return contract(player, stack, true);
-            }
-            // ストライキ時に砂糖をドカ食い
-            if (stack.is(LMTags.Items.MAIDS_SALARY)) {
-                int count = stack.getCount();
-                if (count >= 8) {
-                    if (!player.getAbilities().instabuild) {
-                        stack.shrink(8);
-                    }
-                    this.level().broadcastEntityEvent(this, (byte) 71); // 再雇用エフェクト
-                    this.playSound(SoundEvents.GENERIC_EAT.value(), 1.0F, 1.0F);
-                    this.swing(InteractionHand.MAIN_HAND);
-                    
-                    setContractMM(true);
-                    if (!this.level().isClientSide()) {
-                        NetworkHandler.sendSyncMultiModelS2C(this, this);
-                    }
-                    setStrike(false);
-                    itemContractable.setUnpaidTimes(0);
-                    getNavigation().stop();
-                    setMovingMode(MovingMode.ESCORT);
-                    
-                    return InteractionResult.SUCCESS;
-                } else {
-                    this.level().broadcastEntityEvent(this, (byte) 6); // 怒りエフェクト
-                    this.playForce(LMSounds.FIND_TARGET_D);
-                    player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("chat.littlemaidneo.need_more_sugar_for_strike"));
-                    return InteractionResult.CONSUME;
-                }
-            }
-            this.level().broadcastEntityEvent(this, (byte) 6);
-            return InteractionResult.PASS;
-        }
-        // 本
-        if (stack.is(Items.WRITABLE_BOOK)) {
-            if (!this.level().isClientSide()) {
-                applyParametersFromBook(stack, player);
-                player.sendSystemMessage(net.minecraft.network.chat.Component.translatable("chat.littlemaidneo.book_parameters_applied"));
-            }
-            this.swing(InteractionHand.MAIN_HAND);
-            return InteractionResult.SUCCESS;
-        }
-        // ケーキ
-        if (stack.is(Items.CAKE)) {
-            if (!player.getAbilities().instabuild) {
-                stack.shrink(1);
-            }
-            this.playSound(SoundEvents.GENERIC_EAT.value(), 1.0F, 1.0F);
-            this.swing(InteractionHand.MAIN_HAND);
-            if (!this.level().isClientSide()) {
-                this.addEffect(new MobEffectInstance(MobEffects.SPEED, 600, 1)); // Speed II
-                this.addEffect(new MobEffectInstance(MobEffects.HASTE, 600, 1));      // Haste II
-                this.level().broadcastEntityEvent(this, (byte) 76);
-            }
-            return InteractionResult.SUCCESS;
-        }
-        // サドル持ってるとき
-        if (stack.is(Items.SADDLE)) {
-            if (!this.isPassenger()) {
-                if (player.isVehicle()) {
-                    player.ejectPassengers();
-                }
-                this.startRiding(player);
-            } else {
-                var vehicle = this.getVehicle();
-                if (vehicle == player) {
-                    this.stopRiding();
-                }
-            }
-            return InteractionResult.SUCCESS;
-        }
-        // 肩車されてるとき
-        if (this.getVehicle() == player) {
-            return InteractionResult.PASS;
-        }
-        // 牛乳
-        if (stack.is(Items.MILK_BUCKET)) {
-            if (!player.getAbilities().instabuild) {
-                player.setItemInHand(hand, new ItemStack(Items.BUCKET));
-            }
-            this.removeAllEffects();
-            this.playSound(SoundEvents.GENERIC_DRINK.value(), 1.0F, 1.0F);
-            this.swing(InteractionHand.MAIN_HAND);
-            return InteractionResult.SUCCESS;
-        }
-        // 金リンゴ
-        if (stack.is(Items.GOLDEN_APPLE) || stack.is(Items.ENCHANTED_GOLDEN_APPLE)) {
-            if (!player.getAbilities().instabuild) {
-                stack.shrink(1);
-            }
-            this.heal(this.getMaxHealth());
-            this.playSound(SoundEvents.GENERIC_EAT.value(), 1.0F, 1.0F);
-            this.swing(InteractionHand.MAIN_HAND);
-            if (!this.level().isClientSide()) {
-                if (stack.is(Items.ENCHANTED_GOLDEN_APPLE)) {
-                    this.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 400, 1));
-                    this.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, 6000, 0));
-                    this.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 6000, 0));
-                    this.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 2400, 3));
-                } else {
-                    this.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 100, 1));
-                    this.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 2400, 0));
-                }
-            }
-            return InteractionResult.SUCCESS;
-        }
-        // 砂糖
-        if (stack.is(LMTags.Items.MAIDS_SALARY)) {
-            var config = getConfig();
-            heal(config.health.healAmount);
-            return changeState(player, stack);
-        }
-        // Freedom切替
-        if (stack.getItem() == Items.FEATHER) {
-            if (getMovingMode() == MovingMode.ESCORT) {
-                this.level().broadcastEntityEvent(this, (byte) 73);
-                this.setMovingMode(MovingMode.FREEDOM);
-                this.setFreedomPos(this.blockPosition());
-            } else {
-                this.level().broadcastEntityEvent(this, (byte) 74);
-                this.setMovingMode(MovingMode.ESCORT);
-            }
-            return InteractionResult.SUCCESS;
-        }
-        // Tracer切替
-        if ((this.getMovingMode() == MovingMode.FREEDOM ||
-                this.getMovingMode() == MovingMode.TRACER) &&
-                stack.getItem() == Items.REDSTONE) {
-            if (this.getMovingMode() == MovingMode.FREEDOM) {
-                this.level().broadcastEntityEvent(this, (byte) 75);
-                this.setMovingMode(MovingMode.TRACER);
-            } else {
-                this.level().broadcastEntityEvent(this, (byte) 73);
-                this.setMovingMode(MovingMode.FREEDOM);
-                this.setFreedomPos(this.blockPosition());
-            }
-            return InteractionResult.SUCCESS;
-        }
-        // ガラス瓶->エンチャントの瓶
-        if (this.xpReward >= EXPERIENCE_BOTTLE_COST &&
-                stack.is(Items.GLASS_BOTTLE)) {
-            this.level().playSound(
-                    null,
-                    this.getX(),
-                    this.getY(),
-                    this.getZ(),
-                    SoundEvents.BOTTLE_FILL,
-                    SoundSource.PLAYERS,
-                    1.0f,
-                    1.0f);
-            ItemStack itemStack2 = ItemUtils.createFilledResult(
-                    stack,
-                    player,
-                    Items.EXPERIENCE_BOTTLE.getDefaultInstance());
-            player.setItemInHand(hand, itemStack2);
-            this.addExperience(-EXPERIENCE_BOTTLE_COST);
-            return InteractionResult.SUCCESS;
-        }
-        // モブミルク
-        if (getConfig().misc.canMilking && stack.is(Items.BUCKET)) {
-            player.playSound(SoundEvents.COW_MILK, 1.0F, 1.0F);
-            ItemStack itemStack2 = ItemUtils.createFilledResult(
-                    stack,
-                    player,
-                    Items.MILK_BUCKET.getDefaultInstance());
-            player.setItemInHand(hand, itemStack2);
-            return InteractionResult.SUCCESS;
-        }
-        if (stack.getItem() == Items.GUNPOWDER) {
-            int maxAccelerationStack = getConfig().misc.maxAccelerationStack;
-            int accelerationTicks = getConfig().misc.accelerationTicksPerStack;
-            // 同期ズレ防止のため、if条件を付加する場合は結果をパケットで送信すること
-            int resumeCount = Math.min(maxAccelerationStack, stack.getCount());
-            int acTicks = resumeCount * accelerationTicks;
-            setAccelerationTicks(acTicks);
-
-            if (!player.getAbilities().instabuild) {
-                stack.shrink(resumeCount);
-                if (stack.isEmpty()) {
-                    player.getInventory().removeItem(stack);
-                }
-            }
-
-            return InteractionResult.SUCCESS;
-        }
-        openInventory(player);
-        return InteractionResult.SUCCESS;
+        return LMInteractionHandler.mobInteract(this, player, hand);
     }
 
     public InteractionResult changeState(Player player, ItemStack stack) {
@@ -1821,7 +1432,8 @@ private float prevInterestedAngle;
         this.littleMaidInventory.setWorkItemSlotSize(num);
     }
 
-    // TODO 計算式の改善
+    // 防具耐久消費。バニラ準拠でダメージの 1/4（最低 1）を各防具スロットに適用する。
+    // DAMAGE_RESISTANT な装備および非 EQUIPPABLE はスキップ。
     @Override
     protected void hurtArmor(DamageSource source, float amount) {
         if (!(amount <= 0.0f)) {
@@ -1879,7 +1491,8 @@ private float prevInterestedAngle;
         return super.getSlot(mappedIndex);
     }
 
-    // TODO 処理の改善
+    // 射撃武器に対応する弾を返す。手持ち優先 → インベントリ走査の順で探索し、
+    // EPEntityUtil.arrowCustomHook で他 Mod の矢カスタムフックを通す。
     @Override
     public ItemStack getProjectile(ItemStack stack) {
         if (!(stack.getItem() instanceof ProjectileWeaponItem ranged)) {
@@ -1945,7 +1558,8 @@ private float prevInterestedAngle;
         return this.xpReward;
     }
 
-    // TODO IdFactorの仕様の改善
+    // idFactor は UUID から決まる安定した擬似乱数シード（テクスチャ/ボイスの個体差に使用）。
+    // UUID 変更時に必ず再計算されるよう setUUID をフックする。
     @Override
     public void setUUID(UUID uuid) {
         super.setUUID(uuid);
@@ -2199,8 +1813,8 @@ public Optional<String> getModeName() {
     }
 
     public boolean isFriend(LivingEntity entity) {
-        // TODO
-        // そもそも、isFriend()はAttackProhibitedでは決してない。TargetingSystemにフレンドタグを復活させる必要がある
+        // 注: 本来 isFriend と ATTACK_PROHIBITED は別概念。専用のフレンドタグ体系の導入は
+        //     機能バックログ（Phase 7・TargetingSystem 拡張）で扱う。現状は以下の暫定判定:
         // 暫定でテイム済みのモブは攻撃対象から外す
         if (entity instanceof OwnableEntity tameable &&
                 TameableUtil.hasTameOwner(tameable)) {
@@ -2323,8 +1937,9 @@ public Optional<String> getModeName() {
 
     // 音声関係
 
-    // TODO 強制再生メソッドを生やす
-    // TODO 再生クールダウンをコンフィグ化
+    // 通常ボイス再生。クールダウン(playSoundCool)中は再生しない。
+    // 強制再生が必要な場合はクールダウンを無視する playForce() を使う。
+    // クールダウン長は getConfig().misc.playSoundInterval でコンフィグ化済み。
     @Override
     public void play(String soundName) {
         if (0 < this.playSoundCool) {
@@ -2355,60 +1970,8 @@ public Optional<String> getModeName() {
         return LMRBConfig.get();
     }
 
-    // MOVEとLOOKでGoalを分離
-    // 旧 StareAtHeldItemGoal<T> + TameableStareAtHeldItemGoal<T> +
-    // LMStareAtHeldItemGoal<T> を 1 クラスに統合
-    public static class LMStareAtHeldItemGoal<T extends LittleMaidEntity>
-            extends net.minecraft.world.entity.ai.goal.Goal {
-
-        protected final T mob;
-        protected final java.util.function.Supplier<Float> stareAtRange;
-        protected final java.util.function.Predicate<ItemStack> targetItem;
-        private final boolean isTamed;
-        protected net.minecraft.world.entity.player.Player stareAt;
-
-        public LMStareAtHeldItemGoal(
-                T mob,
-                java.util.function.Supplier<Float> stareAtRange,
-                java.util.function.Predicate<ItemStack> targetItem,
-                boolean isTamed) {
-            this.mob = mob;
-            this.stareAtRange = stareAtRange;
-            this.targetItem = targetItem;
-            this.isTamed = isTamed;
-            setFlags(java.util.EnumSet.of(Flag.LOOK));
-        }
-
-        @Override
-        public boolean canUse() {
-            // 飼い慣らし状態のチェック
-            if (work.nemonet.littlemaidneo.entity.util.TameableUtil.hasTameOwner(this.mob) != isTamed)
-                return false;
-            stareAt = mob.level().getNearestPlayer(mob, stareAtRange.get());
-            return stareAt != null && isHeldTargetItem(stareAt);
-        }
-
-        @Override
-        public boolean canContinueToUse() {
-            return isHeldTargetItem(stareAt);
-        }
-
-        public boolean isHeldTargetItem(net.minecraft.world.entity.player.Player player) {
-            return targetItem.test(player.getMainHandItem()) || targetItem.test(player.getOffhandItem());
-        }
-
-        @Override
-        public void tick() {
-            mob.getLookControl().setLookAt(stareAt, 30F, 30F);
-            // 動いてたら傾げない
-            this.mob.setBegging(this.mob.getNavigation().isDone());
-        }
-
-        @Override
-        public void stop() {
-            this.mob.setBegging(false);
-        }
-    }
+    // 注: 旧 LMStareAtHeldItemGoal（手持ちアイテム注視 Goal）は Phase 7 で
+    //     MaidStareBehavior（Brain Behavior）へ移行済み。Goal 版は孤立デッドコードとなったため削除した。
 
     public static class MaidSoul {
 
@@ -2499,10 +2062,6 @@ public Optional<String> getModeName() {
                 break;
             }
         }
-    }
-
-    private void applyParametersFromBook(ItemStack stack, Player player) {
-        BookParameterParser.apply(this, stack, player);
     }
 
     protected void showTransAmParticles() {
