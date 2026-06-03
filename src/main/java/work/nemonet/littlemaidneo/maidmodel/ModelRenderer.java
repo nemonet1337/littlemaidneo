@@ -315,10 +315,16 @@ public class ModelRenderer {
     protected void renderObject(float par1, boolean pRendering) {
         GLCompat.glGetFloat(GL11.GL_MODELVIEW_MATRIX, matrix);
         if (pRendering && isRendering) {
-            GLCompat.glPushMatrix();
-            GLCompat.glScalef(scaleX, scaleY, scaleZ);
-            GLCompat.glCallList(displayList);
-            GLCompat.glPopMatrix();
+            if (scaleX != 1.0F || scaleY != 1.0F || scaleZ != 1.0F) {
+                // スケール指定がある部品のみ push/scale/pop する。
+                // スケール 1 のとき glScalef は恒等変換であり、それを包む push/pop（Pose 確保）は純粋な無駄。
+                GLCompat.glPushMatrix();
+                GLCompat.glScalef(scaleX, scaleY, scaleZ);
+                GLCompat.glCallList(displayList);
+                GLCompat.glPopMatrix();
+            } else {
+                GLCompat.glCallList(displayList);
+            }
         }
         if (childModels != null) {
             for (ModelRenderer childModel : childModels) {
