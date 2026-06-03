@@ -85,7 +85,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
 import org.jetbrains.annotations.Nullable;
 import work.nemonet.littlemaidneo.LittleMaidNeo;
@@ -122,6 +121,13 @@ import work.nemonet.littlemaidneo.setup.ModRegistration;
 import work.nemonet.littlemaidneo.tags.LMTags;
 import work.nemonet.littlemaidneo.util.LMCollidable;
 import work.nemonet.littlemaidneo.util.ReachAttributeUtil;
+import net.minecraft.world.entity.ai.Brain;
+import net.minecraft.world.entity.ai.ActivityData;
+import net.minecraft.world.entity.schedule.Activity;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import com.mojang.serialization.Dynamic;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 
 //メイドさん本体
 public class LittleMaidEntity
@@ -203,11 +209,8 @@ public class LittleMaidEntity
     private BlockPos freedomPos;
 
     // 首傾げのやつ
-    @OnlyIn(Dist.CLIENT)
-    private float interestedAngle;
-
-    @OnlyIn(Dist.CLIENT)
-    private float prevInterestedAngle;
+private float interestedAngle;
+private float prevInterestedAngle;
 
     private int playSoundCool;
     private int idFactor;
@@ -220,6 +223,7 @@ public class LittleMaidEntity
     public LittleMaidEntity(EntityType<LittleMaidEntity> type, Level worldIn) {
         super(type, worldIn);
         this.moveControl = new FixedMoveControl(this);
+        this.lookControl = new work.nemonet.littlemaidneo.entity.ai.control.MaidLookControl(this);
         ((GroundPathNavigation) getNavigation()).setCanOpenDoors(true);
         multiModel = new MultiModelCompound(
                 this,
@@ -264,6 +268,39 @@ public class LittleMaidEntity
         return MaidResurrection.resurrect(world, pos, player);
     }
 
+    private static final Brain.Provider<LittleMaidEntity> BRAIN_PROVIDER = Brain.<LittleMaidEntity>provider(
+            ImmutableList.of(
+                    ModRegistration.IS_WAITING.get(),
+                    ModRegistration.OWNER.get(),
+                    MemoryModuleType.WALK_TARGET,
+                    MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE
+            ),
+            ImmutableList.of(
+                    ModRegistration.LITTLE_MAID_SENSOR.get()
+            ),
+            entity -> ImmutableList.of(
+                    ActivityData.<LittleMaidEntity>create(Activity.CORE, 0, ImmutableList.of(
+                            new work.nemonet.littlemaidneo.entity.ai.behavior.MaidWaitBehavior(),
+                            new work.nemonet.littlemaidneo.entity.ai.behavior.MaidFollowOwnerBehavior(),
+                            new work.nemonet.littlemaidneo.entity.ai.behavior.MaidStareBehavior(),
+                            new work.nemonet.littlemaidneo.entity.ai.behavior.MaidFreedomBehavior(),
+                            new net.minecraft.world.entity.ai.behavior.LookAtTargetSink(45, 90),
+                            new net.minecraft.world.entity.ai.behavior.MoveToTargetSink()
+                    ))
+            )
+    );
+
+    @Override
+    protected Brain<?> makeBrain(Brain.Packed packedBrain) {
+        return BRAIN_PROVIDER.makeBrain(this, packedBrain);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public Brain<LittleMaidEntity> getBrain() {
+        return (Brain<LittleMaidEntity>) super.getBrain();
+    }
+
     // 登録メソッドたち
 
     @Override
@@ -301,7 +338,7 @@ public class LittleMaidEntity
                 ++priority,
                 new LMCollectSalaryFromContainerGoal<>(this));
 
-        this.goalSelector.addGoal(++priority, new WaitGoal<>(this));
+
 
         this.goalSelector.addGoal(
                 ++priority,
@@ -356,41 +393,9 @@ public class LittleMaidEntity
                     }
                 });
 
-        this.goalSelector.addGoal(
-                ++priority,
-                new HasMMFollowTameOwnerGoal<>(
-                        this,
-                        () -> config.movement.sprintSpeed,
-                        () -> config.movement.sprintStartDistance,
-                        () -> config.movement.sprintEndDistance) {
-                    @Override
-                    public void start() {
-                        super.start();
-                        this.tameable.setSprinting(true);
-                    }
 
-                    @Override
-                    public void stop() {
-                        super.stop();
-                        this.tameable.setSprinting(false);
-                    }
-                });
 
-        this.goalSelector.addGoal(
-                ++priority,
-                new FollowAtHeldItemGoal<>(
-                        this,
-                        () -> config.misc.stareAtSalaryRange,
-                        stack -> stack.is(LMTags.Items.MAIDS_SALARY),
-                        () -> config.misc.followAtHeldSalaryRange,
-                        true));
-        this.goalSelector.addGoal(
-                ++priority,
-                new LMStareAtHeldItemGoal<>(
-                        this,
-                        () -> config.misc.stareAtSalaryRange,
-                        stack -> stack.is(LMTags.Items.MAIDS_SALARY),
-                        true));
+
 
         this.goalSelector.addGoal(
                 ++priority,
@@ -433,25 +438,14 @@ public class LittleMaidEntity
                     }
                 });
 
-        this.goalSelector.addGoal(
-                ++priority,
-                new HasMMFollowTameOwnerGoal<>(
-                        this,
-                        () -> config.movement.followSpeed,
-                        () -> config.movement.followStartDistance,
-                        () -> config.movement.followEndDistance));
+
 
         this.goalSelector.addGoal(++priority, new PlaySnowGoal(this));
 
         this.goalSelector.addGoal(
                 ++priority,
                 new RedstoneTraceGoal(this, () -> config.movement.tracerSpeed));
-        this.goalSelector.addGoal(
-                ++priority,
-                new FreedomGoal<>(
-                        this,
-                        config.movement.freedomSpeed,
-                        () -> config.movement.freedomRange));
+
 
         // 野良
         this.goalSelector.addGoal(
@@ -480,33 +474,7 @@ public class LittleMaidEntity
                                 super.canUse());
                     }
                 });
-        this.goalSelector.addGoal(
-                ++priority,
-                new FollowAtHeldItemGoal<>(
-                        this,
-                        () -> config.misc.stareAtEmployItemRange,
-                        stack -> stack.is(LMTags.Items.MAIDS_EMPLOYABLE),
-                        () -> config.misc.followAtHeldEmployItemRange,
-                        false));
-        this.goalSelector.addGoal(
-                ++priority,
-                new LMStareAtHeldItemGoal<>(
-                        this,
-                        () -> config.misc.stareAtEmployItemRange,
-                        stack -> stack.is(LMTags.Items.MAIDS_EMPLOYABLE),
-                        false));
 
-        this.goalSelector.addGoal(
-                ++priority,
-                new WaterAvoidingRandomStrollGoal(
-                        this,
-                        config.movement.freedomSpeed) {
-                    @Override
-                    public boolean canUse() {
-                        return (!TameableUtil.hasTameOwner(LittleMaidEntity.this) &&
-                                super.canUse());
-                    }
-                });
 
         // 視線
         this.goalSelector.addGoal(
@@ -827,6 +795,7 @@ public class LittleMaidEntity
 
     @Override
     protected void customServerAiStep(ServerLevel serverLevel) {
+        this.getBrain().tick(serverLevel, this);
         super.customServerAiStep(serverLevel);
         if (TameableUtil.hasTameOwner(this) ||
                 getConfig().misc.canPickupItemByNoOwner) {
@@ -930,18 +899,32 @@ public class LittleMaidEntity
         return model.getyOffset(getCaps()) - getBbHeight();
     }
 
+    @Override
+    public Vec3 getPassengerRidingPosition(Entity passenger) {
+        double yOffset = getMountedYOffset();
+        return this.position().add(0.0, yOffset, 0.0);
+    }
+
+    @Override
+    public Vec3 getVehicleAttachmentPoint(Entity vehicle) {
+        Vec3 defaultPoint = super.getVehicleAttachmentPoint(vehicle);
+        return new Vec3(defaultPoint.x, -getRidingYOffset(), defaultPoint.z);
+    }
+
     // 毎回 EntityDimensions を生成するが、頻繁に呼ばれるメソッドではないためキャッシュしない。
     // キャッシュ化はモデル変更・ポーズ・成長スケール全ての無効化が必要で、得られる効果に対し
     // 複雑さ（無効化漏れによるヒットボックス不整合）のリスクが見合わないため見送る（設計判断）。
     @Override
     public EntityDimensions getDefaultDimensions(Pose pose) {
-        EntityDimensions dimensions;
         IMultiModel model = getModel(Layer.SKIN, Part.HEAD).orElse(
                 LMModelManager.INSTANCE.getDefaultModel());
         float height = model.getHeight(getCaps(), MMPose.convertPose(pose));
         float width = model.getWidth(getCaps(), MMPose.convertPose(pose));
-        dimensions = EntityDimensions.scalable(width, height);
-        return dimensions.scale(getAgeScale());
+        float eyeHeight = model.getEyeHeight(getCaps(), MMPose.convertPose(pose));
+        EntityDimensions dimensions = EntityDimensions.scalable(width, height);
+        dimensions = dimensions.scale(getAgeScale());
+        dimensions = dimensions.withEyeHeight(eyeHeight * getAgeScale());
+        return dimensions;
     }
 
     // 1.21.1: changeDimension is final, use afterChangingDimensions instead
@@ -2045,16 +2028,12 @@ public class LittleMaidEntity
     public void setBloodSuck(boolean isBloodSuck) {
         this.setLMMFlag(BLOOD_SUCK_INDEX, isBloodSuck);
     }
-
-    @OnlyIn(Dist.CLIENT)
-    public float getInterestedAngle(float tickDelta) {
+public float getInterestedAngle(float tickDelta) {
         return ((prevInterestedAngle +
                 (interestedAngle - prevInterestedAngle) * tickDelta) *
                 ((getId() % 2 == 0 ? 0.08F : -0.08F) * (float) Math.PI));
     }
-
-    @OnlyIn(Dist.CLIENT)
-    private void tickInterestedAngle() {
+private void tickInterestedAngle() {
         prevInterestedAngle = interestedAngle;
         if (isBegging()) {
             interestedAngle = interestedAngle + (1.0F - interestedAngle) * 0.4F;
@@ -2174,9 +2153,7 @@ public class LittleMaidEntity
     public void setModeName(String modeName) {
         this.entityData.set(MODE_NAME, modeName);
     }
-
-    @OnlyIn(Dist.CLIENT)
-    public Optional<String> getModeName() {
+public Optional<String> getModeName() {
         String modeName = this.entityData.get(MODE_NAME);
         if (modeName.isEmpty())
             return Optional.empty();

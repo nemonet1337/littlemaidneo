@@ -63,6 +63,14 @@ public class ModRegistration {
     public static final DeferredRegister<SensorType<?>> SENSORS =
             DeferredRegister.create(Registries.SENSOR_TYPE, LittleMaidNeo.MODID);
 
+    public static final DeferredHolder<MemoryModuleType<?>, MemoryModuleType<net.minecraft.util.Unit>> IS_WAITING =
+            MEMORY_MODULES.register("is_waiting", () -> new MemoryModuleType<>(java.util.Optional.empty()));
+    public static final DeferredHolder<MemoryModuleType<?>, MemoryModuleType<net.minecraft.world.entity.player.Player>> OWNER =
+            MEMORY_MODULES.register("owner", () -> new MemoryModuleType<>(java.util.Optional.empty()));
+
+    public static final DeferredHolder<SensorType<?>, SensorType<work.nemonet.littlemaidneo.entity.ai.sensor.LittleMaidSensor>> LITTLE_MAID_SENSOR =
+            SENSORS.register("little_maid_sensor", () -> new SensorType<>(work.nemonet.littlemaidneo.entity.ai.sensor.LittleMaidSensor::new));
+
     public static final DeferredRegister<AttachmentType<?>> ATTACHMENT_TYPES =
             DeferredRegister.create(NeoForgeRegistries.Keys.ATTACHMENT_TYPES, LittleMaidNeo.MODID);
 

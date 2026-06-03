@@ -99,17 +99,7 @@ public class RedstoneTraceGoal extends Goal {
                 });
     }
 
-    @Override
-    public void tick() {
-        super.tick();
-        // Limit head rotation relative to body to prevent sudden/scary neck twisting on
-        // turns
-        float maxAngle = 50f;
-        float diff = Mth.wrapDegrees(this.mob.getYHeadRot() - this.mob.yBodyRot);
-        if (Math.abs(diff) > maxAngle) {
-            this.mob.setYHeadRot(this.mob.yBodyRot + Mth.clamp(diff, -maxAngle, maxAngle));
-        }
-    }
+
 
     @Override
     public void stop() {
