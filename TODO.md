@@ -1,6 +1,6 @@
 # LittleMaidNeo — 未完 TODO / 開発ロードマップ
 
-> 更新日: 2026-06-01
+> 更新日: 2026-06-03
 > 方針: Architectury除去 / NeoForge専用 / `net.sistr` → `work.nemonet` / 2MOD統合
 > 統合リファクタリングプラン（フェーズ0〜10）: `docs/plan/2026-06-01_統合リファクタリングプラン.md`
 > 技術的負債と保護コアの詳細: `TODO_System.md`
@@ -66,45 +66,27 @@
 
 ---
 
-## 🛠️ ソースコード中の TODO コメント（Phase でインライン解消）
+## 🛠️ ソースコード中の TODO コメント
 
-> 注: 以前の版ではこの一覧を `[x]` 済みと記していたが、実コードには未解消で残存していたため
-> 実態に合わせて再掲する。各項目を担当フェーズで解消し、コメントも除去する。
+> ✅ 解消済み。`src/main/java` 配下の `// TODO` は全て、実装・説明コメント化・
+> （機能要望は下記バックログへの移管）のいずれかで処理済み（`grep -rn "TODO" src/main/java` が空）。
+> 今後はソースに `// TODO` を残さず、未着手タスクは本ファイルのバックログで一元管理する。
 
-### Phase 1（記述量削減と同時に解消）
-- `LittleMaidEntity.java` L2376: 空の `// TODO` を解消 or 削除
-- `LittleMaidEntity.java` L1426: 「コメントを差す」→ 説明コメント追記
-- `LittleMaidEntity.java` L1624: 「複数モデルで問題ないかチェック」→ 検証コメント化
+---
 
-### Phase 2（神クラス分割と同時に解消）
-- `LittleMaidEntity.java` L239: 単一引数コンストラクタの削除
-- `LittleMaidEntity.java` L319: パーティクル演出の強化（→ `MaidResurrection`）
-- `LittleMaidEntity.java` L763 / L2116: IdFactor のタイミング・仕様改善
-- `LittleMaidEntity.java` L1218 / L1257 / L1359: 処理改善・try/catch 追加
-- `LittleMaidEntity.java` L1366: Infinity 判定を `Holder<Enchantment>` で
-- `LittleMaidEntity.java` L1420: クロスボウ弾道調整（performCrossbowAttack override）
-- `LittleMaidEntity.java` L1636 / L1637: `mobInteract` 整理・使用アイテムのコンフィグ化（→ `LMInteractionHandler`、コンフィグは Phase 6）
-- `LittleMaidEntity.java` L1992: hurtArmor 計算式の改善
-- `LittleMaidEntity.java` L2050: getProjectile の改善
-- `LittleMaidEntity.java` L2500 / L2501: 強制再生メソッド・再生クールダウンのコンフィグ化
-- `ItemContractable.java` L15: クライアント側活用方針の確定
+## 🧱 残課題：構造リファクタ（要 Java25 ランタイム検証・blind 実装は高リスク）
 
-### Phase 3（モード共通化・赤石バグと同時に解消）
-- `RedstoneTraceGoal.java` L57: `getBlockPos()` で判定して動作させる（赤石迷子バグ）
-- `LittleMaidScreen.java` L245: 取得ずれを防ぐ方法を検討
+> これらは多数の private メンバへの参照やセーブ互換に関わり、コンパイル/実機検証なしの blind 実装では
+> 回帰を検出できない。Java25 + `runClient`/`runServer` 環境で着手する。
 
-### Phase 6（Config / 属性現代化と同時に解消）
-- `LittleMaidEntity.java` L215: クライアント側 accelerationTicks の信頼性（同期方針）
-- `LittleMaidEntity.java` L244: 付与属性の再考
-- `LittleMaidEntity.java` L256 / L1043: スポーン条件のコンフィグ化
-- `LittleMaidEntity.java` L1109: ボイス周りの調整・コンフィグ化
-
-### Phase 8（首/視線・サイズ最適化と同時に解消）
-- `LittleMaidEntity.java` L1086: `getDefaultDimensions` のキャッシュ最適化
-- `LittleMaidEntity.java` L1064: マウント系の位置調整
-
-### Phase 7/10（AI 化・仕上げ）
-- `LittleMaidEntity.java` L2376 付近 `isFriend()`: TargetingSystem フレンドタグの復活
+- **R-3 残**: `mobInteract` → `LMInteractionHandler` / `maybeBackOffFromEdge` 系 → `LMSafeMovement` の抽出。
+  ロジック・分岐順序は現状コメントで明文化済み。抽出時は `calculateFallDamage`(protected) 等への
+  パッケージプライベートゲッター追加が必要。
+- **R-7**: `Mode`(CompoundTag) ⇔ `HasModeImpl`(ValueOutput/ValueInput) の NBT API 統一。
+  現状は `HasModeImpl` が `ModeData` を `CompoundTag.CODEC` でラップして橋渡ししており、これは
+  **意図的に維持**している（`ValueOutput.child()` の空コンパウンド pruning により、
+  モード状態を書かないモードで `nowMode` 復元が壊れる懸念があり、ランタイム検証が必要なため）。
+- **R-4 残**: `PathRecalcTimer` 抽出・コンテナ間アイテム移送の共通化（`CookingMode`/`PharmcistMode` 等）。
 
 ---
 
