@@ -10,11 +10,8 @@ import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
 import work.nemonet.littlemaidneo.multimodel.layer.MMMatrixStack;
-
-@OnlyIn(Dist.CLIENT)
 public class MultiModelHeldItemLayer<S extends MultiModelRenderState, M extends MultiModel<S>> extends RenderLayer<S, M> {
 
     public MultiModelHeldItemLayer(RenderLayerParent<S, M> context) {

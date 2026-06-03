@@ -5,15 +5,12 @@ import net.minecraft.client.sounds.WeighedSoundEvents;
 import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundSource;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import work.nemonet.littlemaidneo.client.resource.LMSoundInstance;
 import work.nemonet.littlemaidneo.config.LMMLConfig;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-
-@OnlyIn(Dist.CLIENT)
 public class LMSoundManager {
     public static final LMSoundManager INSTANCE = new LMSoundManager();
     private final Map<String, Identifier> soundPaths = new HashMap<>();

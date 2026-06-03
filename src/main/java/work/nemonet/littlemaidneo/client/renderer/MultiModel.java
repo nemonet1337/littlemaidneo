@@ -3,13 +3,10 @@ package work.nemonet.littlemaidneo.client.renderer;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
 
 import java.util.List;
 import java.util.Map;
-
-@OnlyIn(Dist.CLIENT)
 public class MultiModel<S extends MultiModelRenderState> extends EntityModel<S> {
 
     public MultiModel() {

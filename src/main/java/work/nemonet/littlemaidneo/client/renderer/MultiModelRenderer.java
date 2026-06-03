@@ -11,15 +11,12 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import work.nemonet.littlemaidneo.LittleMaidNeo;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
 import work.nemonet.littlemaidneo.maidmodel.ModelMultiBase;
 import work.nemonet.littlemaidneo.multimodel.layer.MMMatrixStack;
 
 import static work.nemonet.littlemaidneo.maidmodel.IModelCaps.*;
-
-@OnlyIn(Dist.CLIENT)
 public class MultiModelRenderer<T extends LivingEntity & IHasMultiModel>
         extends LivingEntityRenderer<T, MultiModelRenderState, MultiModel<MultiModelRenderState>> {
 

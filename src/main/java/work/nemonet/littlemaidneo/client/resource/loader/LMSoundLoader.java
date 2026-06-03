@@ -2,7 +2,6 @@ package work.nemonet.littlemaidneo.client.resource.loader;
 
 import net.minecraft.resources.Identifier;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import work.nemonet.littlemaidneo.client.resource.ResourceWrapper;
@@ -13,8 +12,6 @@ import work.nemonet.littlemaidneo.resource.util.ResourceHelper;
 
 import java.io.InputStream;
 import java.nio.file.Path;
-
-@OnlyIn(Dist.CLIENT)
 public class LMSoundLoader implements LMLoader {
     private static final Logger LOGGER = LogManager.getLogger();
     private final LMSoundManager soundManager;

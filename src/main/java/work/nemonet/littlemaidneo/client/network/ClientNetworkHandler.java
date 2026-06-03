@@ -7,7 +7,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.util.ProblemReporter;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import work.nemonet.littlemaidneo.client.screen.MaidManagerScreen;
 import work.nemonet.littlemaidneo.client.screen.TargetTagScreen;
@@ -37,8 +36,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-
-@OnlyIn(Dist.CLIENT)
 public class ClientNetworkHandler {
 
     public static void handleSyncMultiModelClient(SyncMultiModelPayload payload, IPayloadContext context) {

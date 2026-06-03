@@ -6,11 +6,8 @@ import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
 import work.nemonet.littlemaidneo.multimodel.layer.MMRenderContext;
-
-@OnlyIn(Dist.CLIENT)
 public class MultiModelSkinLayer<S extends MultiModelRenderState, M extends MultiModel<S>> extends RenderLayer<S, M> {
 
     public MultiModelSkinLayer(RenderLayerParent<S, M> context) {

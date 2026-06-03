@@ -15,7 +15,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import work.nemonet.littlemaidneo.LittleMaidNeo;
 import work.nemonet.littlemaidneo.client.screen.component.*;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
@@ -33,8 +32,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-@OnlyIn(Dist.CLIENT)
 public class ModelSelectScreen<T extends Entity & IHasMultiModel> extends Screen {
     public static final Identifier EMPTY_TEXTURE =
             Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, "textures/empty.png");

@@ -16,7 +16,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import work.nemonet.littlemaidneo.LittleMaidNeo;
 import work.nemonet.littlemaidneo.client.screen.ModelSelectScreen;
 import work.nemonet.littlemaidneo.client.screen.SoundPackSelectScreen;
@@ -26,8 +25,6 @@ import net.minecraft.ChatFormatting;
 import work.nemonet.littlemaidneo.entity.util.MovingMode;
 import work.nemonet.littlemaidneo.network.*;
 import work.nemonet.littlemaidneo.util.Tuple;
-
-@OnlyIn(Dist.CLIENT)
 public class LittleMaidScreen
         extends AbstractContainerScreen<LittleMaidScreenHandler> {
     private StatusIconWidget movingModeButton;
@@ -663,9 +660,7 @@ public class LittleMaidScreen
                     this.getY() - 8 + this.height / 2);
         }
     }
-
-    @OnlyIn(Dist.CLIENT)
-    public static class StatusIconWidget extends Button {
+public static class StatusIconWidget extends Button {
         private ItemStack iconItem;
         private final boolean flat;
 

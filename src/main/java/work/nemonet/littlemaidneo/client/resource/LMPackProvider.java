@@ -9,11 +9,8 @@ import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.server.packs.repository.RepositorySource;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import java.util.function.Consumer;
-
-@OnlyIn(Dist.CLIENT)
 public class LMPackProvider implements RepositorySource {
     public static final PackSource RESOURCE_PACK_SOURCE = PackSource.create(
             packName -> Component.translatable("pack.nameAndSource", packName, Component.translatable("pack.source.littlemaidneo")),

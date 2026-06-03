@@ -1,7 +1,6 @@
 package work.nemonet.littlemaidneo.client.screen;
 
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 
 
@@ -34,7 +33,6 @@ import java.util.stream.Collectors;
  * TargetTagを設定するためのスクリーン
  * 閉じたときにパケットで結果を返す
  */
-@OnlyIn(Dist.CLIENT)
 public class TargetTagScreen extends Screen {
     private final Entity entity;
     private final Map<TargetIdentifier, Set<TargetingSystem.TargetTag>> targetTags;

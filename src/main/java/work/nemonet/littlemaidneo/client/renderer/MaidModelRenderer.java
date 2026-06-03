@@ -10,7 +10,6 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.item.Items;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import work.nemonet.littlemaidneo.LittleMaidNeo;
 import work.nemonet.littlemaidneo.config.LMRBConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
@@ -20,8 +19,6 @@ import work.nemonet.littlemaidneo.maidmodel.ModelMultiBase;
 import work.nemonet.littlemaidneo.multimodel.layer.MMMatrixStack;
 
 import static work.nemonet.littlemaidneo.maidmodel.IModelCaps.*;
-
-@OnlyIn(Dist.CLIENT)
 public class MaidModelRenderer extends MobRenderer<LittleMaidEntity, MaidRenderState, LMMultiModel<MaidRenderState>> {
 
     private static final Identifier NULL_TEXTURE = Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, "null");

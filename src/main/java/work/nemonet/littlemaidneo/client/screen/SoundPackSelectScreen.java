@@ -10,7 +10,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import work.nemonet.littlemaidneo.LittleMaidNeo;
 import work.nemonet.littlemaidneo.client.screen.component.FilterPredicate;
 import work.nemonet.littlemaidneo.client.screen.component.FilterableListGUI;
@@ -22,8 +21,6 @@ import work.nemonet.littlemaidneo.resource.holder.ConfigHolder;
 import work.nemonet.littlemaidneo.resource.manager.LMConfigManager;
 
 import java.util.stream.Collectors;
-
-@OnlyIn(Dist.CLIENT)
 public class SoundPackSelectScreen<T extends Entity & SoundPlayable> extends Screen {
     public static final Identifier MODEL_SELECT_GUI_TEXTURE =
             Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, "textures/gui/model_select.png");

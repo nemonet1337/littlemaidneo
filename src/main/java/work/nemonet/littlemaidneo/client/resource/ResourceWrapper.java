@@ -13,7 +13,6 @@ import net.minecraft.server.packs.metadata.pack.PackMetadataSection;
 import net.minecraft.util.InclusiveRange;
 import net.minecraft.server.packs.resources.IoSupplier;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -26,8 +25,6 @@ import java.util.HashMap;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-
-@OnlyIn(Dist.CLIENT)
 public class ResourceWrapper implements PackResources {
     public static final ResourceWrapper INSTANCE = new ResourceWrapper();
     public static final PackMetadataSection PACK_INFO =

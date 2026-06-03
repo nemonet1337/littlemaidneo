@@ -15,14 +15,12 @@ import net.minecraft.util.Util;
 import net.minecraft.world.item.component.ResolvableProfile;
 import net.minecraft.world.level.block.SkullBlock;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 import java.util.function.Function;
 
 /**
  * メイドさんの頭飾りレンダラ
  */
-@OnlyIn(Dist.CLIENT)
 public class LMHeadFeatureRenderer<S extends MaidRenderState, M extends LMMultiModel<S>> extends RenderLayer<S, M> {
 
     private final Function<SkullBlock.Type, SkullModelBase> headModels;

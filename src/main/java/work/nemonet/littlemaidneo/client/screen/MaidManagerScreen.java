@@ -1,7 +1,6 @@
 package work.nemonet.littlemaidneo.client.screen;
 
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 
 
@@ -39,7 +38,6 @@ import java.util.stream.Collectors;
 /**
  * メイドさん管理情報を表示するためのスクリーン
  */
-@OnlyIn(Dist.CLIENT)
 public class MaidManagerScreen extends Screen {
     private final List<MaidManager.LMInfo> lmInfoList;
     private FilterableListGUI<LMInfoGUIElement> lmInfoGui;

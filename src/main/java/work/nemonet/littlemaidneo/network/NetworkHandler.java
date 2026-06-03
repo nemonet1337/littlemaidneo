@@ -11,7 +11,6 @@ import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
@@ -144,9 +143,7 @@ public class NetworkHandler {
     }
 
     // --- SyncMultiModel ---
-
-    @OnlyIn(Dist.CLIENT)
-    public static void sendSyncMultiModelC2S(Entity entity, IHasMultiModel hasMultiModel) {
+public static void sendSyncMultiModelC2S(Entity entity, IHasMultiModel hasMultiModel) {
         String textureName = hasMultiModel.getTextureHolder(Layer.SKIN, Part.HEAD).getTextureName();
         String armorHead = hasMultiModel.getTextureHolder(Layer.INNER, Part.HEAD).getTextureName();
         String armorBody = hasMultiModel.getTextureHolder(Layer.INNER, Part.BODY).getTextureName();
@@ -192,9 +189,7 @@ public class NetworkHandler {
     }
 
     // --- SyncSoundPack ---
-
-    @OnlyIn(Dist.CLIENT)
-    public static void sendSyncSoundPackC2S(Entity entity, ConfigHolder configHolder) {
+public static void sendSyncSoundPackC2S(Entity entity, ConfigHolder configHolder) {
         ClientPacketDistributor.sendToServer(new SyncSoundPackPayload(entity.getId(), configHolder.getName()));
     }
 
@@ -228,9 +223,7 @@ public class NetworkHandler {
     }
 
     // --- C2SSetMovingState ---
-
-    @OnlyIn(Dist.CLIENT)
-    public static void sendSetMovingStateC2S(Entity entity, MovingMode state) {
+public static void sendSetMovingStateC2S(Entity entity, MovingMode state) {
         ClientPacketDistributor.sendToServer(new C2SSetMovingStatePayload(entity.getId(), state));
     }
 
@@ -256,9 +249,7 @@ public class NetworkHandler {
     }
 
     // --- C2SSetBloodSuck ---
-
-    @OnlyIn(Dist.CLIENT)
-    public static void sendSetBloodSuckC2S(Entity entity, boolean isBloodSuck) {
+public static void sendSetBloodSuckC2S(Entity entity, boolean isBloodSuck) {
         ClientPacketDistributor.sendToServer(new C2SSetBloodSuckPayload(entity.getId(), isBloodSuck));
     }
 
@@ -278,9 +269,7 @@ public class NetworkHandler {
     }
 
     // --- C2SSetWorkItemSlotSize ---
-
-    @OnlyIn(Dist.CLIENT)
-    public static void sendSetWorkItemSlotSizeC2S(LittleMaidEntity entity, int num) {
+public static void sendSetWorkItemSlotSizeC2S(LittleMaidEntity entity, int num) {
         ClientPacketDistributor.sendToServer(new C2SSetWorkItemSlotSizePayload(entity.getId(), num));
     }
 
@@ -300,9 +289,7 @@ public class NetworkHandler {
     }
 
     // --- C2SSetTargetTags ---
-
-    @OnlyIn(Dist.CLIENT)
-    public static <T extends Entity & TargetTagManager> void sendSetTargetTagsC2S(T entity,
+public static <T extends Entity & TargetTagManager> void sendSetTargetTagsC2S(T entity,
             Map<TargetIdentifier, Set<TargetingSystem.TargetTag>> targetTags) {
         TagValueOutput output = TagValueOutput.createWithoutContext(ProblemReporter.DISCARDING);
         TargetTagManagerImpl.write(targetTags, output);
@@ -327,9 +314,7 @@ public class NetworkHandler {
     }
 
     // --- C2SOpenInventory ---
-
-    @OnlyIn(Dist.CLIENT)
-    public static void sendOpenInventoryC2S(Entity entity) {
+public static void sendOpenInventoryC2S(Entity entity) {
         ClientPacketDistributor.sendToServer(new C2SOpenInventoryPayload(entity.getId()));
     }
 
@@ -349,9 +334,7 @@ public class NetworkHandler {
     }
 
     // --- C2SCallWait ---
-
-    @OnlyIn(Dist.CLIENT)
-    public static void sendCallWaitC2S(Entity entity, C2SCallWaitPayload.State state) {
+public static void sendCallWaitC2S(Entity entity, C2SCallWaitPayload.State state) {
         ClientPacketDistributor.sendToServer(new C2SCallWaitPayload(entity.getId(), state));
     }
 
@@ -376,9 +359,7 @@ public class NetworkHandler {
     }
 
     // --- SyncSoundConfig ---
-
-    @OnlyIn(Dist.CLIENT)
-    public static void sendSyncSoundConfigC2S(Entity entity, String configName) {
+public static void sendSyncSoundConfigC2S(Entity entity, String configName) {
         ClientPacketDistributor.sendToServer(new SyncSoundConfigPayload(entity.getId(), configName));
     }
 
@@ -409,9 +390,7 @@ public class NetworkHandler {
     }
 
     // --- OpenTargetTagScreen ---
-
-    @OnlyIn(Dist.CLIENT)
-    public static void sendOpenTargetTagScreenC2S(Entity entity) {
+public static void sendOpenTargetTagScreenC2S(Entity entity) {
         ClientPacketDistributor.sendToServer(new OpenTargetTagScreenC2SPayload(entity.getId()));
     }
 
@@ -442,9 +421,7 @@ public class NetworkHandler {
     }
 
     // --- OpenMaidManagerScreen ---
-
-    @OnlyIn(Dist.CLIENT)
-    public static void sendOpenMaidManagerScreenC2S() {
+public static void sendOpenMaidManagerScreenC2S() {
         ClientPacketDistributor.sendToServer(OpenMaidManagerScreenC2SPayload.INSTANCE);
     }
 

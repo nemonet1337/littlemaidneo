@@ -9,7 +9,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
 import work.nemonet.littlemaidneo.maidmodel.EntityCaps;
 import work.nemonet.littlemaidneo.maidmodel.IModelCaps;
@@ -119,9 +118,7 @@ public class DummyModelEntity extends LivingEntity implements IHasMultiModel {
                     .map(armorPart -> armorPart.getModel(layer));
         }
     }
-
-    @OnlyIn(Dist.CLIENT)
-    @Override
+@Override
     public Optional<Identifier> getTexture(IHasMultiModel.Layer layer, IHasMultiModel.Part part, boolean isLight) {
         if (layer == IHasMultiModel.Layer.SKIN) {
             if (skinTexture == null) return Optional.empty();
@@ -136,9 +133,7 @@ public class DummyModelEntity extends LivingEntity implements IHasMultiModel {
     public IModelCaps getCaps() {
         return caps;
     }
-
-    @OnlyIn(Dist.CLIENT)
-    @Override
+@Override
     public boolean isArmorVisible(IHasMultiModel.Part part) {
         return armorsVisible.getArmor(part).orElse(false);
     }
