@@ -34,7 +34,7 @@
 - [ ] GUI内のメイドさんプレビューがマウス追従して描画されること。
 - [ ] マウスクリック判定のズレ（`mouseClicked` 移行による座標系への影響）がないこと。
 - [ ] モデル描画 (SR2, AC, RX0, Steve等含む全モデル) および防具、手持ち、頭部装飾が正常に表示されること。
-- [ ] `config/` 以下に `littlemaidneo-common.toml` および `littlemaidneo-lmml-common.toml` が競合せず生成され反映されること。
+- [ ] `config/` 以下に `littlemaidneo-lmml-common.toml` が、`saves/<world>/serverconfig/` 以下に `littlemaidneo-server.toml` が競合せず生成され反映されること。
 
 ### 📦 互換性・ネットワーク検証
 - [ ] 既存セーブデータのロード時に NBT 読み込みエラーが起きないこと（NBTキー名の互換性維持）。
