@@ -102,7 +102,8 @@ LittleMaidNeo は、レガシー Mod 系譜 **LittleMaidRebirth (LMRB)** と **L
 
 ### Architecture Notes
 - コンフィグ: `config/LMRBConfig.java`（メイン）と `config/LMMLConfig.java`（モデルローダー）— NeoForge `ModConfigSpec` ベース、TOML
-  - 登録は `LittleMaidNeo` コンストラクタで `modContainer.registerConfig(ModConfig.Type.COMMON, SPEC, "ファイル名.toml")`
+  - `LMRBConfig` は `ModConfig.Type.SERVER`（`littlemaidneo-server.toml`、ワールド同期設定）
+  - `LMMLConfig` は `ModConfig.Type.COMMON`（`littlemaidneo-lmml-common.toml`、クライアント共有設定）
   - `LMRBConfig.bake()` は `ModConfigEvent` で呼ばれる
   - 旧 LMRB の AutoConfig + Cloth Config からは置き換え済み
 - コンフィグ追加手順: (1) `LMRBConfig` に `ModConfigSpec.XxxValue` フィールド追加 → static ブロックで定義 (2) 消費側でゲッター経由参照に置換 (3) lang/{en_us,ja_jp}.json にキー追加
@@ -127,8 +128,11 @@ LittleMaidNeo は、レガシー Mod 系譜 **LittleMaidRebirth (LMRB)** と **L
 - NeoForge `RegisterPayloadHandlersEvent` ベース（`network/NetworkHandler.register(event)`）。旧 Architectury Networking API からは置き換え済み
 
 ### Registration
-- すべての `DeferredRegister` は `setup/Registration.java` に集約し、`LittleMaidNeo` コンストラクタで `register(modEventBus)`
+- すべての `DeferredRegister` は `setup/ModRegistration.java` に集約し、`LittleMaidNeo` コンストラクタで `register(modEventBus)`
 - エンティティ属性は `EntityAttributeCreationEvent` で登録（`onEntityAttributeCreation`）
+- Brain AI: `ModRegistration.MEMORY_MODULES`（`IS_WAITING`/`OWNER`）と `ModRegistration.SENSORS`（`LITTLE_MAID_SENSOR`）を DeferredRegister で登録
+- Data Attachment: `ModRegistration.ATTACHMENT_TYPES` に `MAID_MANAGER_ATTACHMENT`（`MaidManagerImpl`）と `TARGET_TAG_ATTACHMENT`（`TargetTagManagerImpl`）を登録。プレイヤーステートは Mixin+interface ではなく Attachment 経由で取得する（`player.getData(ModRegistration.MAID_MANAGER_ATTACHMENT.get())`）
+- DataGen: `LMDataGenerator` が `GatherDataEvent.Client`/`GatherDataEvent.Server` を受け取り、Lang/Tag/Recipe/LootTable/Advancement/BiomeModifier を生成。出力は `src/generated/resources/`（git 追跡対象）
 
 ### Rendering Notes
 - カスタムシェーダーは `assets/minecraft/shaders/core/` に配置する（NeoForge / バニラのシェーダー解決が `minecraft` 名前空間前提）
