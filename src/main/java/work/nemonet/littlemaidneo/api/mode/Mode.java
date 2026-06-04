@@ -89,6 +89,15 @@ public abstract class Mode {
         return modeType;
     }
 
+    /**
+     * 外部モデルパックが参照する描画 caps（{@code caps_job}）用のジョブ名。
+     * 既定はモード名の小文字。統合モード（例: {@link work.nemonet.littlemaidneo.entity.mode.CombatMode}）は
+     * アクティブなスタイルに応じて従来のジョブ名を返すためにオーバーライドする。
+     */
+    public String getJobName() {
+        return getName().toLowerCase();
+    }
+
     public boolean isBattleMode() {
         return false;
     }

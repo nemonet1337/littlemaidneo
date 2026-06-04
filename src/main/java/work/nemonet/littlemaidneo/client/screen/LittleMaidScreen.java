@@ -290,8 +290,7 @@ public class LittleMaidScreen
             ItemStack modeIcon;
             Component modeTooltip = Component.translatable("mode." + LittleMaidNeo.MODID + "." + modeName);
             switch (modeName) {
-                case "Fencer" -> modeIcon = Items.IRON_SWORD.getDefaultInstance();
-                case "Archer" -> modeIcon = Items.BOW.getDefaultInstance();
+                case "Combat" -> modeIcon = Items.IRON_SWORD.getDefaultInstance();
                 case "Cooking" -> modeIcon = Items.BREAD.getDefaultInstance();
                 case "Ripper" -> modeIcon = Items.SHEARS.getDefaultInstance();
                 case "Torcher" -> modeIcon = Items.TORCH.getDefaultInstance();
