@@ -12,6 +12,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MultiModelClassLoader extends URLClassLoader {
+
+    static {
+        // クラス名ごとのロックを有効化し、複数モデルクラスの並列ロードを許可する
+        // （未登録だとローダ単位の単一ロックで loadClass が直列化される）。
+        ClassLoader.registerAsParallelCapable();
+    }
+
     private final MultiModelClassTransformer transformer = new MultiModelClassTransformer();
 
     public MultiModelClassLoader(List<Path> folderPaths) {

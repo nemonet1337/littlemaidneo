@@ -105,6 +105,34 @@
 
 ---
 
+## ⚡ 描画パフォーマンス最適化（保護コア A 互換維持・外部 .class モデルそのまま動作）
+
+> 方針: 外部モデルパックが束縛する公開シグネチャ・クラス階層・`GLCompat` API は不変。
+> 描画の「内部実装のみ」を最適化し、出力はアフィン行列前提でビット一致を保つ。
+
+- ✅ **P-1（完了）**: `ModelBoxBase.TexturedQuad.draw()` のフレーム毎アロケーション削減。
+  法線変換をクアッド 1 回に集約（`new Vector3f` 撤廃）／頂点座標を `addVertex(Matrix4f,…)` 委譲（頂点毎 `new Vector4f` 撤廃）／UV の `new Vector4f` はテクスチャ行列有効時のみ。レイヤー（本体/スキン/発光/防具）毎に乗算的に効く。
+- ✅ **P-2（完了）**: `ModelRenderer.renderObject()` でスケール 1 の部品の `push/scale/pop` を省略。
+  `PoseStack.pushPose()` の `Pose` 確保（JIT で消えない実コスト）を恒等スケール部品から削減。
+- ✅ **P-3（完了）**: `setRotation()` / `GLCompat.glRotatef()` の `Quaternionf` 確保を撤廃。
+  `mulPose(Axis.*.rotation())` を pose/normal 行列の単位軸 in-place 回転（`mulRotate` ヘルパ）へ置換。
+  回転する部品ごと・毎フレームの確保を削減。回転6ケースの順序は完全保持、出力は数学的に等価。
+- ✅ **P-4（完了）**: `GLCompat` 即時モード（GL_TRIANGLE_STRIP）経路を確保なし化。
+  頂点毎の `Vector3f/Vec2/PositionTextureVertex` とストリップ三角形毎の `TexturedQuad`（+ `calcNormal` の Vector3f×2）を、
+  再利用プリミティブ3頂点リング + 直接バッファ書き出し（`emitStripTriangle`）へ置換。頂点並び・法線計算・「頂点毎 texCoord 必須」挙動まで踏襲。
+- ✅ **P-5（完了）**: レイヤー間 `setAngles` 重複の間引き。
+  base body（`MultiModel.setupAnim`）と `MultiModelLightLayer` が同一 SKIN モデルへ同一入力で `setAngles` を二重に呼ぶため、
+  `ModelMultiBase.setAngles` に「直前入力と一致なら `setRotationAngles` を省略」ガードを追加。遅延描画は最終状態のみ読むため結果不変
+  （`setRotationAngles` 冪等＝LMM 規約が前提）。`animateModel` は二重呼び出しのまま維持（タイマー副作用保存）。
+- ✅ **P-6（完了）**: `renderObject` の行列読み戻しを必要部品のみへ。
+  `loadMatrix()` を使う部品（`Arms`/`HeadTop`/`HeadMount` 等）でのみ `needsMatrixCapture` を立て捕捉。
+  約100部品中の数部品のみに削減。初回 `loadMatrix` 時だけ1フレーム遅延。
+  注: 公開 `matrix` FloatBuffer を `loadMatrix()` 経由せず直接読む外部モデルがあれば初回スタール（LMM 規約外のため許容）。
+
+> 描画パフォーマンス最適化 P-1〜P-6 は実装完了。残りは下記の構造課題（効果は限定的・高リスク）。
+
+---
+
 ## ⚠️ 本リファクタの対象外（挙動が変わるため別途）
 
 - 一部モードの状態 NBT 未永続化（Archer/Fencer の cooldown、Healer の index 等）は

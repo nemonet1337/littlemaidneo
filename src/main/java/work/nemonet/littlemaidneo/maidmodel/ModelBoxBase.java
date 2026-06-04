@@ -96,30 +96,39 @@ public static class TexturedQuad {
             PoseStack.Pose entry = poseStack.last();
             Matrix4f matrix4f = entry.pose();
             Matrix3f matrix3f = entry.normal();
-            Vector3f normal = matrix3f.transform(new Vector3f(normalCache));
 
-            float normalX = normal.x();
-            float normalY = normal.y();
-            float normalZ = normal.z();
+            // 法線はクアッドにつき 1 回だけ変換する（頂点ループの外、アロケーションなし）。
+            // JOML Matrix3f#transform と同一の積和順序なので出力はビット単位で一致する。
+            float ncx = normalCache.x();
+            float ncy = normalCache.y();
+            float ncz = normalCache.z();
+            float normalX = matrix3f.m00() * ncx + matrix3f.m10() * ncy + matrix3f.m20() * ncz;
+            float normalY = matrix3f.m01() * ncx + matrix3f.m11() * ncy + matrix3f.m21() * ncz;
+            float normalZ = matrix3f.m02() * ncx + matrix3f.m12() * ncy + matrix3f.m22() * ncz;
+
+            boolean useTextureMatrix = GLCompat.mode == GL11.GL_TEXTURE;
 
             for (int i = 0; i < 4; ++i) {
                 ModelBoxBase.PositionTextureVertex vertex = this.vertexPositions[i];
                 float x = vertex.vector3D.x() * scale;
                 float y = vertex.vector3D.y() * scale;
                 float z = vertex.vector3D.z() * scale;
-                Vector4f pos = matrix4f.transform(new Vector4f(x, y, z, 1.0F));
-                if (pos.w() != 1.0F) {
-                    pos.normalize();
-                }
 
-                Vector4f uv = new Vector4f(vertex.texturePositionX, vertex.texturePositionY, 0, 1.0F);
-                if (GLCompat.mode == GL11.GL_TEXTURE) {
+                float u = vertex.texturePositionX;
+                float v = vertex.texturePositionY;
+                if (useTextureMatrix) {
+                    // テクスチャ行列が有効なときだけ UV を変換する（まれな経路のみアロケート）。
+                    Vector4f uv = new Vector4f(u, v, 0.0F, 1.0F);
                     GLCompat.textureStack.last().pose().transform(uv);
+                    u = uv.x();
+                    v = uv.y();
                 }
 
-                buffer.addVertex(pos.x(), pos.y(), pos.z())
+                // addVertex(Matrix4f, ...) が内部で座標変換するため new Vector4f を確保しない。
+                // エンティティ描画の行列はアフィン（w 行 = 0,0,0,1）なので w 正規化は不要。
+                buffer.addVertex(matrix4f, x, y, z)
                         .setColor(red, green, blue, alpha)
-                        .setUv(uv.x(), uv.y())
+                        .setUv(u, v)
                         .setOverlay(overlay)
                         .setLight(light)
                         .setNormal(normalX, normalY, normalZ);

@@ -50,6 +50,15 @@ public abstract class ModelMultiBase extends ModelBase implements IModelCaps, IM
     private float netHeadYaw;
     private float headPitch;
 
+    // 直前の setAngles 入力（同一インスタンスへの重複呼び出しで setRotationAngles を省略するため）。
+    private IModelCaps lastAnglesCaps;
+    private float lastLimbSwing;
+    private float lastLimbSwingAmount;
+    private float lastAgeInTicks;
+    private float lastNetHeadYaw;
+    private float lastHeadPitch;
+    private boolean hasLastAngles;
+
     public ModelMultiBase() { this(0.0F); }
 
     public ModelMultiBase(float pSizeAdjust) { this(pSizeAdjust, 0.0F, 64, 32); }
@@ -134,6 +143,25 @@ public abstract class ModelMultiBase extends ModelBase implements IModelCaps, IM
         this.ageInTicks = animationProgress;
         this.netHeadYaw = headYaw;
         this.headPitch = headPitch;
+        // base body と発光レイヤーは同一 SKIN モデルへ同一入力で setAngles を二重に呼ぶ。
+        // 遅延描画は最終状態のみ読むため、直前入力と一致するなら重い setRotationAngles を省略する
+        // （setRotationAngles は入力からの角度設定＝冪等という LMM 規約が前提）。
+        if (hasLastAngles
+                && lastAnglesCaps == caps
+                && lastLimbSwing == limbAngle
+                && lastLimbSwingAmount == limbDistance
+                && lastAgeInTicks == animationProgress
+                && lastNetHeadYaw == headYaw
+                && lastHeadPitch == headPitch) {
+            return;
+        }
+        lastAnglesCaps = caps;
+        lastLimbSwing = limbAngle;
+        lastLimbSwingAmount = limbDistance;
+        lastAgeInTicks = animationProgress;
+        lastNetHeadYaw = headYaw;
+        lastHeadPitch = headPitch;
+        hasLastAngles = true;
         setRotationAngles(limbAngle, limbDistance, animationProgress, headYaw, headPitch, 0.0625F, caps);
     }
 

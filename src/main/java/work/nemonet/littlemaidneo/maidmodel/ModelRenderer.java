@@ -2,7 +2,6 @@ package work.nemonet.littlemaidneo.maidmodel;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.math.Axis;
 import net.minecraft.world.item.ItemStack;
 import work.nemonet.littlemaidneo.maidmodel.compat.GLCompat;
 import work.nemonet.littlemaidneo.multimodel.layer.MMMatrixStack;
@@ -84,6 +83,10 @@ public class ModelRenderer {
     public boolean adjust;
     public FloatBuffer matrix;
     public boolean isInvertX;
+
+    // matrix の読み戻しは loadMatrix() を使う部品（Arms/HeadTop/HeadMount 等）でのみ必要。
+    // 初回 loadMatrix 呼び出しで true になり、以後 renderObject が毎フレーム捕捉する。
+    private boolean needsMatrixCapture;
 
     public ModelRenderer(ModelBase pModelBase, String pName) {
         textureWidth = 64.0F; textureHeight = 32.0F;
@@ -277,48 +280,66 @@ public class ModelRenderer {
     public void setRotatePriority(int pValue) { rotatePriority = pValue; }
 
     protected void setRotation() {
+        // mulPose(Axis.*.rotation(angle)) は回転ごとに Quaternionf を確保する。
+        // pose / normal 行列を単位軸で in-place 回転することで確保を避ける（出力は等価）。
+        PoseStack.Pose entry = poseStack.last();
         switch (rotatePriority) {
             case RotXYZ -> {
-                if (rotateAngleZ != 0.0F) poseStack.mulPose(Axis.ZP.rotation(rotateAngleZ));
-                if (rotateAngleY != 0.0F) poseStack.mulPose(Axis.YP.rotation(rotateAngleY));
-                if (rotateAngleX != 0.0F) poseStack.mulPose(Axis.XP.rotation(rotateAngleX));
+                if (rotateAngleZ != 0.0F) mulRotate(entry, rotateAngleZ, 0.0F, 0.0F, 1.0F);
+                if (rotateAngleY != 0.0F) mulRotate(entry, rotateAngleY, 0.0F, 1.0F, 0.0F);
+                if (rotateAngleX != 0.0F) mulRotate(entry, rotateAngleX, 1.0F, 0.0F, 0.0F);
             }
             case RotXZY -> {
-                if (rotateAngleY != 0.0F) poseStack.mulPose(Axis.YP.rotation(rotateAngleY));
-                if (rotateAngleZ != 0.0F) poseStack.mulPose(Axis.ZP.rotation(rotateAngleZ));
-                if (rotateAngleX != 0.0F) poseStack.mulPose(Axis.XP.rotation(rotateAngleX));
+                if (rotateAngleY != 0.0F) mulRotate(entry, rotateAngleY, 0.0F, 1.0F, 0.0F);
+                if (rotateAngleZ != 0.0F) mulRotate(entry, rotateAngleZ, 0.0F, 0.0F, 1.0F);
+                if (rotateAngleX != 0.0F) mulRotate(entry, rotateAngleX, 1.0F, 0.0F, 0.0F);
             }
             case RotYXZ -> {
-                if (rotateAngleZ != 0.0F) poseStack.mulPose(Axis.ZP.rotation(rotateAngleZ));
-                if (rotateAngleX != 0.0F) poseStack.mulPose(Axis.XP.rotation(rotateAngleX));
-                if (rotateAngleY != 0.0F) poseStack.mulPose(Axis.YP.rotation(rotateAngleY));
+                if (rotateAngleZ != 0.0F) mulRotate(entry, rotateAngleZ, 0.0F, 0.0F, 1.0F);
+                if (rotateAngleX != 0.0F) mulRotate(entry, rotateAngleX, 1.0F, 0.0F, 0.0F);
+                if (rotateAngleY != 0.0F) mulRotate(entry, rotateAngleY, 0.0F, 1.0F, 0.0F);
             }
             case RotYZX -> {
-                if (rotateAngleX != 0.0F) poseStack.mulPose(Axis.XP.rotation(rotateAngleX));
-                if (rotateAngleZ != 0.0F) poseStack.mulPose(Axis.ZP.rotation(rotateAngleZ));
-                if (rotateAngleY != 0.0F) poseStack.mulPose(Axis.YP.rotation(rotateAngleY));
+                if (rotateAngleX != 0.0F) mulRotate(entry, rotateAngleX, 1.0F, 0.0F, 0.0F);
+                if (rotateAngleZ != 0.0F) mulRotate(entry, rotateAngleZ, 0.0F, 0.0F, 1.0F);
+                if (rotateAngleY != 0.0F) mulRotate(entry, rotateAngleY, 0.0F, 1.0F, 0.0F);
             }
             case RotZXY -> {
-                if (rotateAngleY != 0.0F) poseStack.mulPose(Axis.YP.rotation(rotateAngleY));
-                if (rotateAngleX != 0.0F) poseStack.mulPose(Axis.XP.rotation(rotateAngleX));
-                if (rotateAngleZ != 0.0F) poseStack.mulPose(Axis.ZP.rotation(rotateAngleZ));
+                if (rotateAngleY != 0.0F) mulRotate(entry, rotateAngleY, 0.0F, 1.0F, 0.0F);
+                if (rotateAngleX != 0.0F) mulRotate(entry, rotateAngleX, 1.0F, 0.0F, 0.0F);
+                if (rotateAngleZ != 0.0F) mulRotate(entry, rotateAngleZ, 0.0F, 0.0F, 1.0F);
             }
             case RotZYX -> {
-                if (rotateAngleX != 0.0F) poseStack.mulPose(Axis.XP.rotation(rotateAngleX));
-                if (rotateAngleY != 0.0F) poseStack.mulPose(Axis.YP.rotation(rotateAngleY));
-                if (rotateAngleZ != 0.0F) poseStack.mulPose(Axis.ZP.rotation(rotateAngleZ));
+                if (rotateAngleX != 0.0F) mulRotate(entry, rotateAngleX, 1.0F, 0.0F, 0.0F);
+                if (rotateAngleY != 0.0F) mulRotate(entry, rotateAngleY, 0.0F, 1.0F, 0.0F);
+                if (rotateAngleZ != 0.0F) mulRotate(entry, rotateAngleZ, 0.0F, 0.0F, 1.0F);
             }
             default -> { }
         }
     }
 
+    // pose と normal の両行列を同一の単位軸回転で更新する（PoseStack#mulPose 相当・無確保）。
+    private void mulRotate(PoseStack.Pose entry, float angle, float ax, float ay, float az) {
+        entry.pose().rotate(angle, ax, ay, az);
+        entry.normal().rotate(angle, ax, ay, az);
+    }
+
     protected void renderObject(float par1, boolean pRendering) {
-        GLCompat.glGetFloat(GL11.GL_MODELVIEW_MATRIX, matrix);
+        // 全部品で毎フレーム行列を読み戻すのは無駄。loadMatrix() を実際に使う部品でのみ捕捉する。
+        if (needsMatrixCapture) {
+            GLCompat.glGetFloat(GL11.GL_MODELVIEW_MATRIX, matrix);
+        }
         if (pRendering && isRendering) {
-            GLCompat.glPushMatrix();
-            GLCompat.glScalef(scaleX, scaleY, scaleZ);
-            GLCompat.glCallList(displayList);
-            GLCompat.glPopMatrix();
+            if (scaleX != 1.0F || scaleY != 1.0F || scaleZ != 1.0F) {
+                // スケール指定がある部品のみ push/scale/pop する。
+                // スケール 1 のとき glScalef は恒等変換であり、それを包む push/pop（Pose 確保）は純粋な無駄。
+                GLCompat.glPushMatrix();
+                GLCompat.glScalef(scaleX, scaleY, scaleZ);
+                GLCompat.glCallList(displayList);
+                GLCompat.glPopMatrix();
+            } else {
+                GLCompat.glCallList(displayList);
+            }
         }
         if (childModels != null) {
             for (ModelRenderer childModel : childModels) {
@@ -328,6 +349,8 @@ public class ModelRenderer {
     }
 
     public ModelRenderer loadMatrix() {
+        // 初回呼び出し以降、この部品は renderObject で行列を捕捉する（初回のみ1フレーム遅延）。
+        needsMatrixCapture = true;
         GLCompat.glLoadMatrix(matrix);
         if (isInvertX) GLCompat.glScalef(-1F, 1F, 1F);
         return this;
