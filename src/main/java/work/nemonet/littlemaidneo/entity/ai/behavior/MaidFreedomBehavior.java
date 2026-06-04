@@ -12,7 +12,7 @@ import net.minecraft.world.entity.ai.util.LandRandomPos;
 import net.minecraft.world.phys.Vec3;
 import work.nemonet.littlemaidneo.config.LMRBConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
-import work.nemonet.littlemaidneo.entity.util.MovingMode;
+import work.nemonet.littlemaidneo.entity.util.MaidMode;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 import work.nemonet.littlemaidneo.setup.ModRegistration;
 
@@ -29,7 +29,7 @@ public class MaidFreedomBehavior extends Behavior<LittleMaidEntity> {
     protected boolean checkExtraStartConditions(ServerLevel level, LittleMaidEntity entity) {
         boolean hasOwner = TameableUtil.hasTameOwner(entity);
         if (hasOwner) {
-            return entity.getMovingMode() == MovingMode.FREEDOM;
+            return entity.getMaidMode() == MaidMode.FREEDOM;
         } else {
             return true;
         }

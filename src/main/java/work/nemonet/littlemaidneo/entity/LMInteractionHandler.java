@@ -12,7 +12,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemUtils;
 import net.minecraft.world.item.Items;
 import work.nemonet.littlemaidneo.config.LMRBConfig;
-import work.nemonet.littlemaidneo.entity.util.MovingMode;
+import work.nemonet.littlemaidneo.entity.util.MaidMode;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 import work.nemonet.littlemaidneo.network.NetworkHandler;
 import work.nemonet.littlemaidneo.resource.util.LMSounds;
@@ -78,7 +78,7 @@ final class LMInteractionHandler {
                     mob.setStrike(false);
                     mob.itemContractable.setUnpaidTimes(0);
                     mob.getNavigation().stop();
-                    mob.setMovingMode(MovingMode.ESCORT);
+                    mob.setMaidMode(MaidMode.ESCORT);
 
                     return InteractionResult.SUCCESS;
                 } else {
@@ -172,26 +172,26 @@ final class LMInteractionHandler {
         }
         // Freedom切替
         if (stack.getItem() == Items.FEATHER) {
-            if (mob.getMovingMode() == MovingMode.ESCORT) {
+            if (mob.getMaidMode() == MaidMode.ESCORT) {
                 mob.level().broadcastEntityEvent(mob, (byte) 73);
-                mob.setMovingMode(MovingMode.FREEDOM);
+                mob.setMaidMode(MaidMode.FREEDOM);
                 mob.setFreedomPos(mob.blockPosition());
             } else {
                 mob.level().broadcastEntityEvent(mob, (byte) 74);
-                mob.setMovingMode(MovingMode.ESCORT);
+                mob.setMaidMode(MaidMode.ESCORT);
             }
             return InteractionResult.SUCCESS;
         }
         // Tracer切替
-        if ((mob.getMovingMode() == MovingMode.FREEDOM ||
-                mob.getMovingMode() == MovingMode.TRACER) &&
+        if ((mob.getMaidMode() == MaidMode.FREEDOM ||
+                mob.getMaidMode() == MaidMode.TRACER) &&
                 stack.getItem() == Items.REDSTONE) {
-            if (mob.getMovingMode() == MovingMode.FREEDOM) {
+            if (mob.getMaidMode() == MaidMode.FREEDOM) {
                 mob.level().broadcastEntityEvent(mob, (byte) 75);
-                mob.setMovingMode(MovingMode.TRACER);
+                mob.setMaidMode(MaidMode.TRACER);
             } else {
                 mob.level().broadcastEntityEvent(mob, (byte) 73);
-                mob.setMovingMode(MovingMode.FREEDOM);
+                mob.setMaidMode(MaidMode.FREEDOM);
                 mob.setFreedomPos(mob.blockPosition());
             }
             return InteractionResult.SUCCESS;

@@ -12,7 +12,7 @@ import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.entity.HopperBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
-import work.nemonet.littlemaidneo.entity.util.MovingMode;
+import work.nemonet.littlemaidneo.entity.util.MaidMode;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 import work.nemonet.littlemaidneo.util.BlockFinderPD;
 import net.minecraft.util.Mth;
@@ -51,8 +51,8 @@ public class LMStoreItemToContainerGoal<T extends LittleMaidEntity> extends Goal
         if (this.mob.isStrike()) return false;
         if (TameableUtil.getTameOwnerUuid(mob).isEmpty()) return false;
         if (TameableUtil.isWait(mob)) return false;
-        if (this.mob.getMovingMode() != MovingMode.FREEDOM
-                && this.mob.getMovingMode() != MovingMode.TRACER) return false;
+        if (this.mob.getMaidMode() != MaidMode.FREEDOM
+                && this.mob.getMaidMode() != MaidMode.TRACER) return false;
 
         boolean runningBF = blockFinder != null && !blockFinder.isEnd() && count++ < 1000;
         // BF実行中なら

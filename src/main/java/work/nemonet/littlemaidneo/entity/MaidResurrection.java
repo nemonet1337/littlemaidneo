@@ -14,7 +14,7 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.player.Player;
 import work.nemonet.littlemaidneo.advancement.criterion.LMRBCriteria;
 import work.nemonet.littlemaidneo.entity.util.MaidManager;
-import work.nemonet.littlemaidneo.entity.util.MovingMode;
+import work.nemonet.littlemaidneo.entity.util.MaidMode;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 import work.nemonet.littlemaidneo.setup.ModRegistration;
 
@@ -39,7 +39,7 @@ public final class MaidResurrection {
                 maid.installMaidSoul(maidSoul);
                 maid.snapTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5);
 
-                maid.setMovingMode(MovingMode.ESCORT);
+                maid.setMaidMode(MaidMode.ESCORT);
                 TameableUtil.setWait(maid, true);
                 maid.lookAt(
                         EntityAnchorArgument.Anchor.EYES,

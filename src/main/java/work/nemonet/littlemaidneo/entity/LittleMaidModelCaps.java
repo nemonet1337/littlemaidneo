@@ -5,7 +5,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.BushBlock;
 import work.nemonet.littlemaidneo.api.mode.Mode;
 import work.nemonet.littlemaidneo.config.LMRBConfig;
-import work.nemonet.littlemaidneo.entity.util.MovingMode;
+import work.nemonet.littlemaidneo.entity.util.MaidMode;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 import work.nemonet.littlemaidneo.maidmodel.EntityCaps;
 
@@ -24,8 +24,8 @@ public class LittleMaidModelCaps extends EntityCaps {
             case caps_aimedBow -> maid.isAimingBow();
             case caps_isLeeding -> maid.isLeashed(); // MobEntityのメソッドなのでLMMLでなくこっち
             case caps_isBloodsuck -> maid.isBloodSuck();
-            case caps_isFreedom -> maid.getMovingMode() == MovingMode.FREEDOM;
-            case caps_isTracer -> maid.getMovingMode() == MovingMode.TRACER;
+            case caps_isFreedom -> maid.getMaidMode() == MaidMode.FREEDOM;
+            case caps_isTracer -> maid.getMaidMode() == MaidMode.TRACER;
             case caps_isPlaying -> maid.isPlayingSnow();
             case caps_isLookSuger -> maid.isBegging();
             case caps_isWait -> TameableUtil.isWait(maid) &&

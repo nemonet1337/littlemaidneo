@@ -6,9 +6,9 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
 import work.nemonet.littlemaidneo.LittleMaidNeo;
-import work.nemonet.littlemaidneo.entity.util.MovingMode;
+import work.nemonet.littlemaidneo.entity.util.MaidMode;
 
-public record C2SSetMovingStatePayload(int entityId, MovingMode movingMode) implements CustomPacketPayload {
+public record C2SSetMovingStatePayload(int entityId, MaidMode movingMode) implements CustomPacketPayload {
 
     public static final Type<C2SSetMovingStatePayload> TYPE =
             new Type<>(Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, "set_moving_state"));
@@ -16,8 +16,7 @@ public record C2SSetMovingStatePayload(int entityId, MovingMode movingMode) impl
     public static final StreamCodec<FriendlyByteBuf, C2SSetMovingStatePayload> STREAM_CODEC =
             StreamCodec.composite(
                     ByteBufCodecs.VAR_INT, C2SSetMovingStatePayload::entityId,
-                    ByteBufCodecs.VAR_INT.map(i -> MovingMode.values()[i], Enum::ordinal),
-                            C2SSetMovingStatePayload::movingMode,
+                    MaidMode.STREAM_CODEC, C2SSetMovingStatePayload::movingMode,
                     C2SSetMovingStatePayload::new
             );
 

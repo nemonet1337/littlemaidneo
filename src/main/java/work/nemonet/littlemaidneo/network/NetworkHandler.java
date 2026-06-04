@@ -26,7 +26,7 @@ import work.nemonet.littlemaidneo.entity.targeting.TargetTagManagerImpl;
 import work.nemonet.littlemaidneo.entity.targeting.TargetingSystem;
 import work.nemonet.littlemaidneo.entity.util.MaidManager;
 import work.nemonet.littlemaidneo.entity.util.MaidManagerImpl;
-import work.nemonet.littlemaidneo.entity.util.MovingMode;
+import work.nemonet.littlemaidneo.entity.util.MaidMode;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 import work.nemonet.littlemaidneo.setup.ModRegistration;
 import work.nemonet.littlemaidneo.resource.holder.ConfigHolder;
@@ -223,7 +223,7 @@ public static void sendSyncSoundPackC2S(Entity entity, ConfigHolder configHolder
     }
 
     // --- C2SSetMovingState ---
-public static void sendSetMovingStateC2S(Entity entity, MovingMode state) {
+public static void sendSetMovingStateC2S(Entity entity, MaidMode state) {
         ClientPacketDistributor.sendToServer(new C2SSetMovingStatePayload(entity.getId(), state));
     }
 
@@ -240,9 +240,9 @@ public static void sendSetMovingStateC2S(Entity entity, MovingMode state) {
             if (maid.isStrike()) {
                 return;
             }
-            maid.setMovingMode(payload.movingMode());
+            maid.setMaidMode(payload.movingMode());
             maid.getNavigation().stop();
-            if (payload.movingMode() == MovingMode.FREEDOM) {
+            if (payload.movingMode() == MaidMode.FREEDOM) {
                 maid.setFreedomPos(entity.blockPosition());
             }
         });
@@ -353,7 +353,7 @@ public static void sendCallWaitC2S(Entity entity, C2SCallWaitPayload.State state
                 TameableUtil.setWait(maid, true);
             } else {
                 TameableUtil.setWait(maid, false);
-                maid.setMovingMode(MovingMode.ESCORT);
+                maid.setMaidMode(MaidMode.ESCORT);
             }
         });
     }

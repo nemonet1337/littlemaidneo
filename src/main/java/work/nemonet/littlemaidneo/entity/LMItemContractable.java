@@ -12,7 +12,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import work.nemonet.littlemaidneo.resource.util.LMSounds;
 import work.nemonet.littlemaidneo.config.LMRBConfig;
-import work.nemonet.littlemaidneo.entity.util.MovingMode;
+import work.nemonet.littlemaidneo.entity.util.MaidMode;
 import work.nemonet.littlemaidneo.entity.util.SalaryBoxPosListener;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 
@@ -57,8 +57,8 @@ public class LMItemContractable<T extends LittleMaidEntity> extends ItemContract
 
         mob.setStrike(true);
         TameableUtil.setWait(mob, false);
-        if (mob.getMovingMode() != MovingMode.FREEDOM) {
-            mob.setMovingMode(MovingMode.FREEDOM);
+        if (mob.getMaidMode() != MaidMode.FREEDOM) {
+            mob.setMaidMode(MaidMode.FREEDOM);
             mob.setFreedomPos(mob.blockPosition());
         }
     }
