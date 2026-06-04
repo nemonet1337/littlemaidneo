@@ -34,17 +34,23 @@ public class LMTextureLoader implements LMLoader {
     }
 
     @Override
-    public void load(String path, Path folderPath, InputStream inputStream, boolean isArchive) {
+    public Runnable parse(String path, Path folderPath, InputStream inputStream, boolean isArchive) {
+        // テクスチャはファイル名（path）から解決し、ストリーム内容は読まない。重い処理はないが
+        // 登録（共有 Manager への put）は単一スレッドの登録フェーズに委ねる。
         Identifier texturePath = getResourceLocation(path, isArchive)
                 .orElseThrow(() -> new IllegalArgumentException("引数が不正です。"));
         String textureName = ResourceHelper.getTexturePackName(path, isArchive)
                 .orElseThrow(() -> new IllegalArgumentException("引数が不正です。"));
         String modelName = ResourceHelper.getModelName(textureName);
-        textureManager.addTexture(ResourceHelper.getFileName(path, isArchive), textureName, modelName,
-                ResourceHelper.getIndex(path), texturePath);
-        if (FMLEnvironment.getDist() == Dist.CLIENT) {
-            ResourceWrapper.addResourcePath(texturePath, path, folderPath, isArchive);
-        }
+        String fileName = ResourceHelper.getFileName(path, isArchive);
+        int index = ResourceHelper.getIndex(path);
+        boolean client = FMLEnvironment.getDist() == Dist.CLIENT;
+        return () -> {
+            textureManager.addTexture(fileName, textureName, modelName, index, texturePath);
+            if (client) {
+                ResourceWrapper.addResourcePath(texturePath, path, folderPath, isArchive);
+            }
+        };
     }
 
     private Optional<Identifier> getResourceLocation(String path, boolean isArchive) {

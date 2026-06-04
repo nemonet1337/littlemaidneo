@@ -19,19 +19,36 @@ public class LMModelManager {
     private final Map<String, ModelHolder> models = new HashMap<>();
 
     public void addModel(String modelName, Class<? extends ModelMultiBase> modelClass) {
+        buildHolder(modelClass).ifPresent(holder -> putModel(modelName, holder));
+    }
+
+    /**
+     * skin/inner/outer の 3 インスタンスを構築して {@link ModelHolder} を返す（重い処理）。
+     * 共有状態に触れず各インスタンスは独立に構築されるため、ワーカースレッドから呼んで良い。
+     * 抽象クラスや非対応シグネチャの場合は空を返す。
+     */
+    public Optional<ModelHolder> buildHolder(Class<? extends ModelMultiBase> modelClass) {
         try {
             Constructor<? extends ModelMultiBase> constructor = modelClass.getConstructor(float.class);
             ModelMultiBase skin = constructor.newInstance(0.0F);
             float[] size = skin.getArmorModelsSize();
             ModelMultiBase inner = constructor.newInstance(size[0]);
             ModelMultiBase outer = constructor.newInstance(size[1]);
-            models.put(modelName.toLowerCase(), new ModelHolder(skin, inner, outer));
+            return Optional.of(new ModelHolder(skin, inner, outer));
         } catch (Exception e) {
             LOGGER.debug("インスタンス化に失敗しました。抽象クラスまたは非対応のモデルである可能性があります。 : " + modelClass);
             e.printStackTrace();
-            return;
+            return Optional.empty();
         }
-        if (LittleMaidNeo.LOGGER.isDebugEnabled()) LOGGER.debug("Loaded Model : " + modelClass);
+    }
+
+    /**
+     * 構築済みの {@link ModelHolder} を登録する（軽い処理）。HashMap を保護するため
+     * 単一スレッドの登録フェーズからのみ呼ぶこと。
+     */
+    public void putModel(String modelName, ModelHolder holder) {
+        models.put(modelName.toLowerCase(), holder);
+        if (LittleMaidNeo.LOGGER.isDebugEnabled()) LOGGER.debug("Loaded Model : " + holder.skin().getClass());
     }
 
     public void addModel(String modelName, IMultiModel skin, IMultiModel inner, IMultiModel outer) {

@@ -132,16 +132,16 @@ public class MultiModelClassTransformer {
 
         tryReplace(changed, cNode.superName, superName -> cNode.superName = superName);
 
-        cNode.fields.parallelStream().forEach(fNode -> {
+        cNode.fields.stream().forEach(fNode -> {
             tryReplace(changed, fNode.desc, desc -> fNode.desc = desc);
             tryReplace(changed, fNode.signature, signature -> fNode.signature = signature);
         });
 
-        cNode.methods.parallelStream().forEach(mNode -> {
+        cNode.methods.stream().forEach(mNode -> {
             tryReplace(changed, mNode.desc, desc -> mNode.desc = desc);
 
             if (mNode.localVariables != null) {
-                mNode.localVariables.parallelStream().forEach(lNode -> {
+                mNode.localVariables.stream().forEach(lNode -> {
                     if (lNode.desc != null) tryReplace(changed, lNode.desc, desc -> lNode.desc = desc);
                     if (lNode.name != null) tryReplace(changed, lNode.name, name -> lNode.name = name);
                     if (lNode.signature != null) tryReplace(changed, lNode.signature, sig -> lNode.signature = sig);

@@ -28,22 +28,19 @@ public class LMConfigLoader implements LMLoader {
     }
 
     @Override
-    public void load(String path, Path folderPath, InputStream inputStream, boolean isArchive) {
+    public Runnable parse(String path, Path folderPath, InputStream inputStream, boolean isArchive) {
+        // ストリームの読み取りは parse 内（並列フェーズ・ストリーム生存中）で完了させる。
         Map<String, String> settings = new HashMap<>();
-        try {
-            getTextStream(inputStream).forEach(s -> addSettings(settings, s));
-        } catch (Exception e) {
-            e.printStackTrace();
-            return;
-        }
+        getTextStream(inputStream).forEach(s -> addSettings(settings, s));
         String packName = ResourceHelper.getFirstParentName(path, folderPath, isArchive).orElse("");
         String parentName = ResourceHelper.getParentFolderName(path, isArchive).orElse("");
-        String fileName = ResourceHelper.getFileName(path, isArchive);
-        fileName = ResourceHelper.removeExtension(fileName);
-        configManager.addConfig(packName, parentName, fileName, settings);
-        if (LMMLConfig.isDebugMode())
-            LOGGER.debug("Loaded Config : " + packName + "." + parentName + "." + fileName
-                    + " : Total " + settings.size());
+        String fileName = ResourceHelper.removeExtension(ResourceHelper.getFileName(path, isArchive));
+        return () -> {
+            configManager.addConfig(packName, parentName, fileName, settings);
+            if (LMMLConfig.isDebugMode())
+                LOGGER.debug("Loaded Config : " + packName + "." + parentName + "." + fileName
+                        + " : Total " + settings.size());
+        };
     }
 
     public void addSettings(Map<String, String> settings, String text) {

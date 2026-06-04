@@ -26,15 +26,17 @@ public class LMSoundLoader implements LMLoader {
     }
 
     @Override
-    public void load(String path, Path folderPath, InputStream inputStream, boolean isArchive) {
+    public Runnable parse(String path, Path folderPath, InputStream inputStream, boolean isArchive) {
+        // 保護コアB: キー生成（pack.parent.file）・location・探索パスは不変。登録のみ遅延する。
         String packName = ResourceHelper.getFirstParentName(path, folderPath, isArchive).orElse("");
         String parent = ResourceHelper.getParentFolderName(path, isArchive).orElse("");
-        String fileName = ResourceHelper.getFileName(path, isArchive);
-        Identifier location = ResourceHelper.getLocation("sounds", packName, fileName);
-        fileName = ResourceHelper.removeExtension(fileName);
-        fileName = ResourceHelper.removeNameLastIndex(fileName);
-        soundManager.addSound(packName, parent, fileName, location);
-        ResourceWrapper.addResourcePath(location, path, folderPath, isArchive);
-        if (LMMLConfig.isDebugMode()) LOGGER.debug("Loaded Sound : " + packName + " : " + fileName);
+        String rawFileName = ResourceHelper.getFileName(path, isArchive);
+        Identifier location = ResourceHelper.getLocation("sounds", packName, rawFileName);
+        String fileName = ResourceHelper.removeNameLastIndex(ResourceHelper.removeExtension(rawFileName));
+        return () -> {
+            soundManager.addSound(packName, parent, fileName, location);
+            ResourceWrapper.addResourcePath(location, path, folderPath, isArchive);
+            if (LMMLConfig.isDebugMode()) LOGGER.debug("Loaded Sound : " + packName + " : " + fileName);
+        };
     }
 }

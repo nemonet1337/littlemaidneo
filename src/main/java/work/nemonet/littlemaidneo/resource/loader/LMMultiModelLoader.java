@@ -26,25 +26,26 @@ public class LMMultiModelLoader implements LMLoader {
     }
 
     @Override
-    public void load(String path, Path folderPath, InputStream inputStream, boolean isArchive) {
+    @SuppressWarnings("unchecked")
+    public Runnable parse(String path, Path folderPath, InputStream inputStream, boolean isArchive) {
         String classpath = path.replace("/", ".");
         classpath = classpath.substring(0, path.lastIndexOf(".class"));
+        // クラスロード＋ASM変換＋skin/inner/outer の 3×newInstance（最重 CPU 構築）を並列フェーズで実行。
+        Class<?> modelClass;
         try {
-            tryAddModel(classpath, classForName(classpath));
+            modelClass = classForName(classpath);
         } catch (Exception e) {
             LOGGER.error("読み込めませんでした。古いモデルの可能性があります : " + path);
             if (LMMLConfig.isDebugMode()) e.printStackTrace();
+            return null;
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    private void tryAddModel(String classpath, Class<?> modelClass) {
-        if (modelClass != null && ModelMultiBase.class.isAssignableFrom(modelClass)) {
-            int lastSplitter = classpath.lastIndexOf("_");
-            if (lastSplitter == -1) return;
-            String className = classpath.toLowerCase().substring(lastSplitter + 1);
-            modelManager.addModel(className, (Class<? extends ModelMultiBase>) modelClass);
-        }
+        if (modelClass == null || !ModelMultiBase.class.isAssignableFrom(modelClass)) return null;
+        int lastSplitter = classpath.lastIndexOf("_");
+        if (lastSplitter == -1) return null;
+        String className = classpath.toLowerCase().substring(lastSplitter + 1);
+        return modelManager.buildHolder((Class<? extends ModelMultiBase>) modelClass)
+                .<Runnable>map(holder -> () -> modelManager.putModel(className, holder))
+                .orElse(null);
     }
 
     public Class<?> classForName(String className) throws ClassNotFoundException {
