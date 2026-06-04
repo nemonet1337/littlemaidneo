@@ -27,17 +27,38 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x ./gradlew
 
+      # mod_version を自動更新する。形式は 1.X.Y。
+      # Y を +1 し、9 を超えたら Y=0 にして X を +1 する。
+      - name: Bump mod version
+        id: version
+        run: |
+          current=$(grep '^mod_version' gradle.properties | cut -d'=' -f2 | tr -d ' ')
+          IFS='.' read -r major minor patch <<< "$current"
+          patch=$((patch + 1))
+          if [ "$patch" -gt 9 ]; then
+            patch=0
+            minor=$((minor + 1))
+          fi
+          next="${major}.${minor}.${patch}"
+          sed -i "s/^mod_version=.*/mod_version=${next}/" gradle.properties
+          echo "version=${next}" >> "$GITHUB_OUTPUT"
+          echo "Bumped mod_version: ${current} -> ${next}"
+
       - name: Build with Gradle
         run: ./gradlew build
 
-      - name: Get mod version
-        id: version
-        run: echo "version=$(grep '^mod_version' gradle.properties | cut -d'=' -f2 | tr -d ' ')" >> $GITHUB_OUTPUT
+      - name: Commit version bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add gradle.properties
+          git commit -m "chore: bump mod_version to ${{ steps.version.outputs.version }} [skip ci]"
+          git push
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}
           name: LittleMaidNeo v${{ steps.version.outputs.version }}
-          files: build/libs/*.jar
+          files: build/libs/LittleMaidNeo_*.jar
           generate_release_notes: true

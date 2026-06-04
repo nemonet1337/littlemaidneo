@@ -50,6 +50,11 @@ base {
     archivesName.set(mod_id)
 }
 
+// リリース配布用の jar ファイル名: LittleMaidNeo_<Minecraft バージョン>_<Mod バージョン>.jar
+tasks.jar {
+    archiveFileName.set("${mod_name}_${minecraft_version}_${mod_version}.jar")
+}
+
 // Mojang ships Java 25 to end users in 26.1.2, so mods should target Java 25.
 java {
     toolchain {
