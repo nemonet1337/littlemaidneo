@@ -2,7 +2,6 @@ package work.nemonet.littlemaidneo.entity.mode;
 
 import com.google.common.collect.Sets;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.Container;
@@ -65,31 +64,24 @@ public class HasModeImpl implements HasMode {
 
     @Override
     public void writeModeData(ValueOutput output) {
-        if (this.nowMode != null) {
-            ModeManager.INSTANCE.getId(nowMode)
-                    .ifPresent(identifier -> {
-                        output.putString("ModeID", identifier.toString());
-                        nowMode.writeModeData(output.child("ModeData"));
-                    });
+        Mode mode = this.nowMode;
+        if (mode != null) {
+            output.store("ModeType", ModeManager.INSTANCE.CODEC, mode.getModeType());
+            mode.writeModeData(output.child("ModeData"));
         }
     }
 
     @Override
     public void readModeData(ValueInput input) {
-        input.getString("ModeID").ifPresent(modeIDStr -> {
-            var modeID = Identifier.tryParse(modeIDStr);
-            if (modeID != null) {
-                ModeManager.INSTANCE.getType(modeID)
-                        .flatMap(modeType -> modes.stream()
-                                .filter(mode -> mode.getModeType() == modeType)
-                                .findFirst())
-                        .ifPresent(mode -> {
-                            input.child("ModeData").ifPresent(mode::readModeData);
-                            nowMode = mode;
-                            onModeChange.accept(mode);
-                        });
-            }
-        });
+        input.read("ModeType", ModeManager.INSTANCE.CODEC)
+                .flatMap(modeType -> modes.stream()
+                        .filter(mode -> mode.getModeType() == modeType)
+                        .findFirst())
+                .ifPresent(mode -> {
+                    input.child("ModeData").ifPresent(mode::readModeData);
+                    nowMode = mode;
+                    onModeChange.accept(mode);
+                });
     }
 
     public void tick() {
