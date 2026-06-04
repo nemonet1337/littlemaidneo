@@ -84,6 +84,10 @@ public class ModelRenderer {
     public FloatBuffer matrix;
     public boolean isInvertX;
 
+    // matrix の読み戻しは loadMatrix() を使う部品（Arms/HeadTop/HeadMount 等）でのみ必要。
+    // 初回 loadMatrix 呼び出しで true になり、以後 renderObject が毎フレーム捕捉する。
+    private boolean needsMatrixCapture;
+
     public ModelRenderer(ModelBase pModelBase, String pName) {
         textureWidth = 64.0F; textureHeight = 32.0F;
         compiled = false; displayList = 0;
@@ -321,7 +325,10 @@ public class ModelRenderer {
     }
 
     protected void renderObject(float par1, boolean pRendering) {
-        GLCompat.glGetFloat(GL11.GL_MODELVIEW_MATRIX, matrix);
+        // 全部品で毎フレーム行列を読み戻すのは無駄。loadMatrix() を実際に使う部品でのみ捕捉する。
+        if (needsMatrixCapture) {
+            GLCompat.glGetFloat(GL11.GL_MODELVIEW_MATRIX, matrix);
+        }
         if (pRendering && isRendering) {
             if (scaleX != 1.0F || scaleY != 1.0F || scaleZ != 1.0F) {
                 // スケール指定がある部品のみ push/scale/pop する。
@@ -342,6 +349,8 @@ public class ModelRenderer {
     }
 
     public ModelRenderer loadMatrix() {
+        // 初回呼び出し以降、この部品は renderObject で行列を捕捉する（初回のみ1フレーム遅延）。
+        needsMatrixCapture = true;
         GLCompat.glLoadMatrix(matrix);
         if (isInvertX) GLCompat.glScalef(-1F, 1F, 1F);
         return this;

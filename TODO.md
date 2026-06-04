@@ -102,13 +102,16 @@
 - ✅ **P-4（完了）**: `GLCompat` 即時モード（GL_TRIANGLE_STRIP）経路を確保なし化。
   頂点毎の `Vector3f/Vec2/PositionTextureVertex` とストリップ三角形毎の `TexturedQuad`（+ `calcNormal` の Vector3f×2）を、
   再利用プリミティブ3頂点リング + 直接バッファ書き出し（`emitStripTriangle`）へ置換。頂点並び・法線計算・「頂点毎 texCoord 必須」挙動まで踏襲。
+- ✅ **P-5（完了）**: レイヤー間 `setAngles` 重複の間引き。
+  base body（`MultiModel.setupAnim`）と `MultiModelLightLayer` が同一 SKIN モデルへ同一入力で `setAngles` を二重に呼ぶため、
+  `ModelMultiBase.setAngles` に「直前入力と一致なら `setRotationAngles` を省略」ガードを追加。遅延描画は最終状態のみ読むため結果不変
+  （`setRotationAngles` 冪等＝LMM 規約が前提）。`animateModel` は二重呼び出しのまま維持（タイマー副作用保存）。
+- ✅ **P-6（完了）**: `renderObject` の行列読み戻しを必要部品のみへ。
+  `loadMatrix()` を使う部品（`Arms`/`HeadTop`/`HeadMount` 等）でのみ `needsMatrixCapture` を立て捕捉。
+  約100部品中の数部品のみに削減。初回 `loadMatrix` 時だけ1フレーム遅延。
+  注: 公開 `matrix` FloatBuffer を `loadMatrix()` 経由せず直接読む外部モデルがあれば初回スタール（LMM 規約外のため許容）。
 
-### 次段階候補（要 Java25 ローカル `compileJava` + `runClient` 目視検証）
-
-| 優先度 | 項目 | 内容 / 検証ポイント |
-| --- | --- | --- |
-| 中 | P-5: レイヤー間 `setAngles` 重複計算 | `MultiModelLightLayer` 等が同一モデルへ `animateModel`+`setAngles` を再計算。同フレーム済みフラグで間引けるが、**遅延描画（`submitCustomGeometry`）+ 共有可変フィールド**の順序依存があるため要慎重検証 |
-| 低 | P-6: `renderObject` の `glGetFloat` 行列読み戻し | 部品毎の直 `FloatBuffer` 書き込み。`loadMatrix()` 利用モデルがあるため**遅延化は互換リスク**。費用は小さく現状維持が無難 |
+> 描画パフォーマンス最適化 P-1〜P-6 は実装完了。残りは下記の構造課題（効果は限定的・高リスク）。
 
 ---
 
