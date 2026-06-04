@@ -22,7 +22,7 @@ import work.nemonet.littlemaidneo.client.screen.SoundPackSelectScreen;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.LittleMaidScreenHandler;
 import net.minecraft.ChatFormatting;
-import work.nemonet.littlemaidneo.entity.util.MovingMode;
+import work.nemonet.littlemaidneo.entity.util.MaidMode;
 import work.nemonet.littlemaidneo.network.*;
 import work.nemonet.littlemaidneo.util.Tuple;
 public class LittleMaidScreen
@@ -42,8 +42,8 @@ public class LittleMaidScreen
     private static final ItemStack CHEST = Items.CHEST.getDefaultInstance();
     private final LittleMaidEntity owner;
     private Component stateText;
-    private final MovingMode prevMovingMode;
-    private MovingMode movingMode;
+    private final MaidMode prevMaidMode;
+    private MaidMode movingMode;
     private int workItemSlotSize;
     private boolean isSettingWISS;
 
@@ -54,7 +54,7 @@ public class LittleMaidScreen
         super(screenContainer, inv, titleIn, 176, 208);
         owner = screenContainer.getGuiEntity();
         workItemSlotSize = screenContainer.getWorkItemSlotSize();
-        prevMovingMode = movingMode = owner.getMovingMode();
+        prevMaidMode = movingMode = owner.getMaidMode();
     }
 
     @Override
@@ -107,9 +107,9 @@ public class LittleMaidScreen
                                 return;
                             }
                             switch (movingMode) {
-                                case ESCORT -> movingMode = MovingMode.FREEDOM;
-                                case FREEDOM -> movingMode = MovingMode.TRACER;
-                                case TRACER -> movingMode = MovingMode.ESCORT;
+                                case ESCORT -> movingMode = MaidMode.FREEDOM;
+                                case FREEDOM -> movingMode = MaidMode.TRACER;
+                                case TRACER -> movingMode = MaidMode.ESCORT;
                             }
                             stateText = getStateText();
                             updateStatusIcons();
@@ -190,9 +190,9 @@ public class LittleMaidScreen
                         return;
                     }
                     switch (movingMode) {
-                        case ESCORT -> movingMode = MovingMode.FREEDOM;
-                        case FREEDOM -> movingMode = MovingMode.TRACER;
-                        case TRACER -> movingMode = MovingMode.ESCORT;
+                        case ESCORT -> movingMode = MaidMode.FREEDOM;
+                        case FREEDOM -> movingMode = MaidMode.TRACER;
+                        case TRACER -> movingMode = MaidMode.ESCORT;
                     }
                     stateText = getStateText();
                     updateStatusIcons();
@@ -576,7 +576,7 @@ public class LittleMaidScreen
     @Override
     public void onClose() {
         super.onClose();
-        if (prevMovingMode != movingMode) {
+        if (prevMaidMode != movingMode) {
             NetworkHandler.sendSetMovingStateC2S(owner, movingMode);
         }
     }

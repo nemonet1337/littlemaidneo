@@ -15,7 +15,7 @@ import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.level.block.state.BlockState;
 import work.nemonet.littlemaidneo.config.LMRBConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
-import work.nemonet.littlemaidneo.entity.util.MovingMode;
+import work.nemonet.littlemaidneo.entity.util.MaidMode;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 
 /**
@@ -46,7 +46,7 @@ public class RedstoneTraceGoal extends Goal {
             return false;
         }
         if (TameableUtil.isWait(mob) ||
-                mob.getMovingMode() != MovingMode.TRACER ||
+                mob.getMaidMode() != MaidMode.TRACER ||
                 !this.mob.getNavigation().isDone()) {
             return false;
         }
@@ -67,7 +67,7 @@ public class RedstoneTraceGoal extends Goal {
     @Override
     public boolean canContinueToUse() {
         return (!TameableUtil.isWait(mob) &&
-                mob.getMovingMode() == MovingMode.TRACER &&
+                mob.getMaidMode() == MaidMode.TRACER &&
                 !this.mob.getNavigation().isDone());
     }
 

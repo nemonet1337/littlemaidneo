@@ -10,7 +10,7 @@ import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.player.Player;
 import work.nemonet.littlemaidneo.config.LMRBConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
-import work.nemonet.littlemaidneo.entity.util.MovingMode;
+import work.nemonet.littlemaidneo.entity.util.MaidMode;
 import work.nemonet.littlemaidneo.setup.ModRegistration;
 
 public class MaidFollowOwnerBehavior extends Behavior<LittleMaidEntity> {
@@ -26,7 +26,7 @@ public class MaidFollowOwnerBehavior extends Behavior<LittleMaidEntity> {
         // ご主人様への追従は護衛（ESCORT）モードのみ。FREEDOM/TRACER では
         // それぞれ MaidFreedomBehavior / RedstoneTraceGoal が WALK_TARGET を制御するため、
         // ここで追従すると WALK_TARGET を奪い合い徘徊と追従が競合する（Brain 移行で欠落した条件）。
-        return entity.getMovingMode() == MovingMode.ESCORT;
+        return entity.getMaidMode() == MaidMode.ESCORT;
     }
 
     // Behavior の canStillUse 既定は false で、override しないと tick() が一度も呼ばれない

@@ -4,7 +4,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import work.nemonet.littlemaidneo.entity.util.MovingMode;
+import work.nemonet.littlemaidneo.entity.util.MaidMode;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 
 /**
@@ -45,9 +45,9 @@ public final class BookParameterParser {
             }
             case "moving" -> {
                 try {
-                    MovingMode mode = MovingMode.valueOf(value.toUpperCase());
-                    maid.setMovingMode(mode);
-                    if (mode == MovingMode.FREEDOM) {
+                    MaidMode mode = MaidMode.valueOf(value.toUpperCase());
+                    maid.setMaidMode(mode);
+                    if (mode == MaidMode.FREEDOM) {
                         maid.setFreedomPos(maid.blockPosition());
                     }
                 } catch (IllegalArgumentException e) {

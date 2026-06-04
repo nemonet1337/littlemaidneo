@@ -11,7 +11,7 @@ import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.level.pathfinder.WalkNodeEvaluator;
 import net.minecraft.world.phys.Vec3;
 import work.nemonet.littlemaidneo.config.LMRBConfig;
-import work.nemonet.littlemaidneo.entity.util.MovingMode;
+import work.nemonet.littlemaidneo.entity.util.MaidMode;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 
@@ -43,7 +43,7 @@ public class LMTeleportTameOwnerGoal extends Goal {
     @Override
     public boolean canUse() {
         // ESCORTモードのみ発動
-        if (this.tameable.getMovingMode() != MovingMode.ESCORT) return false;
+        if (this.tameable.getMaidMode() != MaidMode.ESCORT) return false;
 
         LivingEntity tameOwner = TameableUtil.getTameOwner(this.tameable).orElse(null);
         if (tameOwner == null) return false;
@@ -55,7 +55,7 @@ public class LMTeleportTameOwnerGoal extends Goal {
 
     @Override
     public boolean canContinueToUse() {
-        if (this.tameable.getMovingMode() != MovingMode.ESCORT) return false;
+        if (this.tameable.getMaidMode() != MaidMode.ESCORT) return false;
         return teleportStartSq.get() < this.tameable.distanceToSqr(this.owner);
     }
 

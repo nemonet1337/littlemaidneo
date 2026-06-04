@@ -19,7 +19,7 @@ import work.nemonet.littlemaidneo.api.mode.ModeType;
 import work.nemonet.littlemaidneo.config.LMRBConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.compound.SoundPlayable;
-import work.nemonet.littlemaidneo.entity.util.MovingMode;
+import work.nemonet.littlemaidneo.entity.util.MaidMode;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 import work.nemonet.littlemaidneo.resource.util.LMSounds;
 import work.nemonet.littlemaidneo.util.BlockFinderPD;
@@ -63,7 +63,7 @@ public class TorcherMode extends Mode {
         if (blockFinder == null || blockFinder.isEnd() || count++ > 100) {
             this.count = 0;
             BlockPos basePos;
-            if (this.mob.getMovingMode() == MovingMode.ESCORT) {
+            if (this.mob.getMaidMode() == MaidMode.ESCORT) {
                 Entity owner = TameableUtil.getTameOwner(mob).orElse(null);
                 if (owner == null) {
                     return false;

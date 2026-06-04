@@ -3,10 +3,10 @@ package work.nemonet.littlemaidneo.entity.util;
 /**
  * 移動状態を返すインターフェイス
  */
-public interface HasMovingMode {
+public interface HasMaidMode {
 
-    MovingMode getMovingMode();
+    MaidMode getMaidMode();
 
-    void setMovingMode(MovingMode movingMode);
+    void setMaidMode(MaidMode movingMode);
 
 }

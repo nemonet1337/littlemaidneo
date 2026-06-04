@@ -127,7 +127,7 @@ public class LittleMaidEntity
         HasMode,
         IHasMultiModel,
         SoundPlayable,
-        HasMovingMode,
+        HasMaidMode,
         CrossbowAttackMob,
         SalaryBoxPosListener,
         TargetTagManager {
@@ -518,12 +518,12 @@ private float prevInterestedAngle;
         output.putInt("XpTotal", this.xpReward);
         if (TameableUtil.getTameOwnerUuid(this).isPresent()) {
             output.putBoolean("Wait", TameableUtil.isWait(this));
-            output.putByte("MovingMode", (byte) this.getMovingMode().getId());
+            output.store("MaidMode", MaidMode.CODEC, this.getMaidMode());
             writeContractable(output);
             writeModeData(output);
             output.putBoolean("isBloodSuck", isBloodSuck());
             BlockPos fp = freedomPos;
-            if (this.getMovingMode() == MovingMode.FREEDOM && fp != null) {
+            if (this.getMaidMode() == MaidMode.FREEDOM && fp != null) {
                 output.store("FreedomPos", BlockPos.CODEC, fp);
             }
             writeTargetTags(output);
@@ -561,12 +561,12 @@ private float prevInterestedAngle;
 
         if (TameableUtil.hasTameOwner(this)) {
             TameableUtil.setWait(this, input.getBooleanOr("Wait", false));
-            setMovingMode(
-                    MovingMode.fromId(input.getByteOr("MovingMode", (byte) 0)));
+            setMaidMode(
+                    input.read("MaidMode", MaidMode.CODEC).orElse(MaidMode.FREEDOM));
             readContractable(input);
             readModeData(input);
             setBloodSuck(input.getBooleanOr("isBloodSuck", false));
-            if (this.getMovingMode() == MovingMode.FREEDOM) {
+            if (this.getMaidMode() == MaidMode.FREEDOM) {
                 freedomPos = input
                         .read("FreedomPos", BlockPos.CODEC)
                         .orElse(null);
@@ -940,7 +940,7 @@ private float prevInterestedAngle;
         super.restoreFrom(entity);
         // ディメンション移動の時に、自由行動地点を削除する
         if (entity instanceof LittleMaidEntity oldMaid &&
-                oldMaid.getMovingMode() == MovingMode.FREEDOM) {
+                oldMaid.getMaidMode() == MaidMode.FREEDOM) {
             this.setFreedomPos(null);
         }
     }
@@ -1342,7 +1342,7 @@ private float prevInterestedAngle;
         setStrike(false);
         itemContractable.setUnpaidTimes(0);
         getNavigation().stop();
-        setMovingMode(MovingMode.ESCORT);
+        setMaidMode(MaidMode.ESCORT);
         if (!player.getAbilities().instabuild) {
             stack.shrink(1);
             if (stack.isEmpty()) {
@@ -1398,14 +1398,14 @@ private float prevInterestedAngle;
     }
 
     @Override
-    public MovingMode getMovingMode() {
-        return MovingMode.fromId(this.entityData.get(MOVING_MODE));
+    public MaidMode getMaidMode() {
+        return MaidMode.fromId(this.entityData.get(MOVING_MODE));
     }
 
     @Override
-    public void setMovingMode(MovingMode movingMode) {
+    public void setMaidMode(MaidMode movingMode) {
         this.entityData.set(MOVING_MODE, (byte) movingMode.getId());
-        if (movingMode == MovingMode.ESCORT && this.isOrderedToSit()) {
+        if (movingMode == MaidMode.ESCORT && this.isOrderedToSit()) {
             this.setOrderedToSit(false);
         }
     }
@@ -1597,7 +1597,7 @@ private float prevInterestedAngle;
     }
 
     public Optional<BlockPos> getFreedomPos() {
-        if (this.getMovingMode() != MovingMode.FREEDOM) {
+        if (this.getMaidMode() != MaidMode.FREEDOM) {
             return Optional.empty();
         }
         if (freedomPos == null) {

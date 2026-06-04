@@ -84,6 +84,19 @@
   空コンパウンド pruning 対策として、`ModeData` が存在しない場合でも `ModeID` がロードできれば `nowMode` を復元する堅牢な処理を実装。
 - ⏸ **R-4 残（見送り）**: `PathRecalcTimer` 抽出・コンテナ間アイテム移送の共通化。
   各タイマーの意味論の違い（`--x<0` は N+1 tick、`x>0` は N tick 周期）による挙動変化のリスク、および int の薄いラッピングにより「薄い単一実装抽象」を増やす負債化を避けるため、あえて見送りが正解と判断。
+- ✅ **AI-1（完了・第1段階）**: 移動モードを `MovingMode` → `MaidMode` に改名し `Codec`/`StreamCodec` を導入。
+  永続化を `ValueOutput#store`/`ValueInput#read`（Codec）へ、ネットワークを `MaidMode.STREAM_CODEC` へ統一。
+  値名・lang・描画 caps・本パラメータ契約は不変。詳細は `docs/adr/0002-...md`。
+
+## 🤖 Mode/Goal AI 統合（第2段階以降・要 CI 検証）
+
+> 本環境は JDK25 不在・foojay 制限でローカルビルド不可。検証は push 後の CI（Java25）が前提。
+
+- [ ] **AI-2**: 作業モード `Mode` 側にも `Codec<ModeType<?>>`（`ModeManager` の BiMap 裏付け）を導入し、
+  `ModeID` 文字列保存を Codec ベースへ統一する。
+- [ ] **AI-3**: `RedstoneTraceGoal`(TRACER) を Brain Behavior 化し、全移動モードを Brain に一元化（非対称の解消）。
+- [ ] **AI-4（機能削減を伴う・要明示合意）**: 戦闘系 3 モード（Fencer/Archer/Ripper）を武器駆動の単一 COMBAT 系へ統合する等、
+  作業モードの統廃合。不可逆のため利用者合意のうえ CI で段階検証する。
 
 ---
 
