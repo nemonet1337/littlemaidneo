@@ -24,8 +24,8 @@ public class MaidFollowOwnerBehavior extends Behavior<LittleMaidEntity> {
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, LittleMaidEntity entity) {
         // ご主人様への追従は護衛（ESCORT）モードのみ。FREEDOM/TRACER では
-        // それぞれ MaidFreedomBehavior / RedstoneTraceGoal が WALK_TARGET を制御するため、
-        // ここで追従すると WALK_TARGET を奪い合い徘徊と追従が競合する（Brain 移行で欠落した条件）。
+        // それぞれ MaidFreedomBehavior / MaidTraceBehavior が移動を制御するため、
+        // ここで追従すると移動目標を奪い合い徘徊と追従が競合する（全移動モードを Brain に一元化）。
         return entity.getMaidMode() == MaidMode.ESCORT;
     }
 

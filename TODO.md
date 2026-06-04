@@ -88,15 +88,20 @@
   永続化を `ValueOutput#store`/`ValueInput#read`（Codec）へ、ネットワークを `MaidMode.STREAM_CODEC` へ統一。
   値名・lang・描画 caps・本パラメータ契約は不変。詳細は `docs/adr/0002-...md`。
 
-## 🤖 Mode/Goal AI 統合（第2段階以降・要 CI 検証）
+## 🤖 Mode/Goal AI 統合（CI 検証済み）
 
-> 本環境は JDK25 不在・foojay 制限でローカルビルド不可。検証は push 後の CI（Java25）が前提。
+> 本環境は JDK25 不在・foojay 制限でローカルビルド不可。検証は push 後の CI（Java25）。
 
-- [ ] **AI-2**: 作業モード `Mode` 側にも `Codec<ModeType<?>>`（`ModeManager` の BiMap 裏付け）を導入し、
-  `ModeID` 文字列保存を Codec ベースへ統一する。
-- [ ] **AI-3**: `RedstoneTraceGoal`(TRACER) を Brain Behavior 化し、全移動モードを Brain に一元化（非対称の解消）。
-- [ ] **AI-4（機能削減を伴う・要明示合意）**: 戦闘系 3 モード（Fencer/Archer/Ripper）を武器駆動の単一 COMBAT 系へ統合する等、
-  作業モードの統廃合。不可逆のため利用者合意のうえ CI で段階検証する。
+- ✅ **AI-2**: 作業モード `Mode` 側に `Codec<ModeType<?>>`（`ModeManager` の BiMap 裏付け）を導入し、
+  `ModeID` 文字列保存を `ValueOutput#store`/`ValueInput#read`（Codec）へ統一。
+- ✅ **AI-3**: `RedstoneTraceGoal`(TRACER) を `MaidTraceBehavior`(Brain) へ移植し、全移動モードを Brain に一元化。
+- ✅ **AI-4**: 戦闘系 Fencer/Archer を単一 `CombatMode` へ統合（武器種でスタイル動的切替）。
+  Ripper は受動作業のため統合対象外。`caps_job` 互換は `Mode#getJobName()` で維持。
+
+### 残課題（AI 統合の発展・任意）
+
+- [ ] 戦闘サブモード状態（Archer cooldown/Fencer cooldown 等）の Codec 永続化（リロード時挙動が変わるため別扱い）。
+- [ ] enum 値名 FREEDOM/ESCORT/TRACER を IDLE/FOLLOW/GUARD へ改称する場合は lang/DataGen/caps/本パラメータの同時更新が必要。
 
 ---
 

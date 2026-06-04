@@ -48,8 +48,7 @@ public class LittleMaidModelCaps extends EntityCaps {
                 (Float) pArg[0]
             );
             case caps_job -> maid.getMode()
-                .map(Mode::getName)
-                .map(String::toLowerCase)
+                .map(Mode::getJobName)
                 .orElse(null);
             default -> super.getCapsValue(pIndex, pArg);
         };

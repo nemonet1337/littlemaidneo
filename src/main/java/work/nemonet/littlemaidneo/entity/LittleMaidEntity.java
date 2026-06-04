@@ -285,6 +285,7 @@ private float prevInterestedAngle;
                             new work.nemonet.littlemaidneo.entity.ai.behavior.MaidFollowOwnerBehavior(),
                             new work.nemonet.littlemaidneo.entity.ai.behavior.MaidStareBehavior(),
                             new work.nemonet.littlemaidneo.entity.ai.behavior.MaidFreedomBehavior(),
+                            new work.nemonet.littlemaidneo.entity.ai.behavior.MaidTraceBehavior(),
                             new net.minecraft.world.entity.ai.behavior.MoveToTargetSink()
                     ))
             )
@@ -442,10 +443,8 @@ private float prevInterestedAngle;
 
         this.goalSelector.addGoal(++priority, new PlaySnowGoal(this));
 
-        this.goalSelector.addGoal(
-                ++priority,
-                new RedstoneTraceGoal(this, () -> config.movement.tracerSpeed));
-
+        // TRACER（赤石動力探知）は MaidTraceBehavior（Brain）へ移行済み（AI-3）。
+        // 全移動モードを Brain に一元化したため、ここでの Goal 登録は不要。
 
         // 野良
         this.goalSelector.addGoal(

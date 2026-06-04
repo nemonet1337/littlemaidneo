@@ -1,6 +1,6 @@
 # ADR 0002: MaidMode enum + Codec によるモード状態シリアライズの統一
 
-- ステータス: 採用（第1段階を実装済み）
+- ステータス: 採用（第1〜4段階を実装済み・各段階 CI(Java25) で検証）
 - 日付: 2026-06-04
 - 関連: ADR 0001（描画ブリッジ維持）, `docs/plan/2026-06-01_統合リファクタリングプラン.md`（Phase 7 Brain 化）
 
@@ -59,18 +59,29 @@
   と結合しているため **不変** とした。型名と機構のみ刷新している。
 - 旧ワールドの保存形式（byte の `MovingMode`）との後方互換は、合意のうえ **非対応**（新形式のみ）。
 
-### 第2段階以降（未実装・要合意）
+### 第2〜4段階（実装済み・利用者合意のうえ実施）
 
-「単一 enum へ全面置換」の残りは、既存機能（料理/治癒/醸造/採掘/戦闘）の実装 ~2,449 行の
-統廃合を伴い不可逆である。本環境は **JDK 25 不在 + foojay 解決がネットワーク制限** のため
-`./gradlew` でのローカルコンパイル検証が不可能で、検証は push 後の CI（Java 25）が唯一の手段。
-このリスクを踏まえ、以下は CI 検証を前提に段階適用する：
+本環境は **JDK 25 不在 + foojay 解決がネットワーク制限** のため `./gradlew` でのローカル
+コンパイル検証が不可能で、検証は push 後の CI（Java 25）が唯一の手段。各段階を個別コミットし
+CI green を確認しながら適用した。
 
-- (a) 作業モード `Mode` 側にも `Codec<ModeType<?>>`（`ModeManager` の BiMap を裏付けとする）を導入し、
-  `ModeID` 文字列保存を Codec ベースへ統一。
-- (b) `RedstoneTraceGoal`(TRACER) を Brain Behavior 化し、全移動モードを Brain に一元化（非対称の解消）。
-- (c) 戦闘系 3 モード（Fencer/Archer/Ripper）を武器駆動の単一 COMBAT 系へ統合する等、
-  作業モードの統廃合（要・利用者の明示合意：機能削減を伴うため）。
+- **AI-2**: 作業モード `Mode` 側に `ModeManager.CODEC`（`Identifier` 文字列・BiMap 裏付け）を導入し、
+  `HasModeImpl` の永続化を `ModeID` 文字列 → `ValueOutput#store`/`ValueInput#read`(Codec) へ統一。
+- **AI-3**: `RedstoneTraceGoal`(TRACER) を `MaidTraceBehavior`(Brain) へ移植し、全移動モード
+  （ESCORT/FREEDOM/TRACER）を Brain に一元化。移動は直接 navigation を操作し旧 Goal の挙動を厳密維持。
+- **AI-4**: 戦闘系 Fencer/Archer を単一 `CombatMode` へ統合。武器種に応じて内部で近接/射撃スタイルを
+  動的に切り替える（既存 `FencerMode`/`ArcherMode` を内部ストラテジとして再利用）。
+  - 毛刈り（Ripper）は敵対ターゲットと戦う「戦闘」ではなく受動的な刈り取り作業のため統合対象外とし、
+    独立モードのまま残した（機能の意味的整合を優先）。
+  - 外部モデルパック互換: `caps_job` の job 名契約を守るため `Mode#getJobName()` を追加し、
+    `CombatMode` はアクティブスタイルに応じ従来の `"fencer"`/`"archer"` を返す。
+    `getBattleModeType()` も SWORD/BOW を返し `TargetingSystem` の挙動を維持。
+
+### 既知の残課題
+
+- 戦闘サブモードの内部状態（cooldown 等）は従来同様 Codec 永続化していない（リロードで挙動が変わるため別扱い）。
+- enum 値名 FREEDOM/ESCORT/TRACER の改称（IDLE/FOLLOW/GUARD 等）は lang/DataGen/描画 caps/本パラメータの
+  同時更新が必要なため見送り（要望の中核は型名＋Codec 機構であり充足済み）。
 
 ## 影響
 

@@ -24,8 +24,7 @@ public class Modes {
      * <p>登録順（同 Priority 時のタイブレーク）＝この並び順。順序を変更しないこと。
      */
     private static final List<Entry> ENTRIES = List.of(
-            new Entry("fencer", Modes::buildFencerMode),
-            new Entry("archer", Modes::buildArcherMode),
+            new Entry("combat", Modes::buildCombatMode),
             new Entry("cooking", Modes::buildCookingMode),
             new Entry("ripper", Modes::buildRipperMode),
             new Entry("torcher", Modes::buildTorcherMode),
@@ -40,15 +39,17 @@ public class Modes {
         }
     }
 
-    public static ModeType.Builder<FencerMode> buildFencerMode() {
-        return ModeType.<FencerMode>builder((type, maid) -> new FencerMode(type, "Fencer", maid, 1.0f))
+    /**
+     * 戦闘モード（近接 Fencer + 射撃 Archer の統合・AI-4）。
+     * <p>武器種に応じて内部でスタイルを切り替える単一モード。アイテムマッチャは旧 Fencer/Archer の和集合。
+     */
+    public static ModeType.Builder<CombatMode> buildCombatMode() {
+        return ModeType.<CombatMode>builder((type, maid) -> new CombatMode(type, "Combat", maid, 1.0f))
+                // 近接（旧 Fencer）
                 .addItemMatcher(stack -> stack.has(DataComponents.WEAPON), ItemMatcher.Priority.LOWER)
                 .addItemMatcher(ItemMatchers.clazz(AxeItem.class), ItemMatcher.Priority.LOWER)
-                .addItemMatcher(ItemMatchers.tag(LMTags.Items.FENCER_MODE), ItemMatcher.Priority.HIGHER);
-    }
-
-    public static ModeType.Builder<ArcherMode> buildArcherMode() {
-        return ModeType.<ArcherMode>builder((type, maid) -> new ArcherMode(type, "Archer", maid))
+                .addItemMatcher(ItemMatchers.tag(LMTags.Items.FENCER_MODE), ItemMatcher.Priority.HIGHER)
+                // 射撃（旧 Archer）
                 .addItemMatcher(ItemMatchers.clazz(IRangedWeapon.class), ItemMatcher.Priority.LOWER)
                 .addItemMatcher(ItemMatchers.tag(LMTags.Items.ARCHER_MODE), ItemMatcher.Priority.HIGHER);
     }

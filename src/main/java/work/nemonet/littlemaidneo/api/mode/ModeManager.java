@@ -2,6 +2,8 @@ package work.nemonet.littlemaidneo.api.mode;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import net.minecraft.resources.Identifier;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 
@@ -16,6 +18,21 @@ import java.util.stream.Collectors;
 public class ModeManager {
     public static ModeManager INSTANCE = new ModeManager();
     private final BiMap<Identifier, ModeType<? extends Mode>> MODE_TYPES = HashBiMap.create();
+
+    /**
+     * 登録済みモードタイプを {@link Identifier} 文字列でシリアライズする Codec。
+     *
+     * <p>移動軸の {@code MaidMode.CODEC} と対をなし、作業モードの永続化を
+     * 手書きの {@code ModeID} 文字列ではなく Codec ベースへ統一する（AI-2）。
+     * 未登録 ID のデコードは {@link DataResult} のエラーとして扱う。
+     */
+    public final Codec<ModeType<? extends Mode>> CODEC = Identifier.CODEC.comapFlatMap(
+            id -> getType(id)
+                    .<DataResult<ModeType<? extends Mode>>>map(DataResult::success)
+                    .orElseGet(() -> DataResult.error(() -> "Unknown maid mode type: " + id)),
+            type -> getId(type)
+                    .orElseThrow(() -> new IllegalStateException(
+                            "Unregistered maid mode type: " + type)));
 
     public void register(Identifier id, ModeType<? extends Mode> type) {
         MODE_TYPES.put(id, type);
