@@ -45,7 +45,7 @@
 - NBT 入出力は **`ValueOutput`/`ValueInput`＋Codec**（旧 `CompoundTag` 直書きは原則不使用）。
 - パケットは全 15 種が `StreamCodec`（`network/`）。登録は `network/NetworkHandler.register(RegisterPayloadHandlersEvent)`。
 - `DeferredRegister` は **`setup/ModRegistration.java`** に集約、`LittleMaidNeo` コンストラクタで `register(modEventBus)`。
-- **AI 現状（ADR-0002 / ADR-0003）**: 移動軸 `MaidMode`・作業軸 `Mode`・補助行動とも **Brain Behavior へ全面移行済み**（`entity/ai/behavior/Maid*Behavior` 13 種）。**全 Behavior は CORE Activity に一括登録**（FIGHT/WORK/IDLE への分割は未実装。ADR-0003 の Activity 体系化記述は将来像であり実装と差異あり＝§A 参照）。作業軸は単一 `MaidWorkModeBehavior` が `ModeManager` で選択中の `Mode` に `shouldExecute/start/tick/stop` を委譲する（`ModeWrapperGoal` は廃止・`entity/goal/` パッケージは削除済み・ソース参照ゼロ）。永続化は `MaidMode.CODEC` / `ModeManager.CODEC`。戦闘は `CombatMode` に統合。`registerGoals()` には**意図的に**バニラ補助 Goal（`AvoidEntityGoal`/`PanicGoal`/`LookAtPlayerGoal`×2/`RandomLookAroundGoal`）のみ残置。
+- **AI 現状（ADR-0002 / ADR-0003）**: 移動軸 `MaidMode`・作業軸 `Mode`・補助行動とも **Brain Behavior へ全面移行済み**（`entity/ai/behavior/Maid*Behavior` 13 種）。**全 Behavior は CORE Activity に一括登録**（FIGHT/WORK/IDLE への分割は未実装。ADR-0003 の Activity 体系化記述は将来像であり実装と差異あり＝§A 参照）。作業軸は現状、単一 `MaidWorkModeBehavior` が `ModeManager` で選択中の `Mode` に `shouldExecute/start/tick/stop` を委譲する（`ModeWrapperGoal` は廃止・`entity/goal/` パッケージは削除済み・ソース参照ゼロ）→ **§C で個別 Behavior へ分割予定**。永続化は `MaidMode.CODEC` / `ModeManager.CODEC`。戦闘は `CombatMode` に統合。`registerGoals()` にはバニラ補助 Goal（`AvoidEntityGoal`/`PanicGoal`/`LookAtPlayerGoal`×2/`RandomLookAroundGoal`）が**残存**（→ §A で Brain へ全廃予定）。`getMode()` がアクティブ `Mode` を返す契約は caps_job/targeting/Codec が依存するため不変。
 - API 調査は `mc-api-research` エージェント必須。NeoForge/Mojang マッピングのメソッド名はバージョンで変わる。ライブラリ Doc は Context7 MCP 優先。
 
 ### 0.5 検証（コミット前に必ず）
@@ -57,22 +57,55 @@
 6. `runGameTestServer`（namespace `littlemaidneo`）で回帰確認
 
 ### 0.6 推奨実施順（依存関係）
-モダン化 WS1〜5（Brain AI / Codec / DataGen / Brigadier / DataFixer）は**完了済み**。本書は後続の内部整理 §A〜§F を扱う。推奨順は **§B（デッドコード削除）→ §E（common 切り出し）→ §F（LittleMaidEntity 分割）→ §D（Mixin 整理）**（低リスク順。§E と §F は委譲メソッドが重なるため近接実施）。§A（Goal AI 化）・§C（Mode Behavior 化）は完了済みで**状況記載のみ・HowTo 不要**。各区切り＝1 コミット。重要な設計判断は `/doc` で `docs/adr/` に記録し CLAUDE.md の該当節も同コミットで更新する。
+モダン化 WS1〜5（Brain AI / Codec / DataGen / Brigadier / DataFixer）は**完了済み**。本書は後続の内部整理 §A〜§F を扱う。推奨順は **§B（デッドコード削除・最低リスク）→ §E（common 切り出し）→ §F（LittleMaidEntity 分割）→ §D（Mixin 整理）→ §C（Mode 個別 Behavior 化）→ §A（残存 Goal 全廃＋Activity 体系化）**。AI に深く関わる §C・§A は最高リスクのため最後に集中（§C は §E の `AbstractMaidModeBehavior` 基底に乗ると楽、§A-5 の Activity 体系化は §C と同時実施が綺麗）。各区切り＝1 コミット。重要な設計判断は `/doc` で `docs/adr/` に記録し CLAUDE.md の該当節も同コミットで更新する。
 
 ---
 
-## §A — Goal の AI(Brain)化（✅ 完了・状況記載のみ／HowTo 不要）
+## §A — Goal の AI(Brain)化（残存バニラ Goal を全廃する）
 
-> 本節は **状況報告のみ**。機能的な問題は無いため実装 HowTo は記載しない（指示に基づく）。
+**進捗と残件**: カスタム Goal は全廃済み（`entity/goal/`・`ModeWrapperGoal` 削除・参照ゼロ、`Float`→`Swim`/`OpenDoor`→`InteractWithDoor` も Behavior 化済み）。**ただし `registerGoals()` にバニラ補助 Goal が残存している**。本節のゴールは**これらも Brain Behavior へ移し、`registerGoals()` を空（または撤去）にする**こと。
 
-**進捗**: カスタム Goal は全廃され、メイドさんの行動はすべて Brain の `BehaviorControl`（`entity/ai/behavior/Maid*Behavior` 13 種）で駆動する。`entity/goal/` パッケージと `entity/mode/ModeWrapperGoal` は削除済み（ソース参照ゼロ・確認済み）。バニラの `FloatGoal`/`OpenDoorGoal` も `Swim`/`InteractWithDoor` Behavior へ置換済み。
+**置換対象（すべて Brain へ）**:
+- `LittleMaidEntity#registerGoals()`（`LittleMaidEntity.java:314-365`）: `LookAtPlayerGoal`×2（Player 優先確率0.8 ＋ 全 LivingEntity）/ `RandomLookAroundGoal`（視線）、`PanicGoal`（**未テイム時のみ**）、`AvoidEntityGoal`（`fleeEntities` 登録 Mob からの退避）。
+- `MultiModelEntity#registerGoals()`（`MultiModelEntity.java:45-49`）: `FloatGoal` + `LookAtPlayerGoal`×2。
 
-**意図的に残置している Goal（機能的問題なし・あえて Goal のまま）**:
-- `LittleMaidEntity#registerGoals()`: `AvoidEntityGoal`（危険な敵からの逃避）/ `PanicGoal`（野良メイドさんのパニック）/ `LookAtPlayerGoal`×2 / `RandomLookAroundGoal`。
-  - **視線（頭部向き）はあえて Goal**: `LOOK_TARGET` メモリを設定するプロデューサが本 Mod に存在せず、`LookAtTargetSink` 系を入れると常に no-op になる。孤立した不活性 Behavior の混入を避けるため、頭部向きはバニラ Goal に委ねる設計判断（`LittleMaidEntity.java:260-265` のコメント参照）。
-- `MultiModelEntity#registerGoals()`: `FloatGoal` + `LookAtPlayerGoal`×2（モデル選択用のダミー表示エンティティ。AI を持たないため Brain 化対象外）。
+### A-1. 視線（LookAtPlayer / RandomLookAround）→ Brain（容易）
 
-**唯一の是正候補（任意・低優先）**: ADR-0003 は `CORE/FIGHT/WORK/IDLE` の 4 Activity 体系を記すが、実装は **全 Behavior が `CORE` に一括登録**で Activity 分割は未実装。挙動は正常なので機能上の問題はない。整合させるなら (a) ADR-0003 を実装の実態（CORE 一括）に合わせて更新するか、(b) `setActiveActivityToFirstValid([FIGHT, WORK, IDLE])` を実装してから ADR を正とする。どちらも任意。
+バニラの `SetEntityLookTarget`（プロデューサ：`LOOK_TARGET` メモリへ対象をセット）＋ `LookAtTargetSink`（コンシューマ：`LOOK_TARGET` を消費し頭/体を向ける）で置換。`RandomLookAround` 相当は `SetEntityLookTarget` の確率版（`SetEntityLookTargetSometimes` 等）か軽量カスタムで代替。
+- **過去の判断を覆す**: 以前は「`LOOK_TARGET` を設定するプロデューサが居らず `LookAtTargetSink` が常に no-op」のため未登録にしていた（`LittleMaidEntity.java:260-265` のコメント）。本作業はプロデューサ（`SetEntityLookTarget`）を追加して**これを解禁する**。`registerGoals()` の視線 3 件は削除し、当該コメントも更新。
+- 手順: (1) `BRAIN_PROVIDER` に `MemoryModuleType.LOOK_TARGET` と `NEAREST_VISIBLE_PLAYER`（または `NEAREST_PLAYERS`/`NEAREST_LIVING_ENTITIES`）を追加 → (2) `LittleMaidSensor` か `NearestLivingEntitySensor`/`PlayerSensor` でメモリ充填 → (3) CORE/IDLE に `SetEntityLookTarget`（プレイヤー優先・旧確率0.8 を引数で再現）＋ランダム注視版＋`LookAtTargetSink` を追加 → (4) `registerGoals()` から視線 Goal 削除。
+- **注意（競合）**: 既存 `MaidStareBehavior` は `getLookControl().setLookAt(...)` で直接頭を向ける（`LOOK_TARGET` 非依存）。注視の二重制御にならないか runClient で確認（最終的に `MaidLookControl` の角度クランプが効く）。
+
+### A-2. パニック（PanicGoal・未テイム時のみ）→ Brain（中）
+
+野良メイドさん（未テイム）が被弾時に逃げる挙動。Brain 版パニックが無ければ軽量カスタム `MaidPanicBehavior`（CORE）を新設。
+- 開始条件: `!TameableUtil.hasTameOwner(entity)` ＋ 旧 `PanicGoal#canUse` 相当（直近被弾など）。**「未テイム時のみ」を厳守**（テイム済みの退避は A-3 の `fleeEntities` 系に委ねる。現状コードも `PanicGoal#canUse` に未テイム条件を AND している）。
+- 動作: `DefaultRandomPos.getPosAway` 等で逃走先を求め `WALK_TARGET` を `config.movement.escapeSpeed` でセット（`MoveToTargetSink` が消費）→ `registerGoals()` から `PanicGoal` 削除。
+
+### A-3. 退避（AvoidEntityGoal）→ Brain（**慎重に・最重要**）
+
+> **これはバニラ汎用の退避ではない**。`fleeEntities`（`Map<Mob,Predicate<Mob>>`）に動的登録された Mob からのみ逃げる本 Mod 独自の退避。結合を厳密に保つこと。
+
+現状の事実（`LittleMaidEntity.java:319-341`／`:193,1288`／`MaidTargetBehavior.java:55-62`）:
+- `fleeEntities` は `MaidTargetBehavior` が「退避が必要」と判断した危険な敵（`TargetingSystem.getDangerousEnemies`）を**削除述語付き**で登録（述語＝「死亡」または「距離 > `dangerousAvoidDistance`+4」で除去）。
+- `AvoidEntityGoal` は `entity -> fleeEntities.containsKey(entity)` で対象を選び、毎 tick 期限切れを除去、`stop()` で `navigation.stop()`。距離 `config.target.dangerousAvoidDistance`、歩行 `followSpeed`、疾走 `sprintSpeed`。
+
+置換方針（`MaidAvoidBehavior`・CORE）:
+1. **`fleeEntities` の毎 tick プルーニング（述語 true の除去）を維持**。保持場所は現状の `LittleMaidEntity` のままで可だが、§F の退避/戦闘コンポーネントへ移すと整理できる。
+2. 開始条件: `fleeEntities` 内かつ `dangerousAvoidDistance` 以内に生存 Mob が居る。
+3. 動作: 最近接の逃避対象から離れる安全位置（`DefaultRandomPos.getPosAway`/`LandRandomPos`）を求め `WALK_TARGET` を **sprintSpeed** でセット（`MoveToTargetSink` が消費）。終了時 `navigation.stop()` 相当。
+4. `registerGoals()` から `AvoidEntityGoal` 削除。
+- **検証必須**: 「強敵に囲まれ退避→距離が開けば退避解除→再ターゲット」の往復、および `MaidTargetBehavior`（攻撃）との優先・競合が旧 Goal と**同値**であることを runClient/GameTest で確認。
+
+### A-4. MultiModelEntity の Goal
+
+AI 不要なダミー表示エンティティ。`FloatGoal` のみ残すか `Swim` Behavior に揃えるかは任意（優先度低）。
+
+### A-5. 仕上げ: Activity 体系化（ADR-0003 整合）
+
+A-1〜A-3 で `registerGoals()` が空になったら、ADR-0003 が記す `CORE/FIGHT/WORK/IDLE` を実装し `customServerAiStep` で `setActiveActivityToFirstValid([FIGHT, WORK, IDLE])`。FIGHT=`MaidTargetBehavior`(+退避)、WORK=作業モード/治癒/給料/収納/搬送、IDLE=見回り/PlaySnow/Stare。これで「実装は CORE 一括」という ADR との差異も解消する（§C の個別モード Behavior と同時実施が綺麗）。
+
+**検証**: 各ステップで `./gradlew build`（CI）＋ runClient（視線追従・野良パニック・強敵退避・追従/作業との両立）。保護コアには触れない。
 
 ---
 
@@ -95,25 +128,39 @@
 **手順**:
 1. 各対象を `Grep`（クラス名／メソッド名）で全リポジトリ横断検索し、参照ゼロを再確認（コメント・docs・`mixins.json` も含む）。
 2. 削除 → `./gradlew compileJava`（CI）。マーカー interface を畳む場合は、その interface を `implements` 句から外し、メソッドを具象側に移し、呼び出し側のキャスト/import を除去。
-3. 旧 Goal 系・`ClientSetup` を指す stale ドキュメントを是正（`CLAUDE.md:16` の `entity/goal/ — AI Goal` ／ `CLAUDE.md` の `ClientSetup` 言及 ／ 本 HOWTO 旧記述）。
+3. 旧 Goal 系・`ClientSetup` を指す stale ドキュメントを是正（`CLAUDE.md:16` の `entity/goal/ — AI Goal` ／ `CLAUDE.md` の `ClientSetup` 言及 ／ 本 HOWTO 旧記述）。加えて **CLAUDE.md Architecture Notes の実在しないクラス記述**（`BlockWorkMode`/`WorkStrategy<T>`/`BlockSearch`/`SearchCondition`/`BlockReservationManager`）を実体（`BlockFinder`/`BlockFinderPD`/`ProcessDivider`/`ModeHelpers`）へ是正（E-4 と同時）。
 
 **検証**: `./gradlew build`（CI）。挙動不変なので実機検証は不要（保護コアに触れない）。
 
 ---
 
-## §C — 各 Mode の Behavior 化（✅ 完了・wrapper 方式／新規 Mode 追加手順）
+## §C — 各 Mode の個別 Behavior 化
 
-**進捗**: 6 モード（`CombatMode`/`CookingMode`/`HealerMode`/`PharmcistMode`/`RipperMode`/`TorcherMode`）は **`Mode` サブクラスのまま**、単一の `MaidWorkModeBehavior`（CORE）が `ModeManager` で選択中（`ItemMatcher` の Priority 降順）の `Mode` に `shouldExecute/start/tick/stop/resetTask` を委譲する。これにより作業軸も Brain 駆動になっている。
+**現状**: 6 モード（`Combat`/`Cooking`/`Healer`/`Pharmcist`/`Ripper`/`Torcher`）は `Mode` サブクラスで、単一の `MaidWorkModeBehavior`（CORE）が `ModeManager` 選択中（`ItemMatcher` Priority 降順）の `Mode` 1 つへ `shouldExecute/start/tick/stop` を委譲している（wrapper 方式）。
 
-**個別 Behavior 化は行わない（設計判断・ADR-0002/0003）**: 各モードを 1 つずつ独立 Behavior へ割るのではなく、`Mode` ロジックを温存して wrapper 1 枚で駆動する。理由は (1) 外部モデルパックが参照する描画 caps `caps_job`（`Mode#getJobName()`、`CombatMode` は `fencer`/`archer` を返す）契約の保護、(2) `ModeManager` のレジストリ＋Priority 判定の再利用、(3) モード追加コストの最小化。したがって「mode の Behavior 化」は **完了**（これ以上の分割は予定なし）。
+**方針: 各モードを個別 Behavior に分割する。** 以前「`caps_job` 契約のため wrapper のまま」としていたが、これは**誤り**。`caps_job` は描画時に `maid.getMode()`（＝アクティブな `Mode` オブジェクト）の `getJobName()` を読むだけ（`LittleMaidModelCaps.java:50`）で、**駆動機構（Goal/Behavior/wrapper）とは独立**。よって個別 Behavior 化に技術的ブロッカーは無い。個別化の利点: (a) 各モードが固有メモリ要件を宣言できる、(b) FIGHT/WORK 等 Activity への割当が自然、(c) wrapper の集約分岐が消える。
 
-**新しい作業モードを追加する手順（Behavior は増やさない）**:
-1. `entity/mode/` に `Mode` を継承したクラスを実装（`shouldExecute`/`tick` 等をオーバーライド。状態の永続化が必要なら `writeModeData`/`readModeData` も）。
-2. `api/mode/Mode.java` の `ENTRIES` に登録エントリを追加し、`buildXxxMode()` で `ModeType.Builder` を構築（`addItemMatcher(matcher, Priority)` で判定アイテムを定義）。
-3. 判定タグを `data/littlemaidneo/tags/items/{mode_name}_mode.json`（DataGen は `data/LMItemTagsProvider`）に、表示名を `assets/littlemaidneo/lang/{en_us,ja_jp}.json` の `mode.littlemaidneo.{Name}` に追加。
-4. `MaidWorkModeBehavior`／Brain 側は **無改修**（ModeManager 経由で自動的に駆動対象になる）。
+**唯一守るべき不変条件（ブロッカーではないが必須）**:
+- `LittleMaidEntity#getMode()`（=`HasModeImpl.getMode()`）が**アクティブな `Mode` を返し続ける**こと。描画 caps（`LittleMaidModelCaps.java:50` の `caps_job`、`:34` の `caps_isWorking`）・`TargetingSystem`（`getBattleModeType()` 参照・`TargetingSystem.java:104`、`LittleMaidEntity.java:1009` の `isBattleMode`）・永続化（`ModeManager.CODEC`・`HasModeImpl.writeModeData`）が依存。
+- モード選択（`ItemMatcher` Priority 降順マッチ・メインハンド/インベントリ走査・`equipModeItemFromInventory`）は `HasModeImpl`/`ModeManager` に**残す**（個別 Behavior が選択ロジックを各自再実装しない）。`CombatMode#getJobName()` が `fencer`/`archer` を返す契約も不変。
 
-**残課題（別管理・挙動変化を伴う）**: 一部モードの内部状態（`CombatMode` の cooldown、`HealerMode` の index 等）が未永続化でリロード時に挙動が変わる。記述量削減リファクタとは分離し「モード状態 NBT 永続化」（TODO.md）で扱う。
+**手順**:
+1. **選択と実行を分離**: `HasModeImpl` は従来どおり「アクティブモードの決定＋切替＋永続化＋caps 提供」を担い `getMode()` の意味を維持。各 `Mode` の **実行ロジック（`tick` 等）だけ**を対応 Behavior へ移す。
+2. **個別 Behavior 新設**: `entity/ai/behavior/` に `MaidCookingBehavior`/`MaidHealerBehavior`/`MaidPharmcistBehavior`/`MaidTorcherBehavior`/`MaidRipperBehavior`/`MaidCombatBehavior` を作成。
+   - `checkExtraStartConditions` =「`getMode()` が自分の担当モード ∧ `mode.shouldExecute()`」、`canStillUse` = `mode.shouldContinueExecuting()`、`start/stop/tick` ↔ `mode.startExecuting/resetTask/tick`（現 `MaidWorkModeBehavior` の写像をモード別に割るだけ）。
+   - **メモリ要件を個別宣言**: 例 Cooking/Pharmcist はかまど探索系、Combat は `ATTACK_TARGET`（`MaidTargetBehavior` が設定する `getTarget()` と整合）。
+   - 共通前提（`isStrike()`／`isEmergency()&&!enableWorkInEmergency` で抑止、`IS_WAITING` VALUE_ABSENT）は**共通基底 `AbstractMaidModeBehavior`** に括る（§E と合流）。
+3. **Activity 割当**: `MaidCombatBehavior` は FIGHT、その他作業は WORK（§A-5 の Activity 体系化と同時実施が綺麗）。
+4. **wrapper 撤去**: `MaidWorkModeBehavior` を削除し `BRAIN_PROVIDER` の登録を個別 Behavior 群へ置換。
+5. `Mode` 抽象クラスは `getJobName/getBattleModeType/getModeType/writeModeData/readModeData/shouldExecute` 等を**温存**（実行ロジックの所在が Behavior へ移るだけ。`Mode` を完全廃止して状態を Behavior に持たせる案は caps/Codec/選択との結合が大きいので段階的に）。
+
+**新しい作業モードを追加する手順（個別化後）**:
+1. `entity/mode/` に `Mode` サブクラス（caps 用 `getJobName()` 等）＋ `Mode.ENTRIES` 登録 ＋ `ItemMatcher`＋タグ（`data/LMItemTagsProvider`／`tags/items/{mode_name}_mode.json`）＋lang（`mode.littlemaidneo.{Name}`）。
+2. 対応する `Maid<Name>Behavior` を追加し `BRAIN_PROVIDER` に登録（`AbstractMaidModeBehavior` 継承なら数行）。
+
+**検証**: 各モードを 1 つずつ個別 Behavior 化→`./gradlew build`（CI）＋ runClient/GameTest で旧 wrapper と挙動同値（料理/治癒/調合/明かり/毛刈り/戦闘の各動作・武器持替時のモード切替・`caps_job` 描画）。
+
+**残課題（別管理・挙動変化を伴う）**: 一部モードの内部状態（`CombatMode` の cooldown、`HealerMode` の index 等）が未永続化。→ TODO.md「モード状態 NBT 永続化」。
 
 ---
 
@@ -147,22 +194,55 @@
 
 ---
 
-## §E — common/ パッケージの切り出し（重複委譲の共通化）
+## §E — 共通化（Mod 全体・`common/` 切り出し）
 
-**目的**: `LittleMaidEntity` と `MultiModelEntity` が **同一の委譲ボイラープレート約 16 メソッド**（`IHasMultiModel` 13 ＋ `SoundPlayable` 3 → `MultiModelCompound`/`SoundPlayableCompound`）を二重に持つのを解消する。
+**方針**: エンティティに限らず Mod 全体で重複しているスキャフォールディングを共通化する。**「ドメイン横断の真に共通な部品は新規 `common/` パッケージへ、ドメイン固有の基底は各ドメインパッケージへ」** を原則とする（全部を `common/` に押し込む神パッケージは作らない）。共通化は**スキャフォールディング（足場）だけ**を抜き、ガード条件（所有者判定・`isStrike()`・各 Behavior 固有メモリ等）はラムダ/オーバーライドで**呼び出し側に残す**。優先度は監査の payoff 順（E-2 → E-3 → E-1 → E-4 → E-5）。
 
-**制約**: 両エンティティは親クラスが異なる（`LittleMaidEntity extends TamableAnimal` / `MultiModelEntity extends PathfinderMob`）ため、**共通の基底クラスは作れない**。`MultiModelCompound`/`SoundPlayableCompound` は委譲先の **実体**（`IHasMultiModel`/`SoundPlayable` を実装した本体ロジック）であり、ここに default メソッドを足すのは不可。→ **「ホルダ interface ＋ default メソッド」**で共通化する。
+> 注: CLAUDE.md の Architecture Notes は **stale**。`BlockWorkMode`/`WorkStrategy<T>`/`BlockSearch`/`SearchCondition`/`BlockReservationManager` は**実在しない**（実体は `util/BlockFinder`〔同期 BFS〕・`util/BlockFinderPD`〔逐次 BFS・`ProcessDivider`〕・`entity/mode/ModeHelpers`・`CookingMode` 内の予約 Map のみ）。E-4 着手時に CLAUDE.md も是正する（§B のドキュメント是正に含む）。
 
-**方針（新規 `entity/common/` パッケージ）**:
-1. `entity/common/MultiModelHolder`（`extends IHasMultiModel`）を新設し、`MultiModelCompound getMultiModel();` を 1 つ宣言。`IHasMultiModel` の 13 メソッドを **default 実装**として `getMultiModel().xxx(...)` へ委譲。
-2. 同様に `entity/common/SoundHolder`（`extends SoundPlayable`）を新設し、`SoundPlayableCompound getSoundCompound();` ＋ `play`/`setConfigHolder`/`getConfigHolder` の default 委譲。
-3. `LittleMaidEntity` と `MultiModelEntity` は `implements MultiModelHolder, SoundHolder` にし、各々の **13+3 メソッド本体を削除**して `getMultiModel()`/`getSoundCompound()`（既存フィールドを返すだけ）のみ実装。
-   - `IHasMultiModel` の polymorphic 利用（3 実装：`MultiModelCompound`/`MultiModelEntity`/`DummyModelEntity`、25 ファイル参照）は **不変**。ホルダは `IHasMultiModel` のサブ型なので既存の型・キャストはそのまま通る。
-4. 併せて common 化できる候補（任意・段階的）: スポーン同期の multimodel/sound 部（`writeSpawnData`/`readSpawnData`）、`addAdditionalSaveData`/`readAdditionalSaveData` の `multiModel.writeToNbt/readFromNbt` 呼び出し。共通ヘルパ（static or default）に寄せる。
+### E-1. エンティティの multimodel/sound 委譲 → ホルダ interface（既知・中）
 
-**手順**: `entity/common/` 作成 → ホルダ interface 2 つ追加 → 両エンティティを付け替え＋重複メソッド削除 → `./gradlew compileJava`（CI）→ `runClient` でモデル/テクスチャ/ボイスが従来どおり（保護コア A/B の観測保証）を確認。
+`LittleMaidEntity` と `MultiModelEntity` が **同一の委譲 ~16 メソッド**（`IHasMultiModel` 13 ＋ `SoundPlayable` 3 → `MultiModelCompound`/`SoundPlayableCompound`）を二重に持つ。親クラスが異なり（`TamableAnimal` vs `PathfinderMob`）基底クラス共有は不可・委譲先 `MultiModelCompound` 自身が実体なので、**default メソッド付きホルダ interface**で解消する。
+- `common/MultiModelHolder`（`extends IHasMultiModel`、`MultiModelCompound getMultiModel();` ＋ 13 メソッドの default 委譲）/ `common/SoundHolder`（`extends SoundPlayable`、`SoundPlayableCompound getSoundCompound();` ＋ 3 メソッドの default 委譲）を新設。
+- 両エンティティは `implements MultiModelHolder, SoundHolder` にし、本体メソッドを削除して `getMultiModel()`/`getSoundCompound()`（既存フィールドを返すだけ）のみ実装。
+- `IHasMultiModel` の polymorphic 利用（3 実装：`MultiModelCompound`/`MultiModelEntity`/`DummyModelEntity`・25 ファイル）は不変（ホルダは `IHasMultiModel` のサブ型なので既存型/キャストはそのまま通る）。`MultiModelEntity`/`DummyModelEntity` は生存（登録済み・モデル選択画面で使用）。
+- 併せて `NetworkHandler.sendSyncMultiModel{C2S,S2C}` の同一 5 行ブロック（全 Part の `getTextureHolder` 列挙）を `collectTextureNames(IHasMultiModel)` に抽出。保護コア A のパケット**ワイヤ順は不変**に保つ。
 
-**注意**: `MultiModelEntity`/`DummyModelEntity` は **生きている**（`MULTI_MODEL_ENTITY`/`DUMMY_MODEL_ENTITY` として登録・モデル選択画面で使用）。デッドコードではないので付け替え対象に含める。
+### E-2. ネットワーク: 所有者検証ハンドラ＋ codec 定型（最高 payoff）
+
+`network/` の C2S ハンドラ 9 種が「`enqueueWork` → `level.getEntity(id)` → `instanceof LittleMaidEntity` → 所有者 UUID 照合 → 実行」の同型コードを反復（`getEntity` 9×、所有者ガード `getTameOwnerUuid(maid).filter(...player.getUUID()...)` 4× 他）。さらに 6 record が entity-id codec（`StreamCodec.composite(ByteBufCodecs.VAR_INT, X::entityId, …)`）をほぼ同一に持ち、`LMSoundPayload`/`SyncSoundPackPayload` は `writeInt` と `VAR_INT` が**不統一**。
+- `network/PayloadHandlers`（static）に `onOwnedMaid(IPayloadContext, int entityId, BiConsumer<ServerPlayer, LittleMaidEntity>)` を新設し、足場を 1 箇所へ。各ハンドラはラムダ 1 行に縮む。非メイド系（`SoundPlayable`/`TargetTagManager`）向けに `resolveEntity(ctx, id, Class<E>, BiConsumer)` も。
+- entity-id codec ファクトリで `VAR_INT, ::entityId` の反復を除去し、ついでに `writeInt`/`VAR_INT` 不統一を是正。
+- **セキュリティ注意**: 所有者チェックを 1 本化する作業のため、各ハンドラ固有の差（`isStrike()` ゲート・`TamableAnimal`/`OwnableEntity` キャスト・target-tag の Attachment フォールバック）はラムダ側に**必ず保持**。~120–150 行削減＋判定の一貫性向上。
+
+### E-3. 画面: `AbstractFilterableListScreen` 基底＋`drawScrollingText` 共通化（低リスク・client 限定）
+
+`MaidManagerScreen`/`TargetTagScreen`/`SoundPackSelectScreen` が単一 `FilterableListGUI` への 6 イベント転送（`mouseClicked`/`Released`/`Dragged`/`Scrolled`/`keyPressed`/`charTyped`）をほぼ同一本体で持つ。マーキー描画 `drawScrollingText`（scissor＋時間スクロール）は `MaidManagerScreen` と `TargetTagScreen` に**ほぼ重複実装**（既に構造がドリフト）。
+- `client/screen/AbstractFilterableListScreen<T extends GUIElement> extends Screen`（`protected FilterableListGUI<T> list`＋6 転送＋`abstract buildList()`＋`renderBackground` フック）を新設し 3 画面を薄く（各 ~40 行減）。
+- `drawScrollingText` を `client/util/ClientScreenHelper`（既存・client 静的ヘルパ）へ移し 1 実装に。`ModelSelectScreen`/`SoundPackSelectScreen` 共通の GUI テクスチャ/サイズ定数も定数ホルダへ。
+- **GUI コンポーネント層（`GUIElement→ListGUI→ScrollableListGUI→FilterableListGUI`）は既に良く factored されているので触らない**。`ModelSelectScreen`（二重リスト）は対象外。
+
+### E-4. 作業モード: 接近＋recalc 共通ヘルパ＋BFS 重複解消（中）
+
+「範囲外なら recalc カウントダウンで経路生成し `moveTo`、範囲内なら `navigation.stop()` して作業」の定型が 5 モード＋behavior に各自のタイマー（`timeToRecalcPath`/`recalcPathTimer`/`pathReCalcCool`/`recalcPathCool`）でコピーされている（`CookingMode:241`/`PharmcistMode:86`/`TorcherMode:159`/`RipperMode:89`/`CombatMode:204`/`MaidCollectSalary:123`）。経路有効性ガード（`endNode.closerThan` 等）も複数で同一。
+- `entity/mode/ModeNavigation`（static）or `ModeHelpers` 拡張に `approachOrStop(...)` / 小さな `RecalcWalker` を新設。`MaidCollectSalary`/`MaidMoveToDropItem` でも再利用。
+- BFS 重複: `BlockFinder.searchTargetBlock`（同期）と `BlockFinderPD.tick`（逐次）が同じ seed/searched/linkable BFS を二重実装 → `BlockFinderPD` を単一ソースにし `searchTargetBlock` を `while(!isEnd()) tick()` の薄いラッパに。
+- **共通化しない**: `HealerMode`/`PharmcistMode` のドメインロジック（食料/ポーション効果評価・醸造スロット状態機械）、`CombatMode.RangedStyle` の strafe/charge は意味的に固有。reach 閾値（1.75/3×3/BB 距離）・melee の `moveTo(target,speed)` 差はパラメタ化して吸収（強制統一しない）。
+
+### E-5. Brain behavior: `AbstractMaidBehavior` 基底（§C と合流）
+
+13 behavior 中 7 つが `super(ImmutableMap.of(IS_WAITING, VALUE_ABSENT))` を同一コードで持ち、全 behavior が `canStillUse` を「default の `false` で `tick()` が呼ばれない」フットガン回避のため override（同趣旨コメントが ~5× コピペ）。`WALK_TARGET`＋`EntityTracker` 構築も 3×。
+- `entity/ai/behavior/AbstractMaidBehavior extends Behavior<LittleMaidEntity>`（`IS_WAITING VALUE_ABSENT` を既定マージするコンストラクタ＋permissive な `canStillUse` 既定＋`walkTo(target, speed, closeEnough)` ヘルパ）を新設。§C の作業モード個別 Behavior 化の共通基底（`AbstractMaidModeBehavior`）もこれに乗せる。
+- **注意**: 必要メモリは behavior ごとに違い、`Wait`(IS_WAITING PRESENT)/`Trace`/`Target` は固有 `canStillUse` が要る。基底は permissive＋opt-in にし、意味差を潰さない（line 削減より footgun 除去とエルゴノミクスが主目的）。
+
+### 対象外（監査で確認・蒸し返さない）
+
+- `config/LMRBConfig` の define ブロック↔`bake()`: NeoForge `ModConfigSpec` の二相パターン（仕様定義 vs ベイク）であり重複ではない。
+- `data/LM*Provider`: NeoForge の定型サブクラスで重複ではない。
+- `resource/manager/*`（`LMModelManager`/`LMTextureManager`/`LMConfigManager`/`LMSoundManager`）の `INSTANCE`＋小文字キー Map: 共通面が薄く差異が実質的（~15-20 行のみ）。触るついでに `LowercaseRegistry` 基底にする程度（低優先）。`resource/loader/` は `LMLoader`＋`LMFileLoader` で既に Strategy 化済み・保護コア B 隣接のため触らない。
+- `entity/util` の interface+Impl ペア: 委譲シーム（意図的分割）であり共通化対象ではない（むしろ §B のインライン候補）。
+
+**手順（各項目共通）**: 足場を抽出（`common/` or ドメインパッケージ）→ ガードは呼び出し側に残す → `./gradlew build`（CI）→ 影響系の検証（E-2 はマルチで所有者判定・各 setter、E-3 は runClient で GUI 操作、E-4 は各モード動作、E-1/E-5 は描画/AI 同値）。保護コア A/B の観測保証（描画・ボイス・パケットワイヤ順）を厳守。
 
 ---
 
@@ -192,7 +272,8 @@
 | Payload Networking（`StreamCodec`） / Deferred Register / Data Attachments / Mixin / TOML / Mojang mappings / moddev / 並行ロード / BlockState | ✅ 採用済 | `network/`, `setup/ModRegistration`, `build.gradle.kts` 等 |
 | `ValueInput/Output`＋Codec 永続化 | ✅ 採用済 | 旧 `getOrCreateTag` 等は不使用 |
 | Codec（`MaidMode` / `ModeManager` / `MaidSoulData`） | ✅ 採用済 | ADR-0002 |
-| Brain AI（移動・戦闘・作業・補助の全面移行） | ✅ 採用済 | ADR-0003。`entity/ai/behavior/` 13 種・全 CORE。残置はバニラ補助 Goal のみ（§A） |
+| Brain AI（移動・戦闘・作業・補助） | ⚠️ 大半採用・残件あり | ADR-0003。`entity/ai/behavior/` 13 種・全 CORE。`registerGoals()` にバニラ補助 Goal（視線/パニック/退避）残存→**§A で全廃予定**。Activity 分割（CORE/FIGHT/WORK/IDLE）も未実装→§A-5/§C |
+| 作業モードの Behavior 化 | ⚠️ wrapper 方式 | 単一 `MaidWorkModeBehavior`→**§C で個別 Behavior へ分割予定** |
 | DataGen（model/blockstate/lang/tag/recipe/loot/advancement） | ✅ 採用済 | `data/LMModelProvider` ほか |
 | Brigadier コマンド | ✅ 採用済 | `command/LMCommands` |
 | DataFixer（MaidSoul/エンティティ NBT 限定） | ✅ 採用済 | `entity/soul/MaidDataFixer` |

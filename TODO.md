@@ -17,11 +17,14 @@
 > 背景: Brain AI 移行後のクリーンアップ。低リスクから消化する。推奨順 **§B → §E → §F → §D**（§A/§C は完了済み・状況のみ）。詳細手順は `HOWTO.md` の対応節。
 > ⚠️ ローカル JDK25 不在環境では検証は CI（Java25）が前提。保護コアに触れる §D/§E は `runClient` 実機確認を併用。
 
-### §A — Goal の AI(Brain)化 … ✅ ほぼ完了（HowTo 不要）
+### §A — Goal の AI(Brain)化（残存バニラ Goal を全廃）… → HOWTO §A
 
-- **進捗**: カスタム Goal は全廃。行動は Brain Behavior（`entity/ai/behavior/Maid*Behavior` 13 種）で駆動。`entity/goal/` パッケージ・`ModeWrapperGoal` 削除済み（ソース参照ゼロ）。`Float`→`Swim` / `OpenDoor`→`InteractWithDoor` も Behavior 化。
-- **意図的に残置（機能的問題なし・あえて Goal）**: `LittleMaidEntity#registerGoals()` の `AvoidEntityGoal`/`PanicGoal`/`LookAtPlayerGoal`×2/`RandomLookAroundGoal`（視線は `LOOK_TARGET` プロデューサ不在のため Behavior 化しない設計判断）。`MultiModelEntity#registerGoals()` の `FloatGoal`+`LookAtPlayerGoal`×2（ダミー表示エンティティ）。
-- [ ] **（任意・低）ADR と実装の差異是正**: ADR-0003 は `CORE/FIGHT/WORK/IDLE` の 4 Activity を記すが、実装は **全 Behavior が CORE に一括**で Activity 分割は未実装。挙動は正常なので、ADR を実態に合わせるか分割を実装してから ADR を正とするか、どちらか（任意）。
+- **進捗**: カスタム Goal は全廃済み（`entity/goal/`・`ModeWrapperGoal` 削除・参照ゼロ、`Float`→`Swim`/`OpenDoor`→`InteractWithDoor` も Behavior 化）。**ただし `registerGoals()` にバニラ補助 Goal が残存**。これも Brain へ移し `registerGoals()` を空にするのがゴール。
+- [ ] 視線（`LookAtPlayerGoal`×2/`RandomLookAroundGoal`）→ `SetEntityLookTarget`＋`LookAtTargetSink`（`LOOK_TARGET`/`NEAREST_VISIBLE_PLAYER` メモリとプロデューサを追加し、旧「no-op だから未登録」判断を解禁）。HOWTO §A-1。
+- [ ] パニック（`PanicGoal`・**未テイム時のみ**）→ カスタム `MaidPanicBehavior`（`escapeSpeed` で逃走）。HOWTO §A-2。
+- [ ] **退避（`AvoidEntityGoal`）→ `MaidAvoidBehavior`（慎重に）**: バニラ汎用ではなく `fleeEntities`（`MaidTargetBehavior` が動的登録）からのみ逃げる独自退避。述語プルーニング・距離/速度・competing との同値を厳守。HOWTO §A-3。
+- [ ] `MultiModelEntity#registerGoals()` の `FloatGoal`+`LookAtPlayerGoal`×2（ダミー表示・優先度低）。
+- [ ] 仕上げ: `registerGoals()` 空化後に `CORE/FIGHT/WORK/IDLE` の Activity 体系化を実装し ADR-0003 と整合（§C と同時実施が綺麗）。HOWTO §A-5。
 
 ### §B — デッドコード削除 … → HOWTO §B（低リスク・即効）
 
@@ -32,12 +35,14 @@
 - [ ] `mixin/MixinPlayerEntity` の空 `@Inject` 2 件（`<init>` / `stopSleepInBed`）削除（§D と同時でも可）。
 - [ ] （要確認）`util/BlockFinder` の `findTarget`/`findHorizonPos`/`findLayer`/`findHorizon`（未使用の疑い・`//多分動かん`）— call-site 再確認のうえ削除。
 - [ ] （任意・低）単一実装マーカー interface のインライン化: `HasMaidMode`/`Contractable`/`HasMode`/`GuiEntitySupplier`（polymorphic 利用ゼロ）。`HasInventory`/`SalaryBoxPosListener`/`LMCollidable`/`ProcessDivider` は load-bearing で残す。
-- [ ] stale ドキュメント是正: `CLAUDE.md:16` の `entity/goal/ — AI Goal`（削除済みパッケージ）／`CLAUDE.md` の `ClientSetup` 言及。
+- [ ] stale ドキュメント是正: `CLAUDE.md:16` の `entity/goal/ — AI Goal`（削除済みパッケージ）／`CLAUDE.md` の `ClientSetup` 言及／**`CLAUDE.md` Architecture Notes が実在しないクラス（`BlockWorkMode`/`WorkStrategy<T>`/`BlockSearch`/`SearchCondition`/`BlockReservationManager`）を前提に記述**（実体は `util/BlockFinder`・`BlockFinderPD`・`ProcessDivider`・`ModeHelpers`）→ E-4 と同時に是正。
 
-### §C — 各 Mode の Behavior 化 … ✅ 完了（wrapper 方式）→ HOWTO §C（新規 Mode 追加手順）
+### §C — 各 Mode の個別 Behavior 化 … → HOWTO §C
 
-- **進捗**: 6 モード（`Combat`/`Cooking`/`Healer`/`Pharmcist`/`Ripper`/`Torcher`）は `Mode` サブクラスのまま、単一 `MaidWorkModeBehavior`（CORE）が `ModeManager` 選択中（Priority 降順）の `Mode` へ委譲。`caps_job` 契約・外部パック互換のため個別 Behavior 化は **行わない**（ADR-0002/0003 の設計判断）＝完了扱い。
-- 新規モードは `Mode` サブクラス＋`Mode.ENTRIES` 登録＋`ItemMatcher`＋タグ＋lang で追加（Brain 側無改修）。手順は HOWTO §C。
+- **現状**: 6 モード（`Combat`/`Cooking`/`Healer`/`Pharmcist`/`Ripper`/`Torcher`）は単一 `MaidWorkModeBehavior`（CORE）が `ModeManager` 選択中の `Mode` 1 つへ委譲する wrapper 方式。
+- **方針転換**: 「`caps_job` 契約のため wrapper のまま」は**誤り**だった。`caps_job` は `maid.getMode()` の `getJobName()` を読むだけ（`LittleMaidModelCaps.java:50`）で駆動機構と独立 → 個別 Behavior 化にブロッカー無し。**各モードを個別 Behavior に分割する**。
+- [ ] `MaidCookingBehavior`/`MaidHealerBehavior`/`MaidPharmcistBehavior`/`MaidTorcherBehavior`/`MaidRipperBehavior`/`MaidCombatBehavior` を新設し `MaidWorkModeBehavior` を撤去。共通前提は `AbstractMaidModeBehavior` 基底へ（§E と合流）。Combat は FIGHT、他は WORK Activity。
+- **不変条件（必須）**: `getMode()` がアクティブ `Mode` を返し続けること（caps_job/`caps_isWorking`/`TargetingSystem.getBattleModeType`/Codec 永続化が依存）。選択ロジック（ItemMatcher Priority・`equipModeItemFromInventory`）は `HasModeImpl`/`ModeManager` に残す。`CombatMode#getJobName()`=`fencer`/`archer` 契約不変。
 
 ### §D — Mixin の整理・脱 Mixin … → HOWTO §D（中リスク）
 
@@ -49,11 +54,16 @@
 - [ ] （任意）`MixinAbstractFurnaceBlockEntity.isBurningFire_LM` → ブロックステート `LIT` 由来にして `@Shadow` 削減。
 - 注意: Mixin 撤去時は `littlemaidneo.mixins.json` の登録も同時削除。命名 `_LM`/`_LMRB` 混在は `_LM` へ寄せると一貫（任意）。
 
-### §E — common/ パッケージ切り出し … → HOWTO §E（低〜中リスク）
+### §E — 共通化（Mod 全体・`common/` 切り出し）… → HOWTO §E
 
-- [ ] `LittleMaidEntity` と `MultiModelEntity` が重複する `IHasMultiModel`(13)＋`SoundPlayable`(3) の委譲 ~16 メソッドを共通化。
-- 方針: 親クラスが異なり（`TamableAnimal` vs `PathfinderMob`）基底共有不可 → `entity/common/MultiModelHolder`・`entity/common/SoundHolder`（default メソッド付きホルダ interface）を新設。両エンティティは `getMultiModel()`/`getSoundCompound()` のみ実装し本体メソッドを削除。`IHasMultiModel` の polymorphic 利用（3 実装・25 ファイル）は不変。
-- [ ] 併せて切り出し: スポーン同期（`writeSpawnData`/`readSpawnData`）の multimodel/sound 部、テクスチャ/ボイス初期化。
+> 方針: エンティティに限らず Mod 全体の重複スキャフォールディングを共通化。横断的部品は `common/`、ドメイン固有基底は各ドメインパッケージへ（神パッケージ化しない）。足場のみ抽出しガードは呼び出し側に残す。payoff 順: E-2 → E-3 → E-1 → E-4 → E-5。
+
+- [ ] **E-2 ネットワーク（最高 payoff）**: C2S ハンドラ 9 種の「entity 解決→所有者 UUID 照合→実行」定型と 6 record の codec 定型を `network/PayloadHandlers.onOwnedMaid(...)` ＋ codec ファクトリへ。`writeInt`/`VAR_INT` 不統一も是正。所有者判定の一貫性向上（~120-150 行減）。固有ガード（`isStrike` 等）はラムダに残す。
+- [ ] **E-3 画面（低リスク）**: `MaidManagerScreen`/`TargetTagScreen`/`SoundPackSelectScreen` の 6 イベント転送を `client/screen/AbstractFilterableListScreen<T>` 基底へ。二重実装の `drawScrollingText` を `client/util/ClientScreenHelper` に 1 本化。GUI コンポーネント層は触らない。
+- [ ] **E-1 エンティティ委譲**: `LittleMaidEntity`/`MultiModelEntity` 重複の `IHasMultiModel`(13)＋`SoundPlayable`(3) を `common/MultiModelHolder`・`common/SoundHolder`（default メソッド付き）で解消。`NetworkHandler.sendSyncMultiModel{C2S,S2C}` の同一ブロックも `collectTextureNames()` 抽出。パケットワイヤ順不変。
+- [ ] **E-4 作業モード**: 5 モード＋behavior の「接近＋recalc カウントダウン」定型を `ModeNavigation.approachOrStop()`／`RecalcWalker` へ。`BlockFinder.searchTargetBlock`↔`BlockFinderPD.tick` の BFS 二重実装を `BlockFinderPD` 単一ソース化。ドメインロジック（治癒/醸造/strafe）は共通化しない。
+- [ ] **E-5 Behavior 基底**: 13 behavior 共通の `IS_WAITING VALUE_ABSENT` コンストラクタ・`canStillUse` フットガン・`WALK_TARGET`+`EntityTracker` 構築を `AbstractMaidBehavior` 基底＋`walkTo()` へ（§C の `AbstractMaidModeBehavior` もここに乗せる）。
+- 対象外（監査確認済）: `LMRBConfig` 二相パターン／`data/LM*Provider`／`resource/manager` 小文字キー Map（差異実質的）／`resource/loader`（Strategy 済・保護コア B 隣接）／`entity/util` の interface+Impl（意図的分割）。
 
 ### §F — LittleMaidEntity の分割 … → HOWTO §F（中リスク）
 
@@ -118,5 +128,4 @@
 - `resource/classloader/`・`maidmodel/`・`GLCompat`・`EntityLittleMaid` スタブ。
 - 保護コア B（ボイスパック形式・`LMSounds`・探索パス・同期パケット形式）。
 - 移動モード旧 byte 形式の後方互換（ADR-0002 で非対応宣言済み）。
-- 各 `Mode` の個別 Behavior 化（`caps_job` 契約保護のため wrapper 方式を採用・§C）。
 - Forge Energy（概念非該当）。
