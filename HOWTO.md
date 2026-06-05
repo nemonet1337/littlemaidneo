@@ -46,6 +46,8 @@
 - パケットは全 15 種が `StreamCodec`（`network/`）。登録は `network/NetworkHandler.register(RegisterPayloadHandlersEvent)`。
 - `DeferredRegister` は **`setup/ModRegistration.java`** に集約、`LittleMaidNeo` コンストラクタで `register(modEventBus)`。
 - **AI 現状（ADR-0002 / ADR-0003）**: 移動軸 `MaidMode`・補助行動は **Brain Behavior へ全面移行済み**（`entity/ai/behavior/Maid*Behavior` 13 種）。**全 Behavior は CORE Activity に一括登録**（FIGHT/WORK/IDLE への分割は未実装。ADR-0003 の Activity 体系化記述は将来像であり実装と差異あり＝§A 参照）。作業軸は**現状は `MaidWorkModeBehavior`→`Mode` 委譲の 2 層構造だが、§C で `Mode`・`ItemMatcher`・`ModeType`・`ModeManager`・`HasModeImpl` を完全廃止し各 Behavior が直接 AI＋アイテム識別を保持する形へ移行する**（`ModeWrapperGoal` は廃止済み・`entity/goal/` 削除済み）。現時点で `getMode()`/`hasModeImpl`/`ModeManager.CODEC` が caps_job/targeting/Codec に依存しているが、§C 完了後はすべて `ACTIVE_JOB_NAME`/`ACTIVE_BATTLE_MODE` メモリ＋`PersistentMaidBehavior` へ置き換わる。`registerGoals()` にはバニラ補助 Goal（`AvoidEntityGoal`/`PanicGoal`/`LookAtPlayerGoal`×2/`RandomLookAroundGoal`）が**残存**（→ §A で Brain へ全廃予定）。
+- **カスタム criteria（`advancement/criterion/`）は廃止不可（調査済み）**: `ContractMaidCriterion`/`ResurrectMaidCriterion` の 2 件は契約・復活の進行条件として正常実装・動作中（`RegisterEvent` + `CriteriaTriggers.register` 方式・NeoForge 26.x 準拠・DataGen 連動）。残存理由は明確であり対応不要。
+- **`network/` は NeoForge 現行 API 準拠済み**（廃止 API なし）。ただし entityId エンコーディング不統一・C2S 定型重複・手書き encode/decode 3 件の課題あり → §E-2 参照。
 - API 調査は `mc-api-research` エージェント必須。NeoForge/Mojang マッピングのメソッド名はバージョンで変わる。ライブラリ Doc は Context7 MCP 優先。
 
 ### 0.5 検証（コミット前に必ず）
@@ -57,7 +59,7 @@
 6. `runGameTestServer`（namespace `littlemaidneo`）で回帰確認
 
 ### 0.6 推奨実施順（依存関係）
-モダン化 WS1〜5（Brain AI / Codec / DataGen / Brigadier / DataFixer）は**完了済み**。本書は後続の内部整理 §A〜§F を扱う。推奨順は **§B（デッドコード削除・最低リスク）→ §E（common 切り出し）→ §F（LittleMaidEntity 分割）→ §D（Mixin 整理）→ §C（Mode 個別 Behavior 化）→ §A（残存 Goal 全廃＋Activity 体系化）**。AI に深く関わる §C・§A は最高リスクのため最後に集中（§C は §E の `AbstractMaidModeBehavior` 基底に乗ると楽、§A-5 の Activity 体系化は §C と同時実施が綺麗）。各区切り＝1 コミット。重要な設計判断は `/doc` で `docs/adr/` に記録し CLAUDE.md の該当節も同コミットで更新する。
+モダン化 WS1〜5（Brain AI / Codec / DataGen / Brigadier / DataFixer）は**完了済み**。本書は後続の内部整理 §A〜§G を扱う。推奨順は **§B（デッドコード削除・最低リスク）→ §G-1（単一クラスディレクトリ平坦化・同低リスク）→ §E（common 切り出し）→ §F（LittleMaidEntity 分割）→ §D（Mixin 整理）→ §C（Mode/ItemMatcher 廃止・最高リスク）→ §G-2（`api/` 廃止・§C と同時）→ §A（残存 Goal 全廃＋Activity 体系化）**。AI に深く関わる §C・§A は最高リスクのため最後に集中（§C は §E の `AbstractMaidBehavior` 基底に乗ると楽、§A-5 の Activity 体系化は §C と同時実施が綺麗）。各区切り＝1 コミット。重要な設計判断は `/doc` で `docs/adr/` に記録し CLAUDE.md の該当節も同コミットで更新する。
 
 ---
 
@@ -255,6 +257,7 @@ C-2 で全 Behavior が揃い CI が通ってから 1 コミットで実施。
   - `readAdditionalSaveData`（旧 `maidList` NBT 移行）→ 移行が不要になれば削除、必要なら最小限の読込フックへ。
   - → これでファイルごと撤去できる見込み（状態は既に `MAID_MANAGER_ATTACHMENT`/`TARGET_TAG_ATTACHMENT` にあり、本 Mixin は orchestration のみ）。
 - `MixinCandleCakeBlock`（`useItemOn` HEAD インジェクトで復活儀式）→ `UseItemOnBlockEvent`（ブロック右クリックの正準的フック・`cancelWithResult` で同等にキャンセル）。ファイルごと撤去。
+  - **⚠️ 要確認（実装前にテストせよ）**: 監査ツールは HEAD インジェクトと `UseItemOnBlockEvent` のタイミングが一致しない可能性を指摘。代替前に GameTest で「着火→Maid 復活」の動作を確認し、イベントが同じタイミング・キャンセル効果を再現できることを実証してから撤去する。再現できない場合は KEEP 扱いとし §D から除外。
 
 **統合・移設**:
 - `MixinCrossBowItem`（`getInterval_LMRB` を override するだけ）→ `MixinRangedWeaponItem` に `instanceof CrossbowItem` 分岐として畳み、`MixinCrossBowItem` を削除（Mixin 1 件減）。`mixins.json` から登録も削除。
@@ -282,10 +285,17 @@ C-2 で全 Behavior が揃い CI が通ってから 1 コミットで実施。
 
 ### E-2. ネットワーク: 所有者検証ハンドラ＋ codec 定型（最高 payoff）
 
-`network/` の C2S ハンドラ 9 種が「`enqueueWork` → `level.getEntity(id)` → `instanceof LittleMaidEntity` → 所有者 UUID 照合 → 実行」の同型コードを反復（`getEntity` 9×、所有者ガード `getTameOwnerUuid(maid).filter(...player.getUUID()...)` 4× 他）。さらに 6 record が entity-id codec（`StreamCodec.composite(ByteBufCodecs.VAR_INT, X::entityId, …)`）をほぼ同一に持ち、`LMSoundPayload`/`SyncSoundPackPayload` は `writeInt` と `VAR_INT` が**不統一**。
-- `network/PayloadHandlers`（static）に `onOwnedMaid(IPayloadContext, int entityId, BiConsumer<ServerPlayer, LittleMaidEntity>)` を新設し、足場を 1 箇所へ。各ハンドラはラムダ 1 行に縮む。非メイド系（`SoundPlayable`/`TargetTagManager`）向けに `resolveEntity(ctx, id, Class<E>, BiConsumer)` も。
-- entity-id codec ファクトリで `VAR_INT, ::entityId` の反復を除去し、ついでに `writeInt`/`VAR_INT` 不統一を是正。
-- **セキュリティ注意**: 所有者チェックを 1 本化する作業のため、各ハンドラ固有の差（`isStrike()` ゲート・`TamableAnimal`/`OwnableEntity` キャスト・target-tag の Attachment フォールバック）はラムダ側に**必ず保持**。~120–150 行削減＋判定の一貫性向上。
+**調査で確認された問題点（network/ は NeoForge 現行 API 準拠済み・廃止 API なし）:**
+1. **定型コード重複**: C2S ハンドラ 8 種が `enqueueWork → level.getEntity(id) → instanceof LittleMaidEntity → 所有者 UUID 照合 → 実行` を約 54 行繰り返す。
+2. **entityId エンコーディング不統一**: `SyncMultiModelPayload`/`SyncSoundPackPayload` が `buf.writeInt()`（固定 4 バイト）、他 8 payload が `ByteBufCodecs.VAR_INT`（可変）。これら 2 つは高頻度送信 payload なので無駄がある。
+3. **手書き encode/decode**: `SyncMultiModelPayload`/`SyncSoundPackPayload`/`LMSoundPayload` が手書きで `encode`/`decode` を実装。他は `StreamCodec.composite()` で自動生成。保守性が低い。
+4. **`RegistryFriendlyByteBuf` vs `FriendlyByteBuf` 混在**: レジストリ依存のある 3 payload と依存のない残りで型が混在。
+
+**対処方針:**
+- `network/PayloadHandlers`（static）に `onOwnedMaid(IPayloadContext, int entityId, BiConsumer<ServerPlayer, LittleMaidEntity>)` を新設し、定型を 1 箇所へ。各ハンドラはラムダ 1 行に縮む。非メイド系（`SoundPlayable`/`TargetTagManager`）向けに `resolveEntity(ctx, id, Class<E>, BiConsumer)` も。
+- `SyncMultiModelPayload`/`SyncSoundPackPayload` を `StreamCodec.composite()` + `VAR_INT` に統一。手書き encode/decode を廃止。
+- `RegistryFriendlyByteBuf` vs `FriendlyByteBuf` の使い分けを整理（レジストリ依存が本当に必要なものだけ前者を使う）。
+- **セキュリティ注意**: 所有者チェック一本化の作業のため、各ハンドラ固有の差（`isStrike()` ゲート・`TamableAnimal`/`OwnableEntity` キャスト・target-tag の Attachment フォールバック）はラムダ側に**必ず保持**。~120–150 行削減＋判定の一貫性向上。
 
 ### E-3. 画面: `AbstractFilterableListScreen` 基底＋`drawScrollingText` 共通化（低リスク・client 限定）
 
@@ -334,6 +344,104 @@ C-2 で全 Behavior が揃い CI が通ってから 1 コミットで実施。
 **注意**: `initGoals()`/`registerGoals()` は `Mob` コンストラクタ内で呼ばれサブクラスのフィールドが未初期化。外部委譲する場合はラムダで遅延参照する（CLAUDE.md）。NBT 入出力は `ValueOutput`/`ValueInput`＋Codec を踏襲。
 
 **検証**: 1 クラスタ移すごとに `./gradlew build`（CI）＋ 該当機能の GameTest／`runClient` 目視（戦闘・加速・ボイス・描画）。挙動同値を確認してから次へ。
+
+---
+
+## §G — ディレクトリ・クラス数の削減（構造刷新）
+
+**現状**: 36 ディレクトリ・220 Java ファイル。単一クラスしか入っていないディレクトリが 9 個あり、機能の散らばりが大きい。§C 完了で `api/mode/` と `entity/mode/` が消え自然に縮むが、それ以外にも平坦化できる箇所がある。
+
+**不変原則**: `maidmodel/`・`resource/classloader/` は保護コア A の ASM リマップ基盤であり、ディレクトリ構造含め移動厳禁。`multimodel/` と `resource/` の内部構造も極力保持する。
+
+---
+
+### G-1. 単一クラスディレクトリの平坦化（低リスク・import 変更のみ）
+
+| 現在のパス | ファイル | 移動先 |
+|---|---|---|
+| `entity/ai/control/MaidLookControl.java` | 1 | `entity/ai/` |
+| `entity/ai/sensor/LittleMaidSensor.java` | 1 | `entity/ai/` |
+| `client/key/LMKeys.java` | 1 | `client/` |
+| `client/network/ClientNetworkHandler.java` | 1 | `client/` |
+| `client/resource/loader/` | 1 | `client/resource/` |
+| `client/resource/manager/` | 1 | `client/resource/` |
+
+**手順**: ファイルを移動 → import を一括置換 → `./gradlew compileJava` でエラーゼロを確認。1 ディレクトリ＝1 コミット。
+
+---
+
+### G-2. `api/` パッケージ廃止（§C 完了後）
+
+§C で `api/mode/` の全クラスが削除されると `api/` が空になる。
+
+- `IRangedWeapon` interface（`MixinRangedWeaponItem` が `implements` に使用）を `entity/ai/behavior/` または `util/` へ移設してから `api/mode/` → `api/` の順で削除。
+- §C-3 の「全撤去」コミットに含めてよい。
+
+---
+
+### G-3. 誤配置の是正
+
+- **`mixin/CrossbowItemInvoker.java`**: `@Mixin` 注釈なし・`mixins.json` 未登録。Mixin ではなくただのユーティリティクラス。`util/` 配下（例: `util/CrossbowSpeedUtil`）へ移設、または唯一の呼び出し元（`LittleMaidEntity.java`）へ定数をインライン化して削除。§D と同時実施が自然。
+- **`criteria/` または `advancement/criterion/`**: `ContractMaidCriterion`/`ResurrectMaidCriterion` は正しく実装・使用中（契約/復活の進行条件）。廃止不可。残存理由は明確なのでこれ以上調査しない。
+
+---
+
+### G-4. `setup/` の整理（ClientSetup 削除後）
+
+`setup/ClientSetup.java` は §B で削除済み（または予定）。残るのは `ModSetup.java` + `ModRegistration.java` の 2 ファイル。
+
+- `ModSetup` が薄い場合（`LittleMaidNeo` コンストラクタから数行呼ぶだけ）: `LittleMaidNeo.java` へインライン化し `ModSetup` を削除 → `setup/` が `ModRegistration` のみになれば、`ModRegistration` をルート直下（または `setup/` 維持）に移して `setup/` 廃止を検討。
+- `ModRegistration` は巨大なため安易に移動しない。`setup/` が `ModRegistration` 専用パッケージとして機能しているなら残してよい。
+
+---
+
+### G-5. 目標パッケージ構造（§C・§G 完了後の想定）
+
+```
+work.nemonet.littlemaidneo/
+├── LittleMaidNeo.java
+├── LittleMaidNeoClient.java
+├── entity/
+│   ├── LittleMaidEntity.java
+│   ├── MultiModelEntity.java
+│   ├── MaidSoulEntity.java
+│   ├── EntityLittleMaid.java       ← 保護コア A スタブ・移動不可
+│   ├── ai/
+│   │   ├── behavior/               ← Maid*Behavior 群（§C 後に増加）
+│   │   ├── MaidLookControl.java    ← G-1 で移動
+│   │   └── LittleMaidSensor.java   ← G-1 で移動
+│   ├── compound/                   ← IHasMultiModel 等（§E-1 で整理）
+│   ├── soul/
+│   ├── targeting/
+│   └── util/
+├── block/
+├── item/
+├── network/                        ← NetworkHandler + Payload 群（§E-2 で整理）
+├── client/
+│   ├── LMKeys.java                 ← G-1 で移動
+│   ├── ClientNetworkHandler.java   ← G-1 で移動
+│   ├── renderer/
+│   ├── screen/
+│   │   ├── component/
+│   │   └── AbstractFilterableListScreen.java  ← §E-3 で追加
+│   ├── resource/                   ← G-1 で loader/manager を統合
+│   └── util/
+├── maidmodel/                      ← 保護コア A・移動不可
+├── multimodel/                     ← 保護コア A・極力維持
+├── resource/                       ← 保護コア A/B・維持
+├── mixin/
+├── config/
+├── data/
+├── setup/                          ← ClientSetup 削除後 2 ファイル以下
+├── tags/
+├── advancement/
+├── command/
+└── util/
+```
+
+削減目標: **36 → 約 24 ディレクトリ**（-12）、**220 → 約 185 ファイル**（§C/§B/§G 合計で -35 前後）。
+
+**検証（G-1 平坦化）**: 移動は `./gradlew compileJava` + `./gradlew build`（CI）のみで十分（動作変更なし）。G-2/G-4 は §C/§B との同コミットで可。
 
 ---
 

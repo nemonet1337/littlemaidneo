@@ -35,7 +35,8 @@
 - [ ] `mixin/MixinPlayerEntity` の空 `@Inject` 2 件（`<init>` / `stopSleepInBed`）削除（§D と同時でも可）。
 - [ ] （要確認）`util/BlockFinder` の `findTarget`/`findHorizonPos`/`findLayer`/`findHorizon`（未使用の疑い・`//多分動かん`）— call-site 再確認のうえ削除。
 - [ ] （任意・低）単一実装マーカー interface のインライン化: `HasMaidMode`/`Contractable`/`HasMode`/`GuiEntitySupplier`（polymorphic 利用ゼロ）。`HasInventory`/`SalaryBoxPosListener`/`LMCollidable`/`ProcessDivider` は load-bearing で残す。
-- [ ] stale ドキュメント是正: `CLAUDE.md:16` の `entity/goal/ — AI Goal`（削除済みパッケージ）／`CLAUDE.md` の `ClientSetup` 言及／**`CLAUDE.md` Architecture Notes が実在しないクラス（`BlockWorkMode`/`WorkStrategy<T>`/`BlockSearch`/`SearchCondition`/`BlockReservationManager`）を前提に記述**（実体は `util/BlockFinder`・`BlockFinderPD`・`ProcessDivider`・`ModeHelpers`）→ E-4 と同時に是正。
+- [ ] stale ドキュメント是正: `CLAUDE.md:16` の `entity/goal/ — AI Goal`（削除済みパッケージ）／`CLAUDE.md` の `ClientSetup` 言及／**`CLAUDE.md` Architecture Notes が実在しないクラス（`BlockWorkMode`/`WorkStrategy<T>`/`BlockSearch`/`SearchCondition`/`BlockReservationManager`）を前提に記述**（実体は `util/BlockFinder`・`BlockFinderPD`・`ProcessDivider`・`ModeHelpers`）→ E-4 と同時に是正（**CLAUDE.md は既にコミット済み**）。
+- **criteria は廃止不可（調査済み）**: `ContractMaidCriterion`/`ResurrectMaidCriterion` の 2 件は契約・復活の進行条件として正常実装中（`CriteriaTriggers.register` + NeoForge 26.x `RegisterEvent` 方式・正常）。残存理由は明確であり対応不要。
 
 ### §C — Mode/ItemMatcher 廃止：Behavior が直接 AI＋アイテム識別を保持する … → HOWTO §C
 
@@ -57,11 +58,27 @@
 - [ ] （任意）`MixinAbstractFurnaceBlockEntity.isBurningFire_LM` → ブロックステート `LIT` 由来にして `@Shadow` 削減。
 - 注意: Mixin 撤去時は `littlemaidneo.mixins.json` の登録も同時削除。命名 `_LM`/`_LMRB` 混在は `_LM` へ寄せると一貫（任意）。
 
+### §G — ディレクトリ・クラス数の削減（構造刷新）… → HOWTO §G
+
+- **現状**: 36 ディレクトリ・220 Java ファイル。単一クラスしか入っていないディレクトリが 9 個あり、機能の散らばりが大きい。
+- [ ] **G-1 単一クラスディレクトリを平坦化**（低リスク・import 変更のみ）:
+  - `entity/ai/control/` (MaidLookControl のみ) → `entity/ai/`
+  - `entity/ai/sensor/` (LittleMaidSensor のみ) → `entity/ai/`
+  - `client/key/` (LMKeys のみ) → `client/`
+  - `client/network/` (ClientNetworkHandler のみ) → `client/`
+  - `client/resource/loader/` + `client/resource/manager/` → `client/resource/`
+- [ ] **G-2 `api/` パッケージ廃止（§C 完了後）**: `api/mode/` が全廃されると `api/` が空になる。`IRangedWeapon` interface（`MixinRangedWeaponItem` 経由で使用）は `entity/ai/behavior/` or `util/` へ移設してから `api/` ディレクトリごと削除。
+- [ ] **G-3 誤配置・判断待ち**:
+  - `mixin/CrossbowItemInvoker.java`（`@Mixin` 無し・`mixins.json` 未登録の普通のユーティリティ）→ `util/` へ移設（§D-4 参照）。
+  - `multimodel/IMultiModel.java`（唯一のファイル）→ `multimodel/layer/` との距離を縮める移設検討（保護コア A 隣接のため慎重に）。
+- [ ] **G-4 `setup/` 整理**: `ClientSetup.java` 削除（§B）後、`ModSetup` + `ModRegistration` の 2 ファイルに。`ModSetup` が薄ければ `LittleMaidNeo.java` にインライン化して `setup/` ごと廃止を検討。
+- **不変（移動厳禁）**: `maidmodel/`・`resource/classloader/`（保護コア A の ASM リマップ基盤）は内部構造含め移動しない。
+
 ### §E — 共通化（Mod 全体・`common/` 切り出し）… → HOWTO §E
 
 > 方針: エンティティに限らず Mod 全体の重複スキャフォールディングを共通化。横断的部品は `common/`、ドメイン固有基底は各ドメインパッケージへ（神パッケージ化しない）。足場のみ抽出しガードは呼び出し側に残す。payoff 順: E-2 → E-3 → E-1 → E-4 → E-5。
 
-- [ ] **E-2 ネットワーク（最高 payoff）**: C2S ハンドラ 9 種の「entity 解決→所有者 UUID 照合→実行」定型と 6 record の codec 定型を `network/PayloadHandlers.onOwnedMaid(...)` ＋ codec ファクトリへ。`writeInt`/`VAR_INT` 不統一も是正。所有者判定の一貫性向上（~120-150 行減）。固有ガード（`isStrike` 等）はラムダに残す。
+- [ ] **E-2 ネットワーク（最高 payoff）**: C2S ハンドラ 8 種の「entity 解決→所有者 UUID 照合→実行」定型（~54 行重複）を `network/PayloadHandlers.onOwnedMaid(...)` ＋ codec ファクトリへ。具体的な是正箇所: (a) `SyncMultiModelPayload`/`SyncSoundPackPayload` の `buf.writeInt()` → `VAR_INT` に統一、(b) 3 payload の手書き encode/decode → `StreamCodec.composite()` へ統一、(c) `RegistryFriendlyByteBuf` vs `FriendlyByteBuf` の混在を整理。固有ガード（`isStrike` 等）はラムダに残す。~120–150 行削減。
 - [ ] **E-3 画面（低リスク）**: `MaidManagerScreen`/`TargetTagScreen`/`SoundPackSelectScreen` の 6 イベント転送を `client/screen/AbstractFilterableListScreen<T>` 基底へ。二重実装の `drawScrollingText` を `client/util/ClientScreenHelper` に 1 本化。GUI コンポーネント層は触らない。
 - [ ] **E-1 エンティティ委譲**: `LittleMaidEntity`/`MultiModelEntity` 重複の `IHasMultiModel`(13)＋`SoundPlayable`(3) を `common/MultiModelHolder`・`common/SoundHolder`（default メソッド付き）で解消。`NetworkHandler.sendSyncMultiModel{C2S,S2C}` の同一ブロックも `collectTextureNames()` 抽出。パケットワイヤ順不変。
 - [ ] **E-4 作業モード**: 5 モード＋behavior の「接近＋recalc カウントダウン」定型を `ModeNavigation.approachOrStop()`／`RecalcWalker` へ。`BlockFinder.searchTargetBlock`↔`BlockFinderPD.tick` の BFS 二重実装を `BlockFinderPD` 単一ソース化。ドメインロジック（治癒/醸造/strafe）は共通化しない。
