@@ -37,12 +37,15 @@
 - [ ] （任意・低）単一実装マーカー interface のインライン化: `HasMaidMode`/`Contractable`/`HasMode`/`GuiEntitySupplier`（polymorphic 利用ゼロ）。`HasInventory`/`SalaryBoxPosListener`/`LMCollidable`/`ProcessDivider` は load-bearing で残す。
 - [ ] stale ドキュメント是正: `CLAUDE.md:16` の `entity/goal/ — AI Goal`（削除済みパッケージ）／`CLAUDE.md` の `ClientSetup` 言及／**`CLAUDE.md` Architecture Notes が実在しないクラス（`BlockWorkMode`/`WorkStrategy<T>`/`BlockSearch`/`SearchCondition`/`BlockReservationManager`）を前提に記述**（実体は `util/BlockFinder`・`BlockFinderPD`・`ProcessDivider`・`ModeHelpers`）→ E-4 と同時に是正。
 
-### §C — 各 Mode の個別 Behavior 化 … → HOWTO §C
+### §C — Mode/ItemMatcher 廃止：Behavior が直接 AI＋アイテム識別を保持する … → HOWTO §C
 
-- **現状**: 6 モード（`Combat`/`Cooking`/`Healer`/`Pharmcist`/`Ripper`/`Torcher`）は単一 `MaidWorkModeBehavior`（CORE）が `ModeManager` 選択中の `Mode` 1 つへ委譲する wrapper 方式。
-- **方針転換**: 「`caps_job` 契約のため wrapper のまま」は**誤り**だった。`caps_job` は `maid.getMode()` の `getJobName()` を読むだけ（`LittleMaidModelCaps.java:50`）で駆動機構と独立 → 個別 Behavior 化にブロッカー無し。**各モードを個別 Behavior に分割する**。
-- [ ] `MaidCookingBehavior`/`MaidHealerBehavior`/`MaidPharmcistBehavior`/`MaidTorcherBehavior`/`MaidRipperBehavior`/`MaidCombatBehavior` を新設し `MaidWorkModeBehavior` を撤去。共通前提は `AbstractMaidModeBehavior` 基底へ（§E と合流）。Combat は FIGHT、他は WORK Activity。
-- **不変条件（必須）**: `getMode()` がアクティブ `Mode` を返し続けること（caps_job/`caps_isWorking`/`TargetingSystem.getBattleModeType`/Codec 永続化が依存）。選択ロジック（ItemMatcher Priority・`equipModeItemFromInventory`）は `HasModeImpl`/`ModeManager` に残す。`CombatMode#getJobName()`=`fencer`/`archer` 契約不変。
+- **現状**: `Mode` 抽象クラス（6 サブクラス）＋`ItemMatcher`/`ModeType`/`ModeManager`/`HasModeImpl` が絡み合い、単一 `MaidWorkModeBehavior` が `Mode.tick()` を委譲する 2 層構造。`getMode()` に caps_job/caps_isWorking/TargetingSystem/Codec 永続化が依存。
+- **方針: `Mode`・`ItemMatcher`/`ItemMatchers`・`ModeType`・`ModeManager`・`HasModeImpl`/`HasMode`・`MaidWorkModeBehavior` を完全廃止。各 Behavior クラス本体がアイテム識別＋AI 実行＋永続状態を直接保持する。**
+- [ ] **C-1 設計確定・ADR 記録**: `ACTIVE_JOB_NAME`（`MemoryModuleType<String>`）、`PersistentMaidBehavior` interface、`AbstractMaidWorkBehavior` の abstract メソッド一覧を確定し ADR に記録してから実装開始（HOWTO §C-1 参照）。
+- [ ] **C-2 個別 Behavior 新設**: `MaidCookingBehavior`/`MaidHealerBehavior`/`MaidPharmcistBehavior`/`MaidTorcherBehavior`/`MaidRipperBehavior`/`MaidCombatBehavior`（各 Mode の AI ロジックを直接移植・アイテム識別を各 Behavior に持たせる）。
+- [ ] **C-3 旧システム全撤去**: `Mode`・`ItemMatcher`/`ItemMatchers`・`ModeType`・`ModeManager`・`HasModeImpl`/`HasMode`・`MaidWorkModeBehavior`・`entity/mode/` パッケージ（`ModeHelpers` は §E-4 で判断）を削除。`getMode()` 廃止・全消費側を新 API へ移行。
+- **注意（caps_job 保護コア A 隣接）**: `caps_job`（外部モデルパック依存）は `ACTIVE_JOB_NAME` メモリ経由で `LittleMaidModelCaps` が読む形で維持。`MaidCombatBehavior` は武器種に応じ `"fencer"`/`"archer"` を tick ごとに書き込む（旧 `CombatMode#getJobName()` の動的評価を継承）。
+- §B の `ItemMatchers` deprecated 削除・`ModeType.Builder` 単一引数版削除は §C-3 の全廃に吸収される（個別に対応不要）。
 
 ### §D — Mixin の整理・脱 Mixin … → HOWTO §D（中リスク）
 
@@ -78,9 +81,9 @@
 
 ---
 
-## 🩹 残課題: モード状態 NBT の永続化（§C と並行・挙動変化を伴うため別管理）
+## 🩹 残課題（§C 設計決定後に再判断）
 
-- [ ] 一部モードの内部状態（Combat の cooldown、Healer の index 等）が未永続化でリロード時に挙動が変わる。Codec 基盤で永続化を検討（挙動が変わる修正のため記述量削減リファクタとは分離して扱う）。
+- [ ] `MaidCombatBehavior` の cooldown・`MaidHealerBehavior` の index 等の内部状態を `PersistentMaidBehavior.saveBehaviorData` で永続化するか判断（挙動が変わる修正のため §C-2 本体とは分離。§C-3 全廃後に実体が明確になってから着手）。
 - [ ] 移動モード enum 値名 `FREEDOM`/`ESCORT`/`TRACER` を `IDLE`/`FOLLOW`/`GUARD` 等へ改称する場合は、lang / DataGen / 描画 caps（`caps_isFreedom` 等）/ 本パラメータの同時更新が必要（ADR-0002 で見送り済み・任意）。
 
 ---

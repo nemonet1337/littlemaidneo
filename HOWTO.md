@@ -45,7 +45,7 @@
 - NBT 入出力は **`ValueOutput`/`ValueInput`＋Codec**（旧 `CompoundTag` 直書きは原則不使用）。
 - パケットは全 15 種が `StreamCodec`（`network/`）。登録は `network/NetworkHandler.register(RegisterPayloadHandlersEvent)`。
 - `DeferredRegister` は **`setup/ModRegistration.java`** に集約、`LittleMaidNeo` コンストラクタで `register(modEventBus)`。
-- **AI 現状（ADR-0002 / ADR-0003）**: 移動軸 `MaidMode`・作業軸 `Mode`・補助行動とも **Brain Behavior へ全面移行済み**（`entity/ai/behavior/Maid*Behavior` 13 種）。**全 Behavior は CORE Activity に一括登録**（FIGHT/WORK/IDLE への分割は未実装。ADR-0003 の Activity 体系化記述は将来像であり実装と差異あり＝§A 参照）。作業軸は現状、単一 `MaidWorkModeBehavior` が `ModeManager` で選択中の `Mode` に `shouldExecute/start/tick/stop` を委譲する（`ModeWrapperGoal` は廃止・`entity/goal/` パッケージは削除済み・ソース参照ゼロ）→ **§C で個別 Behavior へ分割予定**。永続化は `MaidMode.CODEC` / `ModeManager.CODEC`。戦闘は `CombatMode` に統合。`registerGoals()` にはバニラ補助 Goal（`AvoidEntityGoal`/`PanicGoal`/`LookAtPlayerGoal`×2/`RandomLookAroundGoal`）が**残存**（→ §A で Brain へ全廃予定）。`getMode()` がアクティブ `Mode` を返す契約は caps_job/targeting/Codec が依存するため不変。
+- **AI 現状（ADR-0002 / ADR-0003）**: 移動軸 `MaidMode`・補助行動は **Brain Behavior へ全面移行済み**（`entity/ai/behavior/Maid*Behavior` 13 種）。**全 Behavior は CORE Activity に一括登録**（FIGHT/WORK/IDLE への分割は未実装。ADR-0003 の Activity 体系化記述は将来像であり実装と差異あり＝§A 参照）。作業軸は**現状は `MaidWorkModeBehavior`→`Mode` 委譲の 2 層構造だが、§C で `Mode`・`ItemMatcher`・`ModeType`・`ModeManager`・`HasModeImpl` を完全廃止し各 Behavior が直接 AI＋アイテム識別を保持する形へ移行する**（`ModeWrapperGoal` は廃止済み・`entity/goal/` 削除済み）。現時点で `getMode()`/`hasModeImpl`/`ModeManager.CODEC` が caps_job/targeting/Codec に依存しているが、§C 完了後はすべて `ACTIVE_JOB_NAME`/`ACTIVE_BATTLE_MODE` メモリ＋`PersistentMaidBehavior` へ置き換わる。`registerGoals()` にはバニラ補助 Goal（`AvoidEntityGoal`/`PanicGoal`/`LookAtPlayerGoal`×2/`RandomLookAroundGoal`）が**残存**（→ §A で Brain へ全廃予定）。
 - API 調査は `mc-api-research` エージェント必須。NeoForge/Mojang マッピングのメソッド名はバージョンで変わる。ライブラリ Doc は Context7 MCP 優先。
 
 ### 0.5 検証（コミット前に必ず）
@@ -134,33 +134,105 @@ A-1〜A-3 で `registerGoals()` が空になったら、ADR-0003 が記す `CORE
 
 ---
 
-## §C — 各 Mode の個別 Behavior 化
+## §C — Mode/ItemMatcher 廃止：Behavior が直接 AI＋アイテム識別を保持する
 
-**現状**: 6 モード（`Combat`/`Cooking`/`Healer`/`Pharmcist`/`Ripper`/`Torcher`）は `Mode` サブクラスで、単一の `MaidWorkModeBehavior`（CORE）が `ModeManager` 選択中（`ItemMatcher` Priority 降順）の `Mode` 1 つへ `shouldExecute/start/tick/stop` を委譲している（wrapper 方式）。
+**廃止対象（すべて削除）**: `api/mode/Mode.java`（抽象クラス＋6 サブクラス）/ `api/mode/ItemMatcher.java`・`ItemMatchers.java` / `api/mode/ModeType.java`・`ModeManager.java` / `entity/mode/HasModeImpl.java`・`HasMode.java` / `entity/ai/behavior/MaidWorkModeBehavior.java`。`entity/mode/ModeHelpers.java` は §E-4 の共通ヘルパ化後に判断。
 
-**方針: 各モードを個別 Behavior に分割する。** 以前「`caps_job` 契約のため wrapper のまま」としていたが、これは**誤り**。`caps_job` は描画時に `maid.getMode()`（＝アクティブな `Mode` オブジェクト）の `getJobName()` を読むだけ（`LittleMaidModelCaps.java:50`）で、**駆動機構（Goal/Behavior/wrapper）とは独立**。よって個別 Behavior 化に技術的ブロッカーは無い。個別化の利点: (a) 各モードが固有メモリ要件を宣言できる、(b) FIGHT/WORK 等 Activity への割当が自然、(c) wrapper の集約分岐が消える。
+**廃止後の代替設計（対応表）**:
 
-**唯一守るべき不変条件（ブロッカーではないが必須）**:
-- `LittleMaidEntity#getMode()`（=`HasModeImpl.getMode()`）が**アクティブな `Mode` を返し続ける**こと。描画 caps（`LittleMaidModelCaps.java:50` の `caps_job`、`:34` の `caps_isWorking`）・`TargetingSystem`（`getBattleModeType()` 参照・`TargetingSystem.java:104`、`LittleMaidEntity.java:1009` の `isBattleMode`）・永続化（`ModeManager.CODEC`・`HasModeImpl.writeModeData`）が依存。
-- モード選択（`ItemMatcher` Priority 降順マッチ・メインハンド/インベントリ走査・`equipModeItemFromInventory`）は `HasModeImpl`/`ModeManager` に**残す**（個別 Behavior が選択ロジックを各自再実装しない）。`CombatMode#getJobName()` が `fencer`/`archer` を返す契約も不変。
+| 廃止するもの | 代替 |
+|---|---|
+| `ItemMatcher` / `ItemMatcher.Priority` | 各 Behavior の `protected abstract boolean isMyItem(ItemStack)` ＋ Brain 登録優先度番号 |
+| `HasModeImpl.tick()`（アイテム判定・インベントリ走査・装備） | 各 Behavior の `checkExtraStartConditions` に inline |
+| `Mode.shouldExecute()/tick()/resetTask()` 等 | 各 Behavior の `checkExtraStartConditions()/tick()/stop()` へ直接移植 |
+| `maid.getMode().map(Mode::getJobName)`（caps_job） | `brain.getMemory(ACTIVE_JOB_NAME)` |
+| `maid.getMode().isPresent()`（caps_isWorking） | `brain.hasMemoryValue(ACTIVE_JOB_NAME)` |
+| `mode.getBattleModeType()`（TargetingSystem） | `brain.getMemory(ACTIVE_BATTLE_MODE)` |
+| `mode.isBattleMode()`（LittleMaidEntity:1009） | `brain.hasMemoryValue(ACTIVE_BATTLE_MODE)` |
+| `mode.getModeType().isModeItem(stack)`（MaidStoreItemBehavior） | `workBehaviors.stream().anyMatch(b -> b.isMyItem(stack))` |
+| `HasModeImpl.writeModeData/readModeData` | `PersistentMaidBehavior.saveBehaviorData/loadBehaviorData` |
 
-**手順**:
-1. **選択と実行を分離**: `HasModeImpl` は従来どおり「アクティブモードの決定＋切替＋永続化＋caps 提供」を担い `getMode()` の意味を維持。各 `Mode` の **実行ロジック（`tick` 等）だけ**を対応 Behavior へ移す。
-2. **個別 Behavior 新設**: `entity/ai/behavior/` に `MaidCookingBehavior`/`MaidHealerBehavior`/`MaidPharmcistBehavior`/`MaidTorcherBehavior`/`MaidRipperBehavior`/`MaidCombatBehavior` を作成。
-   - `checkExtraStartConditions` =「`getMode()` が自分の担当モード ∧ `mode.shouldExecute()`」、`canStillUse` = `mode.shouldContinueExecuting()`、`start/stop/tick` ↔ `mode.startExecuting/resetTask/tick`（現 `MaidWorkModeBehavior` の写像をモード別に割るだけ）。
-   - **メモリ要件を個別宣言**: 例 Cooking/Pharmcist はかまど探索系、Combat は `ATTACK_TARGET`（`MaidTargetBehavior` が設定する `getTarget()` と整合）。
-   - 共通前提（`isStrike()`／`isEmergency()&&!enableWorkInEmergency` で抑止、`IS_WAITING` VALUE_ABSENT）は**共通基底 `AbstractMaidModeBehavior`** に括る（§E と合流）。
-3. **Activity 割当**: `MaidCombatBehavior` は FIGHT、その他作業は WORK（§A-5 の Activity 体系化と同時実施が綺麗）。
-4. **wrapper 撤去**: `MaidWorkModeBehavior` を削除し `BRAIN_PROVIDER` の登録を個別 Behavior 群へ置換。
-5. `Mode` 抽象クラスは `getJobName/getBattleModeType/getModeType/writeModeData/readModeData/shouldExecute` 等を**温存**（実行ロジックの所在が Behavior へ移るだけ。`Mode` を完全廃止して状態を Behavior に持たせる案は caps/Codec/選択との結合が大きいので段階的に）。
+---
 
-**新しい作業モードを追加する手順（個別化後）**:
-1. `entity/mode/` に `Mode` サブクラス（caps 用 `getJobName()` 等）＋ `Mode.ENTRIES` 登録 ＋ `ItemMatcher`＋タグ（`data/LMItemTagsProvider`／`tags/items/{mode_name}_mode.json`）＋lang（`mode.littlemaidneo.{Name}`）。
-2. 対応する `Maid<Name>Behavior` を追加し `BRAIN_PROVIDER` に登録（`AbstractMaidModeBehavior` 継承なら数行）。
+### C-1. 設計確定・ADR 記録（実装前に完了させる）
 
-**検証**: 各モードを 1 つずつ個別 Behavior 化→`./gradlew build`（CI）＋ runClient/GameTest で旧 wrapper と挙動同値（料理/治癒/調合/明かり/毛刈り/戦闘の各動作・武器持替時のモード切替・`caps_job` 描画）。
+以下を決定し `docs/adr/` に記録してから C-2 へ進む。
 
-**残課題（別管理・挙動変化を伴う）**: 一部モードの内部状態（`CombatMode` の cooldown、`HealerMode` の index 等）が未永続化。→ TODO.md「モード状態 NBT 永続化」。
+**新メモリ型**（`ModRegistration.MEMORY_MODULES` に追加）:
+- `ACTIVE_JOB_NAME : MemoryModuleType<String>` — 作業 Behavior の `start()` で `setMemory`、`stop()` で `eraseMemory`。`caps_job`/`caps_isWorking` が読む。
+- `ACTIVE_BATTLE_MODE : MemoryModuleType<BattleModeType>` — `MaidCombatBehavior` の `start()/tick()` で設定、`stop()` で削除。`TargetingSystem`・`LittleMaidEntity#hurtServer` が読む（旧 `getMode().getBattleModeType()` 相当）。`BattleModeType` enum は `MaidCombatBehavior` 内（または `entity/ai/` 直下）に移設。
+
+**`AbstractMaidWorkBehavior`**（§E-5 の `AbstractMaidBehavior` を継承）:
+```java
+abstract class AbstractMaidWorkBehavior extends AbstractMaidBehavior {
+    protected abstract boolean isMyItem(ItemStack stack);
+    protected abstract String jobName(); // ACTIVE_JOB_NAME に書き込む値
+    // checkExtraStartConditions: isStrike / isEmergency ガード + isMyItem(mainHand) or equipFromInventory
+    // start: brain.setMemory(ACTIVE_JOB_NAME, jobName())
+    // stop: brain.eraseMemory(ACTIVE_JOB_NAME)
+}
+```
+
+**`PersistentMaidBehavior`**（interface）:
+```java
+interface PersistentMaidBehavior {
+    void saveBehaviorData(ValueOutput output);
+    void loadBehaviorData(ValueInput input);
+}
+```
+`LittleMaidEntity` は `List<AbstractMaidWorkBehavior> workBehaviors`（BRAIN_PROVIDER 構築時に初期化）を保持し、`addAdditionalSaveData`/`readAdditionalSaveData` でイテレートして `PersistentMaidBehavior` を実装するものだけ call する。
+
+**アイテム識別の優先度**: Brain 登録の整数優先度（高い方が先に `checkExtraStartConditions` を通る）で制御する。旧 `ItemMatcher.Priority.HIGHER/LOWER` に相当する優先度番号を各 Behavior に割り当てる。同一優先度のときは登録順。
+
+---
+
+### C-2. 個別 Behavior 新設（1 Behavior＝1 コミット）
+
+`entity/ai/behavior/` に以下を新設。各 `Mode` サブクラスの実行ロジックをそのまま移植し、`isMyItem` と `jobName()` を実装する。
+
+| Behavior | 旧 Mode | jobName | BattleMode | Activity |
+|---|---|---|---|---|
+| `MaidCookingBehavior` | `CookingMode` | `"cooking"` | NONE | WORK |
+| `MaidHealerBehavior` | `HealerMode` | `"healer"` | NONE | WORK |
+| `MaidPharmcistBehavior` | `PharmcistMode` | `"pharmcist"` | NONE | WORK |
+| `MaidTorcherBehavior` | `TorcherMode` | `"torcher"` | NONE | WORK |
+| `MaidRipperBehavior` | `RipperMode` | `"ripper"` | NONE | WORK |
+| `MaidCombatBehavior` | `CombatMode` | `"fencer"`/`"archer"`（tick 毎更新） | SWORD/BOW | FIGHT |
+
+**`MaidCombatBehavior` の caps_job 動的更新**: `tick()` 内で現在の武器種を判定し `brain.setMemory(ACTIVE_JOB_NAME, ...)` を毎 tick 更新。`ACTIVE_BATTLE_MODE` も同様に更新（旧 `CombatMode#getJobName()` の動的評価を引き継ぐ・外部パック互換を維持）。
+
+**`isMyItem` の実装**: 旧 `Mode.java` 各 `buildXxxMode()` の `addItemMatcher(...)` 呼び出しを参照し、同じ述語を `isMyItem` に移植。タグ参照（`LMTags.Items.COOKING_MODE` 等）は変更なし。
+
+**`checkExtraStartConditions` の装備ロジック**: 旧 `HasModeImpl.equipModeItemFromInventory()` の「インベントリを優先度順にスキャンしてメインハンドへ装備」処理を各 Behavior の `checkExtraStartConditions` に統合（優先度は登録順で担保されているため再スキャンは 1 Behavior 分だけ）。
+
+---
+
+### C-3. 旧システム全撤去
+
+C-2 で全 Behavior が揃い CI が通ってから 1 コミットで実施。
+
+1. **`entity/mode/`** のファイルを削除（`Mode`・6 サブクラス・`HasModeImpl`・`HasMode`）。`ModeHelpers` は §E-4 判断まで保留。
+2. **`api/mode/`** の `ItemMatcher`・`ItemMatchers`・`ModeType`・`ModeManager` を削除（`Mode.java` ごと）。
+3. **`MaidWorkModeBehavior`** を削除し `BRAIN_PROVIDER` の登録を個別 Behavior 群へ。
+4. **`getMode()`・`writeModeData()`・`readModeData()`・`addMode()`・`addAllMode()`** を `LittleMaidEntity` から削除。`hasModeImpl` フィールドごと削除。
+5. 各消費側の移行:
+   - `LittleMaidModelCaps:50`（caps_job） → `brain.getMemory(ACTIVE_JOB_NAME).orElse(null)`
+   - `LittleMaidModelCaps:34`（caps_isWorking） → `brain.hasMemoryValue(ACTIVE_JOB_NAME)`
+   - `TargetingSystem:104`（getBattleModeType） → `brain.getMemory(ACTIVE_BATTLE_MODE).orElse(NONE)`
+   - `LittleMaidEntity:1009`（isBattleMode） → `brain.hasMemoryValue(ACTIVE_BATTLE_MODE)`
+   - `MaidStoreItemBehavior:103`（isExceptItem） → `workBehaviors.stream().anyMatch(b -> b.isMyItem(stack))`
+6. `MixinRangedWeaponItem` が参照する `IRangedWeapon`（`Mode.java:157` 経由）は `MaidCombatBehavior.isMyItem` 内で直接 `instanceof ProjectileWeaponItem` 判定に移行（Mixin 自体は §D で KEEP）。
+7. `§B` の削除候補「`ItemMatchers` deprecated / `ModeType.Builder` 単一引数版」は本 C-3 で全廃されるため §B からは除外してよい。
+
+---
+
+### 新しい作業モードを追加する手順（廃止後）
+
+1. `entity/ai/behavior/` に `AbstractMaidWorkBehavior` を継承した `Maid<Name>Behavior` を作成。`isMyItem`・`jobName()`・`checkExtraStartConditions`（作業条件）・`tick()` を実装。必要なら `PersistentMaidBehavior` も実装。
+2. `BRAIN_PROVIDER` に登録（適切な優先度番号・WORK Activity）。
+3. アイテムタグ（`tags/items/{name}_mode.json`）・lang（`mode.littlemaidneo.{Name}`）を追加（DataGen）。
+
+**検証**: C-2・C-3 それぞれで `./gradlew build`（CI）。C-3 完了後に `runClient`/GameTest で全モード動作・武器持替時の job 名切替・`caps_job` 描画・`caps_isWorking`・TargetingSystem 戦闘判定・MaidStoreItemBehavior のモードアイテム保護を確認。
 
 ---
 
@@ -273,7 +345,7 @@ A-1〜A-3 で `registerGoals()` が空になったら、ADR-0003 が記す `CORE
 | `ValueInput/Output`＋Codec 永続化 | ✅ 採用済 | 旧 `getOrCreateTag` 等は不使用 |
 | Codec（`MaidMode` / `ModeManager` / `MaidSoulData`） | ✅ 採用済 | ADR-0002 |
 | Brain AI（移動・戦闘・作業・補助） | ⚠️ 大半採用・残件あり | ADR-0003。`entity/ai/behavior/` 13 種・全 CORE。`registerGoals()` にバニラ補助 Goal（視線/パニック/退避）残存→**§A で全廃予定**。Activity 分割（CORE/FIGHT/WORK/IDLE）も未実装→§A-5/§C |
-| 作業モードの Behavior 化 | ⚠️ wrapper 方式 | 単一 `MaidWorkModeBehavior`→**§C で個別 Behavior へ分割予定** |
+| 作業モードの Behavior 化 | ⚠️ wrapper 方式・廃止予定 | `MaidWorkModeBehavior`→`Mode` 委譲構造を**§C で全廃**。`Mode`/`ItemMatcher`/`ModeManager` ごと撤去し各 Behavior が直接保持する形へ |
 | DataGen（model/blockstate/lang/tag/recipe/loot/advancement） | ✅ 採用済 | `data/LMModelProvider` ほか |
 | Brigadier コマンド | ✅ 採用済 | `command/LMCommands` |
 | DataFixer（MaidSoul/エンティティ NBT 限定） | ✅ 採用済 | `entity/soul/MaidDataFixer` |
