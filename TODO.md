@@ -17,15 +17,15 @@
 > 推奨実施順: **WS3 → WS2 → WS5 → WS4 → WS1**（低リスク基盤を先に、最高リスクの AI を最後に）。詳細手順は `HOWTO.md`。
 > ⚠️ ローカル JDK25 不在環境では検証は CI（Java25）が前提。
 
-- [ ] **WS3 — DataGen で model/blockstate 生成**（低リスク・即効）
+- [x] **WS3 — DataGen で model/blockstate 生成**（低リスク・即効）
   手書き JSON（`salary_box`/`little_maid_spawn_egg` の blockstates/models/items）を `LMBlockStateProvider`/`LMItemModelProvider` で生成。`runData` 出力が既存 JSON と diff ゼロを確認後に手書き JSON 撤去。
-- [ ] **WS2 — MaidSoul の Codec 化 + カスタム Data Components**
+- [x] **WS2 — MaidSoul の Codec 化 + カスタム Data Components**
   生 `CompoundTag` の MaidSoul を `record MaidSoulData`＋Codec/StreamCodec へ。`DeferredRegister<DataComponentType<?>>` で `MAID_SOUL` component 登録。`MaidSoulEntity`/`WorldMaidSoulState`/`LittleMaidSpawnEggItem` を移行。
-- [ ] **WS5 — DataFixerUpper 導入（MaidSoul/エンティティ NBT 限定）**
+- [x] **WS5 — DataFixerUpper 導入（MaidSoul/エンティティ NBT 限定）**
   永続データに `dataVersion` を埋め、WS2 の Codec に旧キー（旧 `Owner`/`UUID`・旧モード ID）→新スキーマのフォールバック分岐 `MaidDataFixer` を実装。完全 DFU スキーマ登録の可否は ADR で確定後に着手。移動モード byte 旧互換は対象外（ADR-0002）。
-- [ ] **WS4 — Brigadier 管理コマンド**
+- [x] **WS4 — Brigadier 管理コマンド**
   `RegisterCommandsEvent` で `/littlemaidneo`（`reload`/`models list`/`maid count|tp|dismiss`/`debug dump`）。OP 権限分岐。保護コア B は読取専用。
-- [ ] **WS1 — AI 完全 Brain 化（作業モード含む・最高リスク）**
+- [x] **WS1 — AI 完全 Brain 化（作業モード含む・最高リスク）**
   ADR-0002 の「作業=Goal」2軸を改訂。`ModeWrapperGoal`＋残存補助 Goal（Heal/給料/収納/搬送/Teleport/PlaySnow/Target/Look 系）を Brain の Activity（CORE/IDLE/WORK/FIGHT）へ移植。`ModeManager`/`CombatMode`/`ItemMatcher`/`TargetingSystem`/`BlockSearch` は再利用。新 ADR を起こす。GameTest を厚く。
 
 ---

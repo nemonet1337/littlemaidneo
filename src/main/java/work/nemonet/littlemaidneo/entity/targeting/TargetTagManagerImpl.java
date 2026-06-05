@@ -129,7 +129,7 @@ public class TargetTagManagerImpl implements TargetTagManager {
         }
 
         if (tags.isEmpty()) {
-            tags = Set.of(TargetingSystem.TargetTag.PREEMPTIVE_ATTACK_PROHIBITED);
+            tags = Set.of();
         }
 
         var immutableTags = Set.copyOf(tags);

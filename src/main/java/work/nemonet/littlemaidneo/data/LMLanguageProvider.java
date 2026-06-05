@@ -86,6 +86,16 @@ public class LMLanguageProvider extends LanguageProvider {
             add("chat.littlemaidneo.owner_name_prefix", "Owner");
             add("chat.littlemaidneo.book_parameters_applied", "Parameters applied from the book.");
             add("chat.littlemaidneo.need_more_sugar_for_strike", "Need 8 or more sugar to resume from strike!");
+
+            add("commands.littlemaidneo.reload.start", "Reloading LittleMaidNeo resources...");
+            add("commands.littlemaidneo.reload.success", "Reloaded LittleMaidNeo resources successfully.");
+            add("commands.littlemaidneo.reload.failure", "Failed to reload LittleMaidNeo resources: %s");
+            add("commands.littlemaidneo.models.list.count", "Total loaded models: %s");
+            add("commands.littlemaidneo.executor.null", "This command must be run by an entity.");
+            add("commands.littlemaidneo.maid.count.nearby", "Nearby maids (within %2$s blocks): %1$s");
+            add("commands.littlemaidneo.executor.not_player", "Only players can run this subcommand.");
+            add("commands.littlemaidneo.maid.tp.success", "Teleported %s maids to your location.");
+            add("commands.littlemaidneo.maid.dismiss.success", "Dismissed %s maids nearby.");
         } else if ("ja_jp".equals(locale)) {
             add("itemGroup.littlemaidneo", "リトルメイドネオ");
 
@@ -158,6 +168,16 @@ public class LMLanguageProvider extends LanguageProvider {
             add("chat.littlemaidneo.owner_name_prefix", "ご主人");
             add("chat.littlemaidneo.book_parameters_applied", "本からパラメータを読み込み、適用しました。");
             add("chat.littlemaidneo.need_more_sugar_for_strike", "ストライキを解除するには砂糖が8個以上必要です！");
+
+            add("commands.littlemaidneo.reload.start", "リトルメイドネオのリソースを再読み込み中...");
+            add("commands.littlemaidneo.reload.success", "リトルメイドネオのリソースを再読み込みしました。");
+            add("commands.littlemaidneo.reload.failure", "リソースの再読み込みに失敗しました: %s");
+            add("commands.littlemaidneo.models.list.count", "読み込み済みモデルの総数: %s");
+            add("commands.littlemaidneo.executor.null", "このコマンドはエンティティから実行する必要があります。");
+            add("commands.littlemaidneo.maid.count.nearby", "付近（%2$sブロック以内）のメイドさんの数: %1$s");
+            add("commands.littlemaidneo.executor.not_player", "このサブコマンドはプレイヤーのみ実行可能です。");
+            add("commands.littlemaidneo.maid.tp.success", "%s体のメイドをご主人の元へテレポートしました。");
+            add("commands.littlemaidneo.maid.dismiss.success", "%s体のメイドの契約を解除しました。");
         }
     }
 }

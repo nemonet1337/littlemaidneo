@@ -44,9 +44,7 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.AvoidEntityGoal;
-import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
-import net.minecraft.world.entity.ai.goal.OpenDoorGoal;
 import net.minecraft.world.entity.ai.goal.PanicGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
@@ -84,10 +82,8 @@ import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
 import work.nemonet.littlemaidneo.entity.compound.MultiModelCompound;
 import work.nemonet.littlemaidneo.entity.compound.SoundPlayable;
 import work.nemonet.littlemaidneo.entity.compound.SoundPlayableCompound;
-import work.nemonet.littlemaidneo.entity.goal.*;
 import work.nemonet.littlemaidneo.entity.mode.HasMode;
 import work.nemonet.littlemaidneo.entity.mode.HasModeImpl;
-import work.nemonet.littlemaidneo.entity.mode.ModeWrapperGoal;
 import work.nemonet.littlemaidneo.entity.targeting.TargetIdentifier;
 import work.nemonet.littlemaidneo.entity.targeting.TargetTagManager;
 import work.nemonet.littlemaidneo.entity.targeting.TargetTagManagerImpl;
@@ -109,10 +105,12 @@ import work.nemonet.littlemaidneo.setup.ModRegistration;
 import work.nemonet.littlemaidneo.tags.LMTags;
 import work.nemonet.littlemaidneo.util.LMCollidable;
 import work.nemonet.littlemaidneo.util.ReachAttributeUtil;
+import work.nemonet.littlemaidneo.entity.soul.MaidSoulData;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.ActivityData;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.ai.behavior.BehaviorControl;
 import com.mojang.serialization.Dynamic;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -271,21 +269,29 @@ private float prevInterestedAngle;
                     ModRegistration.OWNER.get(),
                     MemoryModuleType.WALK_TARGET,
                     MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE,
-                    // MoveToTargetSink は PATH メモリを必須要件（VALUE_ABSENT）に持つ。
-                    // 未登録だと checkMemory が常に false を返し MoveToTargetSink が起動せず、
-                    // 各 Behavior が設定した WALK_TARGET が消費されないため移動が一切発生しない。
-                    MemoryModuleType.PATH
+                    MemoryModuleType.PATH,
+                    MemoryModuleType.DOORS_TO_CLOSE
             ),
             ImmutableList.of(
                     ModRegistration.LITTLE_MAID_SENSOR.get()
             ),
             entity -> ImmutableList.of(
-                    ActivityData.<LittleMaidEntity>create(Activity.CORE, 0, ImmutableList.of(
+                    ActivityData.<LittleMaidEntity>create(Activity.CORE, 0, ImmutableList.<BehaviorControl<? super LittleMaidEntity>>of(
+                            new net.minecraft.world.entity.ai.behavior.Swim(0.8f),
+                            net.minecraft.world.entity.ai.behavior.InteractWithDoor.create(),
+                            new work.nemonet.littlemaidneo.entity.ai.behavior.MaidTeleportBehavior(),
                             new work.nemonet.littlemaidneo.entity.ai.behavior.MaidWaitBehavior(),
+                            new work.nemonet.littlemaidneo.entity.ai.behavior.MaidHealSelfBehavior(),
+                            new work.nemonet.littlemaidneo.entity.ai.behavior.MaidTargetBehavior(),
+                            new work.nemonet.littlemaidneo.entity.ai.behavior.MaidWorkModeBehavior(),
+                            new work.nemonet.littlemaidneo.entity.ai.behavior.MaidCollectSalaryBehavior(),
+                            new work.nemonet.littlemaidneo.entity.ai.behavior.MaidStoreItemBehavior(),
+                            new work.nemonet.littlemaidneo.entity.ai.behavior.MaidMoveToDropItemBehavior(),
                             new work.nemonet.littlemaidneo.entity.ai.behavior.MaidFollowOwnerBehavior(),
-                            new work.nemonet.littlemaidneo.entity.ai.behavior.MaidStareBehavior(),
                             new work.nemonet.littlemaidneo.entity.ai.behavior.MaidFreedomBehavior(),
                             new work.nemonet.littlemaidneo.entity.ai.behavior.MaidTraceBehavior(),
+                            new work.nemonet.littlemaidneo.entity.ai.behavior.MaidPlaySnowBehavior(),
+                            new work.nemonet.littlemaidneo.entity.ai.behavior.MaidStareBehavior(),
                             new net.minecraft.world.entity.ai.behavior.MoveToTargetSink()
                     ))
             )
@@ -308,44 +314,6 @@ private float prevInterestedAngle;
     protected void registerGoals() {
         int priority = -1;
         LMRBConfig config = getConfig();
-
-        // 緊急テレポート
-        this.goalSelector.addGoal(
-                priority,
-                new LMTeleportTameOwnerGoal(
-                        this,
-                        () -> config.movement.emergencyTeleportStartDistance) {
-                    @Override
-                    public boolean canUse() {
-                        return (isEmergency() &&
-                                LittleMaidEntity.this.hurtTime > 0 &&
-                                !TameableUtil.isWait(LittleMaidEntity.this) &&
-                                super.canUse());
-                    }
-                });
-
-        this.goalSelector.addGoal(++priority, new FloatGoal(this));
-        this.goalSelector.addGoal(++priority, new OpenDoorGoal(this, true));
-
-        this.goalSelector.addGoal(
-                ++priority,
-                new LMHealMyselfGoal(
-                        this,
-                        () -> config.health.healInterval,
-                        () -> config.health.healAmount,
-                        stack -> stack.is(LMTags.Items.MAIDS_SALARY)));
-
-        this.goalSelector.addGoal(
-                ++priority,
-                new LMCollectSalaryFromContainerGoal<>(this));
-
-
-
-        this.goalSelector.addGoal(
-                ++priority,
-                new LMTeleportTameOwnerGoal(
-                        this,
-                        () -> config.movement.teleportStartDistance));
 
         // 危険な敵からの逃避
         this.goalSelector.addGoal(
@@ -372,98 +340,7 @@ private float prevInterestedAngle;
                     }
                 });
 
-        this.goalSelector.addGoal(
-                ++priority,
-                new ModeWrapperGoal<>(this) {
-                    @Override
-                    public boolean canUse() {
-                        return (!this.owner.isStrike() &&
-                                (config.health.enableWorkInEmergency ||
-                                        !isEmergency())
-                                &&
-                                super.canUse());
-                    }
-
-                    @Override
-                    public boolean canContinueToUse() {
-                        return (!this.owner.isStrike() &&
-                                (config.health.enableWorkInEmergency ||
-                                        !isEmergency())
-                                &&
-                                super.canContinueToUse());
-                    }
-                });
-
-
-
-
-
-        this.goalSelector.addGoal(
-                ++priority,
-                new LMStoreItemToContainerGoal<>(
-                        this,
-                        stack -> stack.is(LMTags.Items.MAIDS_SALARY) ||
-                                this.hasModeImpl
-                                        .getMode()
-                                        .filter(mode -> mode.getModeType().isModeItem(stack))
-                                        .isPresent(),
-                        () -> config.work.searchContainerRange));
-
-        this.goalSelector.addGoal(
-                ++priority,
-                new LMMoveToDropItemGoal(
-                        this,
-                        () -> config.movement.pickupItemRange,
-                        () -> config.movement.pickupItemFrequency,
-                        () -> config.movement.pickupItemSpeed) {
-                    @Override
-                    public boolean canUse() {
-                        return (TameableUtil.hasTameOwner(LittleMaidEntity.this) &&
-                                (config.health.enableWorkInEmergency ||
-                                        !isEmergency())
-                                &&
-                                super.canUse());
-                    }
-
-                    @Override
-                    public List<ItemEntity> findAroundDropItem() {
-                        return TameableUtil.getTameOwner(maid)
-                                .map(owner -> {
-                                    return super.findAroundDropItem()
-                                            .stream()
-                                            .filter(item -> !this.isOwnerRange(item, owner))
-                                            .collect(Collectors.toList());
-                                    // ご主人様が存在しない場合は普通にとる
-                                })
-                                .orElse(super.findAroundDropItem());
-                    }
-                });
-
-
-
-        this.goalSelector.addGoal(++priority, new PlaySnowGoal(this));
-
-        // TRACER（赤石動力探知）は MaidTraceBehavior（Brain）へ移行済み（AI-3）。
-        // 全移動モードを Brain に一元化したため、ここでの Goal 登録は不要。
-
         // 野良
-        this.goalSelector.addGoal(
-                ++priority,
-                new LMMoveToDropItemGoal(
-                        this,
-                        () -> config.movement.pickupItemRange,
-                        () -> config.movement.pickupItemFrequency,
-                        () -> config.movement.pickupItemSpeed) {
-                    @Override
-                    public boolean canUse() {
-                        return (!TameableUtil.hasTameOwner(LittleMaidEntity.this) &&
-                                config.misc.canPickupItemByNoOwner &&
-                                (config.health.enableWorkInEmergency ||
-                                        !isEmergency())
-                                &&
-                                super.canUse());
-                    }
-                });
         this.goalSelector.addGoal(
                 ++priority,
                 new PanicGoal(this, config.movement.escapeSpeed) {
@@ -485,9 +362,6 @@ private float prevInterestedAngle;
                 priority,
                 new LookAtPlayerGoal(this, LivingEntity.class, 8.0F));
         this.goalSelector.addGoal(priority, new RandomLookAroundGoal(this));
-
-        // ターゲット系
-        this.targetSelector.addGoal(0, new LMTargetGoal(this));
     }
 
     @Override
@@ -1030,7 +904,7 @@ private float prevInterestedAngle;
             TameableUtil.getTameOwnerUuid(this).ifPresent(id -> {
                 var maidSoulEntity = new MaidSoulEntity(
                         serverWorld,
-                        new MaidSoul(this));
+                        MaidSoulData.create(this));
                 maidSoulEntity.setPos(this.getX(), this.getY(), this.getZ());
                 maidSoulEntity.setDeltaMovement(
                         new Vec3(
@@ -1042,7 +916,7 @@ private float prevInterestedAngle;
         }
     }
 
-    public void installMaidSoul(MaidSoul maidSoul) {
+    public void installMaidSoul(MaidSoulData maidSoul) {
         load(
                 TagValueInput.create(
                         ProblemReporter.DISCARDING,
@@ -1981,59 +1855,7 @@ public Optional<String> getModeName() {
     // 注: 旧 LMStareAtHeldItemGoal（手持ちアイテム注視 Goal）は Phase 7 で
     //     MaidStareBehavior（Brain Behavior）へ移行済み。Goal 版は孤立デッドコードとなったため削除した。
 
-    public static class MaidSoul {
 
-        private final CompoundTag nbt;
-        private final UUID uuid;
-        private final String name;
-
-        public MaidSoul(LittleMaidEntity maid) {
-            TagValueOutput output = TagValueOutput.createWithContext(
-                    ProblemReporter.DISCARDING,
-                    maid.registryAccess());
-            maid.saveWithoutId(output);
-            CompoundTag tag = output.buildResult();
-            tag.putString("Name", maid.getName().getString());
-            this.nbt = tag;
-            this.name = maid.getName().getString();
-            this.uuid = maid.getUUID();
-        }
-
-        private MaidSoul(CompoundTag nbt, UUID uuid, String name) {
-            this.nbt = nbt;
-            this.uuid = uuid;
-            this.name = name;
-        }
-
-        public static MaidSoul fromNbt(CompoundTag nbt) {
-            UUID uuid = nbt
-                    .getIntArray("UUID")
-                    .filter(a -> a.length == 4)
-                    .map(UUIDUtil::uuidFromIntArray)
-                    .orElse(Util.NIL_UUID);
-            String name = nbt.getStringOr("Name", "");
-            return new MaidSoul(nbt, uuid, name);
-        }
-
-        public CompoundTag getNbt() {
-            return nbt;
-        }
-
-        public UUID getUuid() {
-            return this.uuid;
-        }
-
-        public Optional<UUID> getOwnerUUID() {
-            return nbt
-                    .getIntArray("Owner")
-                    .filter(a -> a.length == 4)
-                    .map(UUIDUtil::uuidFromIntArray);
-        }
-
-        public String getName() {
-            return this.name;
-        }
-    }
 
     public int getContractTime() {
         return this.entityData.get(CONTRACT_TIME);

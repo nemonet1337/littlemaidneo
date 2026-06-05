@@ -45,9 +45,20 @@ import work.nemonet.littlemaidneo.entity.MultiModelEntity;
 import work.nemonet.littlemaidneo.item.LittleMaidSpawnEggItem;
 import work.nemonet.littlemaidneo.entity.DummyModelEntity;
 
+import net.minecraft.core.component.DataComponentType;
+import work.nemonet.littlemaidneo.entity.soul.MaidSoulData;
+
 public class ModRegistration {
     public static final DeferredRegister<EntityType<?>> ENTITIES =
             DeferredRegister.create(Registries.ENTITY_TYPE, LittleMaidNeo.MODID);
+    public static final DeferredRegister<DataComponentType<?>> DATA_COMPONENT_TYPES =
+            DeferredRegister.create(Registries.DATA_COMPONENT_TYPE, LittleMaidNeo.MODID);
+
+    public static final DeferredHolder<DataComponentType<?>, DataComponentType<MaidSoulData>> MAID_SOUL =
+            DATA_COMPONENT_TYPES.register("maid_soul", () -> DataComponentType.<MaidSoulData>builder()
+                    .persistent(MaidSoulData.CODEC)
+                    .networkSynchronized(MaidSoulData.STREAM_CODEC)
+                    .build());
     public static final DeferredRegister<Block> BLOCKS =
             DeferredRegister.create(Registries.BLOCK, LittleMaidNeo.MODID);
     public static final DeferredRegister<Item> ITEMS =

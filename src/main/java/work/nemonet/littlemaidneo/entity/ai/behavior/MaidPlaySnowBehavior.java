@@ -1,24 +1,26 @@
-package work.nemonet.littlemaidneo.entity.goal;
+package work.nemonet.littlemaidneo.entity.ai.behavior;
 
+import com.google.common.collect.ImmutableMap;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.entity.ai.behavior.Behavior;
+import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.Snowball;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.Vec3;
-import work.nemonet.littlemaidneo.resource.util.LMSounds;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
+import work.nemonet.littlemaidneo.resource.util.LMSounds;
+import work.nemonet.littlemaidneo.setup.ModRegistration;
 import org.jetbrains.annotations.Nullable;
-import java.util.Comparator;
-import java.util.EnumSet;
 
-public class PlaySnowGoal extends Goal {
-    private final LittleMaidEntity mob;
+import java.util.Comparator;
+
+public class MaidPlaySnowBehavior extends Behavior<LittleMaidEntity> {
     private final int maxCraftSnowballTime = 60;
     private final int maxLookTargetTime = 30;
     private final int maxWaitNextTime = 30;
@@ -27,56 +29,68 @@ public class PlaySnowGoal extends Goal {
     @Nullable
     private LivingEntity target;
 
-    public PlaySnowGoal(LittleMaidEntity mob) {
-        this.mob = mob;
-        this.setFlags(EnumSet.of(Flag.MOVE, Flag.LOOK));
+    public MaidPlaySnowBehavior() {
+        super(ImmutableMap.of(
+                ModRegistration.IS_WAITING.get(), MemoryStatus.VALUE_ABSENT
+        ));
     }
 
     @Override
-    public boolean canUse() {
-        var time = this.mob.level().getOverworldClockTime();
+    protected boolean checkExtraStartConditions(ServerLevel level, LittleMaidEntity entity) {
+        return canPlaySnow(entity);
+    }
+
+    private boolean canPlaySnow(LittleMaidEntity entity) {
+        var time = entity.level().getOverworldClockTime();
         time = time % 24000;
         // 朝～昼以外はやらない
         if (time < 0 || 12500 < time) {
             return false;
         }
-        var block = this.mob.getInBlockState();
+        var block = entity.getInBlockState();
         return block.is(BlockTags.SNOW);
     }
 
     @Override
-    public boolean canContinueToUse() {
-        return super.canContinueToUse();
+    protected boolean canStillUse(ServerLevel level, LittleMaidEntity entity, long gameTime) {
+        return canPlaySnow(entity);
     }
 
     @Override
-    public void start() {
+    protected void start(ServerLevel level, LittleMaidEntity entity, long gameTime) {
         state = 0;
         timer = 0;
         target = null;
-        this.mob.setPlayingSnow(true);
+        entity.setPlayingSnow(true);
     }
 
     @Override
-    public void tick() {
+    protected void stop(ServerLevel level, LittleMaidEntity entity, long gameTime) {
+        entity.setShiftKeyDown(false);
+        entity.setPlayingSnow(false);
+        target = null;
+    }
+
+    @Override
+    protected void tick(ServerLevel level, LittleMaidEntity entity, long gameTime) {
         // 雪玉を作る
         if (state == 0) {
             if (timer == 0) {
-                this.mob.play(LMSounds.COLLECT_SNOW);
+                entity.play(LMSounds.COLLECT_SNOW);
             }
             if (timer % 15 == 0 && timer % 30 != 0) {
-                this.mob.swing(InteractionHand.MAIN_HAND);
-                this.mob.level().playSound(null, this.mob.getX(), this.mob.getY(), this.mob.getZ(),
+                entity.swing(InteractionHand.MAIN_HAND);
+                entity.level().playSound(null, entity.getX(), entity.getY(), entity.getZ(),
                         SoundEvents.SNOW_HIT, SoundSource.NEUTRAL, 1.0f, 1.0f);
             }
 
-            this.mob.setShiftKeyDown(true);
-            var lookAt = this.mob.position()
-                    .add(this.mob.getLookAngle()
+            entity.setShiftKeyDown(true);
+            var lookAt = entity.position()
+                    .add(entity.getLookAngle()
                             .multiply(1, 0, 1)
                             .normalize()
-                            .scale(this.mob.getEyeHeight(this.mob.getPose())));
-            this.mob.getLookControl().setLookAt(lookAt);
+                            .scale(entity.getEyeHeight(entity.getPose())));
+            entity.getLookControl().setLookAt(lookAt);
 
             timer++;
             if (timer >= maxCraftSnowballTime) {
@@ -86,24 +100,24 @@ public class PlaySnowGoal extends Goal {
         }
         // 当てる相手を探す
         else if (state == 1) {
-            this.mob.setShiftKeyDown(false);
+            entity.setShiftKeyDown(false);
 
-            var world = this.mob.level();
+            var world = entity.level();
 
             if (target == null) {
                 timer = 0;
                 this.target = world.getEntitiesOfClass(LivingEntity.class,
-                                this.mob.getBoundingBox().inflate(10),
-                                entity -> this.mob != entity)
+                                entity.getBoundingBox().inflate(10),
+                                e -> entity != e)
                         .stream()
-                        .sorted(Comparator.comparingDouble(this.mob::distanceToSqr))
-                        .filter(entity -> this.mob.getSensing().hasLineOfSight(entity))
+                        .sorted(Comparator.comparingDouble(entity::distanceToSqr))
+                        .filter(e -> entity.getSensing().hasLineOfSight(e))
                         .findAny()
                         .orElse(null);
             } else {
-                if (this.mob.getSensing().hasLineOfSight(target)) {
+                if (entity.getSensing().hasLineOfSight(target)) {
                     timer++;
-                    this.mob.getLookControl().setLookAt(target);
+                    entity.getLookControl().setLookAt(target);
                 } else {
                     timer = 0;
                     this.target = null;
@@ -117,19 +131,19 @@ public class PlaySnowGoal extends Goal {
         }
         // 投げる
         else {
-            this.mob.setShiftKeyDown(false);
+            entity.setShiftKeyDown(false);
 
             if (target == null) {
                 state = 1;
                 timer = 0;
             } else {
                 if (timer == 0) {
-                    shootSnowBall(this.mob.level(), this.mob);
-                    this.mob.swing(InteractionHand.MAIN_HAND);
-                    this.mob.play(LMSounds.SHOOT);
-                    this.mob.setYRot(this.mob.getYHeadRot());
+                    shootSnowBall(entity.level(), entity);
+                    entity.swing(InteractionHand.MAIN_HAND);
+                    entity.play(LMSounds.SHOOT);
+                    entity.setYRot(entity.getYHeadRot());
                 }
-                this.mob.getLookControl().setLookAt(target);
+                entity.getLookControl().setLookAt(target);
             }
 
             timer++;
@@ -150,16 +164,5 @@ public class PlaySnowGoal extends Goal {
             snowballEntity.shootFromRotation(user, user.getXRot(), user.getYHeadRot(), 0.0f, 1.5f, 1.0f);
             world.addFreshEntity(snowballEntity);
         }
-    }
-
-    @Override
-    public void stop() {
-        this.mob.setShiftKeyDown(false);
-        this.mob.setPlayingSnow(false);
-    }
-
-    @Override
-    public boolean requiresUpdateEveryTick() {
-        return true;
     }
 }

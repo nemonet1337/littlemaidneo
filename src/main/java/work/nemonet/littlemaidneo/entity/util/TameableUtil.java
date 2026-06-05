@@ -7,6 +7,11 @@ import net.minecraft.world.entity.EntityReference;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.OwnableEntity;
 import net.minecraft.world.entity.TamableAnimal;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.pathfinder.PathType;
+import net.minecraft.world.level.pathfinder.WalkNodeEvaluator;
+import work.nemonet.littlemaidneo.config.LMRBConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.setup.ModRegistration;
 
@@ -100,4 +105,46 @@ public class TameableUtil {
         return ref != null && entity.getUUID().equals(ref.getUUID());
     }
 
+    public static boolean tryTeleportToOwner(LittleMaidEntity tameable, LivingEntity owner, int widthRange, int heightRange) {
+        BlockPos ownerPos = owner.blockPosition();
+        var navigation = tameable.getNavigation();
+        int maxTry = LMRBConfig.get().movement.maxTryTeleportCount;
+        for (int i = 0; i < maxTry; ++i) {
+            int x = tameable.getRandom().nextInt(widthRange * 2 + 1) - widthRange;
+            int y = tameable.getRandom().nextInt(heightRange * 2 + 1) - heightRange;
+            int z = tameable.getRandom().nextInt(widthRange * 2 + 1) - widthRange;
+            
+            int targetX = ownerPos.getX() + x;
+            int targetY = ownerPos.getY() + y;
+            int targetZ = ownerPos.getZ() + z;
+
+            if (isOwnerForwardRange(owner, targetX, targetY, targetZ)) continue;
+            
+            BlockPos targetPos = new BlockPos(targetX, targetY, targetZ);
+            if (canTeleportTo(tameable, targetPos)) {
+                tameable.snapTo(targetX + 0.5, targetY, targetZ + 0.5, tameable.getYRot(), tameable.getXRot());
+                navigation.stop();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isOwnerForwardRange(LivingEntity owner, int x, int y, int z) {
+        if (LMRBConfig.get().movement.canTeleportOwnerForwards) return false;
+        Vec3 ownerPos = owner.position();
+        Vec3 entityPos = new Vec3(x + 0.5, y, z + 0.5).subtract(ownerPos);
+        Vec3 ownerRot = owner.getViewVector(1F);
+        double dot = entityPos.dot(ownerRot);
+        double range = LMRBConfig.get().movement.ownerForwardRange;
+        return 0 < dot && dot < range * range;
+    }
+
+    private static boolean canTeleportTo(LittleMaidEntity tameable, BlockPos pos) {
+        PathType pathNodeType = WalkNodeEvaluator.getPathTypeStatic(
+                new net.minecraft.world.level.pathfinder.PathfindingContext(tameable.level(), tameable), pos.mutable());
+        if (pathNodeType != PathType.WALKABLE) return false;
+        BlockPos blockPos = pos.subtract(tameable.blockPosition());
+        return tameable.level().noCollision(tameable, tameable.getBoundingBox().move(blockPos));
+    }
 }

@@ -18,13 +18,14 @@ import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.Vec3;
 import work.nemonet.littlemaidneo.entity.util.MaidManager;
 import work.nemonet.littlemaidneo.setup.ModRegistration;
+import work.nemonet.littlemaidneo.entity.soul.MaidSoulData;
 import org.jetbrains.annotations.Nullable;
 
 //メイドソウル
 //体重21g！
 public class MaidSoulEntity extends Entity {
     @Nullable
-    private LittleMaidEntity.MaidSoul maidSoul; // メイドソウルはクライアント側はnull
+    private MaidSoulData maidSoul; // メイドソウルはクライアント側はnull
     private int waveProgress;
     private boolean maidManagerRegistered;
 
@@ -33,7 +34,7 @@ public class MaidSoulEntity extends Entity {
         this.noPhysics = true;
     }
 
-    public MaidSoulEntity(Level world, LittleMaidEntity.MaidSoul maidSoul) {
+    public MaidSoulEntity(Level world, MaidSoulData maidSoul) {
         this(ModRegistration.MAID_SOUL_ENTITY.get(), world);
         this.maidSoul = maidSoul;
     }
@@ -200,7 +201,7 @@ public class MaidSoulEntity extends Entity {
     @Override
     protected void readAdditionalSaveData(ValueInput input) {
         input.read("maidSoul", CompoundTag.CODEC)
-                .ifPresent(nbt -> this.maidSoul = LittleMaidEntity.MaidSoul.fromNbt(nbt));
+                .ifPresent(nbt -> this.maidSoul = MaidSoulData.fromNbt(nbt));
     }
 
     @Override
@@ -244,7 +245,7 @@ public class MaidSoulEntity extends Entity {
         return waveProgress;
     }
 
-    public LittleMaidEntity.MaidSoul getSoul() {
+    public MaidSoulData getSoul() {
         return this.maidSoul;
     }
 }

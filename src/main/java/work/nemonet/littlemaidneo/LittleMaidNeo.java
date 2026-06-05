@@ -50,6 +50,7 @@ public class LittleMaidNeo {
 
     public LittleMaidNeo(IEventBus modEventBus, ModContainer modContainer) {
         ModRegistration.ENTITIES.register(modEventBus);
+        ModRegistration.DATA_COMPONENT_TYPES.register(modEventBus);
         ModRegistration.BLOCKS.register(modEventBus);
         ModRegistration.ITEMS.register(modEventBus);
         ModRegistration.MENUS.register(modEventBus);
@@ -71,6 +72,8 @@ public class LittleMaidNeo {
         modEventBus.addListener(this::onRegisterSpawnPlacements);
         modEventBus.addListener(this::onRegisterEvent);
         modEventBus.addListener(this::onModConfig);
+
+        net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(work.nemonet.littlemaidneo.command.LMCommands::register);
     }
 
     private void onCommonSetup(FMLCommonSetupEvent event) {

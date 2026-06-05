@@ -10,8 +10,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
-import work.nemonet.littlemaidneo.entity.LittleMaidEntity.MaidSoul;
 import work.nemonet.littlemaidneo.entity.MaidSoulEntity;
+import work.nemonet.littlemaidneo.entity.soul.MaidSoulData;
 import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Optional;
@@ -22,7 +22,7 @@ public interface MaidManager {
 
     void registerMaid(MaidSoulEntity soul);
 
-    void registerMaid(LittleMaidEntity.MaidSoul soul);
+    void registerMaid(MaidSoulData soul);
 
     List<LMInfo> getMaidList();
 
@@ -30,7 +30,7 @@ public interface MaidManager {
 
     void readMaidManager(ValueInput input);
 
-    List<LittleMaidEntity.MaidSoul> getMaidSouls();
+    List<MaidSoulData> getMaidSouls();
 
     void clearMaidSouls();
 
@@ -96,11 +96,11 @@ public interface MaidManager {
                 return new MaidLMInfo(id, name, lastPos, worldId, null, entityId);
             } else if (status == Status.SOUL_ENTITY) {
                 var soulNbt = input.read("soul", CompoundTag.CODEC).orElse(null);
-                var soul = soulNbt != null ? LittleMaidEntity.MaidSoul.fromNbt(soulNbt) : null;
+                var soul = soulNbt != null ? MaidSoulData.fromNbt(soulNbt) : null;
                 return new SoulEntityLMInfo(id, name, lastPos, worldId, null, soul, entityId);
             } else {
                 var soulNbt = input.read("soul", CompoundTag.CODEC).orElse(null);
-                var soul = soulNbt != null ? LittleMaidEntity.MaidSoul.fromNbt(soulNbt) : null;
+                var soul = soulNbt != null ? MaidSoulData.fromNbt(soulNbt) : null;
                 return new SoulLMInfo(id, name, soul);
             }
         }
@@ -167,11 +167,11 @@ public interface MaidManager {
 
     final class SoulEntityLMInfo extends LMInfo {
         private final @Nullable MaidSoulEntity soulEntity;
-        private final LittleMaidEntity.MaidSoul soul;
+        private final MaidSoulData soul;
         private final int entityId;
 
         private SoulEntityLMInfo(UUID id, String name, BlockPos lastPos, String worldId,
-                                 @Nullable MaidSoulEntity soulEntity, LittleMaidEntity.MaidSoul soul, int entityId) {
+                                 @Nullable MaidSoulEntity soulEntity, MaidSoulData soul, int entityId) {
             super(id, name, Status.SOUL_ENTITY, lastPos, worldId);
             this.soulEntity = soulEntity;
             this.soul = soul;
@@ -182,7 +182,7 @@ public interface MaidManager {
             return soulEntity;
         }
 
-        public LittleMaidEntity.MaidSoul getSoul() {
+        public MaidSoulData getSoul() {
             return soul;
         }
 
@@ -215,18 +215,18 @@ public interface MaidManager {
     }
 
     final class SoulLMInfo extends LMInfo {
-        private final LittleMaidEntity.MaidSoul soul;
+        private final MaidSoulData soul;
 
-        private SoulLMInfo(UUID id, String name, LittleMaidEntity.MaidSoul soul) {
+        private SoulLMInfo(UUID id, String name, MaidSoulData soul) {
             super(id, name, Status.SOUL_WITHIN, BlockPos.ZERO, "");
             this.soul = soul;
         }
 
-        public static SoulLMInfo create(LittleMaidEntity.MaidSoul soul) {
+        public static SoulLMInfo create(MaidSoulData soul) {
             return new SoulLMInfo(soul.getUuid(), soul.getName(), soul);
         }
 
-        public LittleMaidEntity.MaidSoul soul() {
+        public MaidSoulData soul() {
             return soul;
         }
 

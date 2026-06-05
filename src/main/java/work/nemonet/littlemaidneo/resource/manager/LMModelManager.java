@@ -94,4 +94,8 @@ public class LMModelManager {
             };
         }
     }
+
+    public java.util.Set<String> getModelNames() {
+        return java.util.Collections.unmodifiableSet(models.keySet());
+    }
 }

@@ -12,7 +12,7 @@ import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 import work.nemonet.littlemaidneo.LittleMaidNeo;
-import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
+import work.nemonet.littlemaidneo.entity.soul.MaidSoulData;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.UUID;
 
 public class WorldMaidSoulState extends SavedData {
-    private final Map<UUID, List<LittleMaidEntity.MaidSoul>> maidSoulsMap = Maps.newHashMap();
+    private final Map<UUID, List<MaidSoulData>> maidSoulsMap = Maps.newHashMap();
 
     public static final Codec<WorldMaidSoulState> CODEC = CompoundTag.CODEC.xmap(
             WorldMaidSoulState::fromNbt,
@@ -34,11 +34,11 @@ public class WorldMaidSoulState extends SavedData {
             DataFixTypes.LEVEL
     );
 
-    public void add(UUID ownerId, LittleMaidEntity.MaidSoul maidSoul) {
+    public void add(UUID ownerId, MaidSoulData maidSoul) {
         maidSoulsMap.computeIfAbsent(ownerId, id -> Lists.newArrayList()).add(maidSoul);
     }
 
-    public List<LittleMaidEntity.MaidSoul> get(UUID ownerId) {
+    public List<MaidSoulData> get(UUID ownerId) {
         return maidSoulsMap.computeIfAbsent(ownerId, id -> Lists.newArrayList());
     }
 
@@ -48,9 +48,9 @@ public class WorldMaidSoulState extends SavedData {
 
     private CompoundTag toNbt() {
         CompoundTag nbt = new CompoundTag();
-        for (Map.Entry<UUID, List<LittleMaidEntity.MaidSoul>> entry : maidSoulsMap.entrySet()) {
+        for (Map.Entry<UUID, List<MaidSoulData>> entry : maidSoulsMap.entrySet()) {
             ListTag listTag = new ListTag();
-            for (LittleMaidEntity.MaidSoul soul : entry.getValue()) {
+            for (MaidSoulData soul : entry.getValue()) {
                 listTag.add(soul.getNbt());
             }
             nbt.put(entry.getKey().toString(), listTag);
@@ -65,10 +65,10 @@ public class WorldMaidSoulState extends SavedData {
                 UUID uuid = UUID.fromString(key);
                 Tag tag = nbt.get(key);
                 if (tag instanceof ListTag listTag) {
-                    List<LittleMaidEntity.MaidSoul> souls = new ArrayList<>();
+                    List<MaidSoulData> souls = new ArrayList<>();
                     for (Tag t : listTag) {
                         if (t instanceof CompoundTag ct) {
-                            souls.add(LittleMaidEntity.MaidSoul.fromNbt(ct));
+                            souls.add(MaidSoulData.fromNbt(ct));
                         }
                     }
                     state.maidSoulsMap.put(uuid, souls);

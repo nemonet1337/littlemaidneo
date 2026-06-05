@@ -57,6 +57,7 @@ public class LittleMaidScreen
         prevMaidMode = movingMode = owner.getMaidMode();
     }
 
+
     @Override
     protected void init() {
         super.init();
@@ -505,11 +506,12 @@ public class LittleMaidScreen
     }
 
     @Override
-    public void extractContents(
+    public void extractBackground(
             GuiGraphicsExtractor context,
             int mouseX,
             int mouseY,
             float delta) {
+        super.extractBackground(context, mouseX, mouseY, delta);
         int relX = (this.width - this.imageWidth) / 2;
         int relY = (this.height - this.imageHeight) / 2;
         context.blit(
@@ -522,7 +524,15 @@ public class LittleMaidScreen
                 0.0f,
                 (float) this.imageWidth,
                 (float) this.imageHeight);
+    }
 
+    @Override
+    public void extractContents(
+            GuiGraphicsExtractor context,
+            int mouseX,
+            int mouseY,
+            float delta) {
+        super.extractContents(context, mouseX, mouseY, delta);
         if (!isSettingWISS) {
             drawWorkItemSlotOverlay(context, workItemSlotSize);
         }

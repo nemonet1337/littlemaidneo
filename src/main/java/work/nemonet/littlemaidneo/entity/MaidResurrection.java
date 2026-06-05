@@ -17,6 +17,7 @@ import work.nemonet.littlemaidneo.entity.util.MaidManager;
 import work.nemonet.littlemaidneo.entity.util.MaidMode;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 import work.nemonet.littlemaidneo.setup.ModRegistration;
+import work.nemonet.littlemaidneo.entity.soul.MaidSoulData;
 
 /**
  * メイドさんの復活演出（魂からの蘇生・パーティクル/サウンド）を担う。
@@ -33,7 +34,7 @@ public final class MaidResurrection {
         if (maidSouls.isEmpty()) {
             return false;
         }
-        for (LittleMaidEntity.MaidSoul maidSoul : maidSouls) {
+        for (MaidSoulData maidSoul : maidSouls) {
             var maid = ModRegistration.LITTLE_MAID_ENTITY.get().create(world, EntitySpawnReason.TRIGGERED);
             if (maid != null) {
                 maid.installMaidSoul(maidSoul);

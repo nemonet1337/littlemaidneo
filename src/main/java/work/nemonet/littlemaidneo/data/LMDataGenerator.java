@@ -26,6 +26,7 @@ public class LMDataGenerator {
         // Language Providers
         event.createProvider(output -> new LMLanguageProvider(output, "en_us"));
         event.createProvider(output -> new LMLanguageProvider(output, "ja_jp"));
+        event.createProvider(LMModelProvider::new);
     }
 
     public static void gatherServerData(GatherDataEvent.Server event) {

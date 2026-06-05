@@ -91,7 +91,10 @@ public class MaidFreedomBehavior extends Behavior<LittleMaidEntity> {
 
             if (entity.getNavigation().isDone() && entity.onGround()) {
                 if (entity.level().noCollision(entity.getBoundingBox().move(entity.position().scale(-1)).move(Vec3.atCenterOf(freedomPos)))) {
-                    entity.randomTeleport(freedomPos.getX() + 0.5D, freedomPos.getY(), freedomPos.getZ() + 0.5D, true);
+                    // randomTeleport()はエフェクト・SEが発生するため、サイレントなsnapTo()を使用する
+                    // （問題3: エンダーマン的なワープ回避の廃止、問題4: ワープエフェクト・SE抑制）
+                    entity.snapTo(freedomPos.getX() + 0.5D, freedomPos.getY(), freedomPos.getZ() + 0.5D, entity.getYRot(), entity.getXRot());
+                    entity.getNavigation().stop();
                     entity.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
                 }
             }

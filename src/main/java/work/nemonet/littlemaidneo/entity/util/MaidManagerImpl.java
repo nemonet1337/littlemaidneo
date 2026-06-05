@@ -5,6 +5,7 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.MaidSoulEntity;
+import work.nemonet.littlemaidneo.entity.soul.MaidSoulData;
 
 import java.util.*;
 
@@ -22,7 +23,7 @@ public class MaidManagerImpl implements MaidManager {
     }
 
     @Override
-    public void registerMaid(LittleMaidEntity.MaidSoul soul) {
+    public void registerMaid(MaidSoulData soul) {
         maidMap.put(soul.getUuid(), SoulLMInfo.create(soul));
     }
 
@@ -47,7 +48,7 @@ public class MaidManagerImpl implements MaidManager {
     }
 
     @Override
-    public List<LittleMaidEntity.MaidSoul> getMaidSouls() {
+    public List<MaidSoulData> getMaidSouls() {
         return this.maidMap.values().stream()
                 .filter(lmInfo -> lmInfo.status() == Status.SOUL_WITHIN)
                 .map(lmInfo -> ((SoulLMInfo) lmInfo).soul())
