@@ -2,37 +2,75 @@
 
 > 更新日: 2026-06-05
 > 方針: NeoForge 単一プラットフォーム / LMRB＋LMML 統合 / モダン化リファクタリング
-> 実装ガイド・保護コア詳細: `HOWTO.md`
-> 設計判断: `docs/adr/`（0001 描画ブリッジ維持 / 0002 MaidMode Codec・AI 状態統一 / 0002 並列パックロード）
+> 実装ガイド・保護コア詳細: `HOWTO.md`（§A〜§F）
+> 設計判断: `docs/adr/`（0001 描画ブリッジ維持 / 0002 MaidMode Codec・AI 状態統一 / 0003 Brain AI 完全移行）
 > 全体プラン: `docs/plan/2026-06-01_統合リファクタリングプラン.md`
 
 このファイルは「実態と一致する単一バックログ」。完了項目は削除する（履歴は不要）。
 
----
-
-## 🚀 モダン化リファクタリング（5 ワークストリーム・進行中）
-
-> 背景: 1.6.4→1.21.1 系で刷新された内部システム／Modding API のうち、本 Mod の穴を埋める差分リファクタ。
-> 既採用分（Deferred Register / PayloadRegistrar / Data Attachments / DataGen / Mojang mappings / TOML 等）は省略。
-> 推奨実施順: **WS3 → WS2 → WS5 → WS4 → WS1**（低リスク基盤を先に、最高リスクの AI を最後に）。詳細手順は `HOWTO.md`。
-> ⚠️ ローカル JDK25 不在環境では検証は CI（Java25）が前提。
-
-- [x] **WS3 — DataGen で model/blockstate 生成**（低リスク・即効）
-  手書き JSON（`salary_box`/`little_maid_spawn_egg` の blockstates/models/items）を `LMBlockStateProvider`/`LMItemModelProvider` で生成。`runData` 出力が既存 JSON と diff ゼロを確認後に手書き JSON 撤去。
-- [x] **WS2 — MaidSoul の Codec 化 + カスタム Data Components**
-  生 `CompoundTag` の MaidSoul を `record MaidSoulData`＋Codec/StreamCodec へ。`DeferredRegister<DataComponentType<?>>` で `MAID_SOUL` component 登録。`MaidSoulEntity`/`WorldMaidSoulState`/`LittleMaidSpawnEggItem` を移行。
-- [x] **WS5 — DataFixerUpper 導入（MaidSoul/エンティティ NBT 限定）**
-  永続データに `dataVersion` を埋め、WS2 の Codec に旧キー（旧 `Owner`/`UUID`・旧モード ID）→新スキーマのフォールバック分岐 `MaidDataFixer` を実装。完全 DFU スキーマ登録の可否は ADR で確定後に着手。移動モード byte 旧互換は対象外（ADR-0002）。
-- [x] **WS4 — Brigadier 管理コマンド**
-  `RegisterCommandsEvent` で `/littlemaidneo`（`reload`/`models list`/`maid count|tp|dismiss`/`debug dump`）。OP 権限分岐。保護コア B は読取専用。
-- [x] **WS1 — AI 完全 Brain 化（作業モード含む・最高リスク）**
-  ADR-0002 の「作業=Goal」2軸を改訂。`ModeWrapperGoal`＋残存補助 Goal（Heal/給料/収納/搬送/Teleport/PlaySnow/Target/Look 系）を Brain の Activity（CORE/IDLE/WORK/FIGHT）へ移植。`ModeManager`/`CombatMode`/`ItemMatcher`/`TargetingSystem`/`BlockSearch` は再利用。新 ADR を起こす。GameTest を厚く。
+> **完了済みベースライン（履歴省略・現状把握用に要点のみ）**: Brain AI 全面移行（ADR-0003）／ `MaidMode`・`Mode`・`MaidSoul` の Codec 化（ADR-0002）／ DataGen（model/blockstate/lang/tag/recipe/loot/advancement）／ Brigadier コマンド（`command/LMCommands`）／ DataFixer（`entity/soul/MaidDataFixer`）。これらは消化済みのため本バックログからは除外。
 
 ---
 
-## 🩹 残課題: モード状態 NBT の永続化（WS1/WS2 と並行検討）
+## 🧹 内部整理リファクタリング（6 ワークストリーム・進行中）
 
-- [ ] 一部モードの内部状態（Archer/Fencer→`CombatMode` の cooldown、Healer の index 等）が未永続化でリロード時に挙動が変わる。WS2 の Codec 基盤で永続化を検討（挙動が変わる修正のため記述量削減リファクタとは分離して扱う）。
+> 背景: Brain AI 移行後のクリーンアップ。低リスクから消化する。推奨順 **§B → §E → §F → §D**（§A/§C は完了済み・状況のみ）。詳細手順は `HOWTO.md` の対応節。
+> ⚠️ ローカル JDK25 不在環境では検証は CI（Java25）が前提。保護コアに触れる §D/§E は `runClient` 実機確認を併用。
+
+### §A — Goal の AI(Brain)化 … ✅ ほぼ完了（HowTo 不要）
+
+- **進捗**: カスタム Goal は全廃。行動は Brain Behavior（`entity/ai/behavior/Maid*Behavior` 13 種）で駆動。`entity/goal/` パッケージ・`ModeWrapperGoal` 削除済み（ソース参照ゼロ）。`Float`→`Swim` / `OpenDoor`→`InteractWithDoor` も Behavior 化。
+- **意図的に残置（機能的問題なし・あえて Goal）**: `LittleMaidEntity#registerGoals()` の `AvoidEntityGoal`/`PanicGoal`/`LookAtPlayerGoal`×2/`RandomLookAroundGoal`（視線は `LOOK_TARGET` プロデューサ不在のため Behavior 化しない設計判断）。`MultiModelEntity#registerGoals()` の `FloatGoal`+`LookAtPlayerGoal`×2（ダミー表示エンティティ）。
+- [ ] **（任意・低）ADR と実装の差異是正**: ADR-0003 は `CORE/FIGHT/WORK/IDLE` の 4 Activity を記すが、実装は **全 Behavior が CORE に一括**で Activity 分割は未実装。挙動は正常なので、ADR を実態に合わせるか分割を実装してから ADR を正とするか、どちらか（任意）。
+
+### §B — デッドコード削除 … → HOWTO §B（低リスク・即効）
+
+- [ ] `setup/ClientSetup.java`（空 `init()`・参照ゼロ）をクラスごと削除。
+- [ ] `entity/util/MaidMode.fromName(String)`（呼び出しゼロ・`byName` の重複）削除。
+- [ ] `api/mode/ItemMatchers` の `item(Item)`(@Deprecated)/`name(String)` ＋ private record `ItemInstance`/`NameMatcher`（全て呼び出しゼロ）削除。
+- [ ] `api/mode/ModeType.Builder.addItemMatcher(ItemMatcher)` 単一引数版(@Deprecated・呼び出しゼロ)削除。
+- [ ] `mixin/MixinPlayerEntity` の空 `@Inject` 2 件（`<init>` / `stopSleepInBed`）削除（§D と同時でも可）。
+- [ ] （要確認）`util/BlockFinder` の `findTarget`/`findHorizonPos`/`findLayer`/`findHorizon`（未使用の疑い・`//多分動かん`）— call-site 再確認のうえ削除。
+- [ ] （任意・低）単一実装マーカー interface のインライン化: `HasMaidMode`/`Contractable`/`HasMode`/`GuiEntitySupplier`（polymorphic 利用ゼロ）。`HasInventory`/`SalaryBoxPosListener`/`LMCollidable`/`ProcessDivider` は load-bearing で残す。
+- [ ] stale ドキュメント是正: `CLAUDE.md:16` の `entity/goal/ — AI Goal`（削除済みパッケージ）／`CLAUDE.md` の `ClientSetup` 言及。
+
+### §C — 各 Mode の Behavior 化 … ✅ 完了（wrapper 方式）→ HOWTO §C（新規 Mode 追加手順）
+
+- **進捗**: 6 モード（`Combat`/`Cooking`/`Healer`/`Pharmcist`/`Ripper`/`Torcher`）は `Mode` サブクラスのまま、単一 `MaidWorkModeBehavior`（CORE）が `ModeManager` 選択中（Priority 降順）の `Mode` へ委譲。`caps_job` 契約・外部パック互換のため個別 Behavior 化は **行わない**（ADR-0002/0003 の設計判断）＝完了扱い。
+- 新規モードは `Mode` サブクラス＋`Mode.ENTRIES` 登録＋`ItemMatcher`＋タグ＋lang で追加（Brain 側無改修）。手順は HOWTO §C。
+
+### §D — Mixin の整理・脱 Mixin … → HOWTO §D（中リスク）
+
+- **KEEP（バイトコード必須）**: `MixinExperienceOrbEntity`/`MixinItemEntity`/`MixinRangedWeaponItem`/`MixinAbstractFurnaceBlockEntity`(getRecipeType_LM)/`MixinPlayerEntity`(positionRider/onPassengerTurned override)。
+- [ ] `MixinServerPlayerEntity`（6 `@Inject`・状態フィールドなし）→ NeoForge イベント（`PlayerEvent.Clone`/`PlayerTickEvent.Pre`/睡眠/セーブ）へ。ファイルごと撤去候補。
+- [ ] `MixinCandleCakeBlock`（復活儀式）→ `UseItemOnBlockEvent` へ。ファイルごと撤去候補。
+- [ ] `MixinCrossBowItem` → `MixinRangedWeaponItem` に `instanceof CrossbowItem` 分岐で統合（Mixin 1 件減）。
+- [ ] `mixin/CrossbowItemInvoker`（実は Mixin ではない・誤配置）→ `entity/util/`（`CrossbowSpeedUtil` 等）へ移設 or インライン。
+- [ ] （任意）`MixinAbstractFurnaceBlockEntity.isBurningFire_LM` → ブロックステート `LIT` 由来にして `@Shadow` 削減。
+- 注意: Mixin 撤去時は `littlemaidneo.mixins.json` の登録も同時削除。命名 `_LM`/`_LMRB` 混在は `_LM` へ寄せると一貫（任意）。
+
+### §E — common/ パッケージ切り出し … → HOWTO §E（低〜中リスク）
+
+- [ ] `LittleMaidEntity` と `MultiModelEntity` が重複する `IHasMultiModel`(13)＋`SoundPlayable`(3) の委譲 ~16 メソッドを共通化。
+- 方針: 親クラスが異なり（`TamableAnimal` vs `PathfinderMob`）基底共有不可 → `entity/common/MultiModelHolder`・`entity/common/SoundHolder`（default メソッド付きホルダ interface）を新設。両エンティティは `getMultiModel()`/`getSoundCompound()` のみ実装し本体メソッドを削除。`IHasMultiModel` の polymorphic 利用（3 実装・25 ファイル）は不変。
+- [ ] 併せて切り出し: スポーン同期（`writeSpawnData`/`readSpawnData`）の multimodel/sound 部、テクスチャ/ボイス初期化。
+
+### §F — LittleMaidEntity の分割 … → HOWTO §F（中リスク）
+
+- **現状**: `entity/LittleMaidEntity.java` は **1934 行・10 interface 実装**で最大ファイル（次点の約 3 倍）。既存委譲: `LMSafeMovement`/`LMInteractionHandler`/`LMHasInventory`/`LMItemContractable`/`HasModeImpl`/`MaidResurrection`/`BookParameterParser`/`TargetTagManagerImpl`/`TargetingSystem`/`MultiModelCompound`/`SoundPlayableCompound`/`MaidLookControl`。
+- [ ] 未委譲クラスタをコンポーネント抽出（1 クラスタ＝1 コミット）:
+  - 戦闘 → `MaidCombat`（`doHurtTarget`/`hurtServer`/`performRangedAttack`/クロスボウ/`hurtArmor`/`hurtHelmet`/`killedEntity`/`canAttack`/`getProjectile`）
+  - 加速 → `MaidAcceleration`（`getTickMultiple`/`setAccelerationTicks`/`dec…`/`get…`/`isAcceleration`/`inTickMultiplePre`/`Post`）
+  - 環境音・演出 → `MaidVoice`/`MaidParticle`（`playAmbientSound`/`die` ボイス/`handleEntityEvent` 粒子/`showFreedomParticle`/`showTracerParticle`）
+  - 個体差初期化 → ヘルパ（`setRandomTexture`/`setRandomVoice`）
+  - multimodel/sound 委譲 → §E の common ホルダで解消
+- 注意: `@Override`（特に `super` 呼び出し・バニラ protected override）は本体に残し中身のみ委譲（CLAUDE.md 方針）。
+
+---
+
+## 🩹 残課題: モード状態 NBT の永続化（§C と並行・挙動変化を伴うため別管理）
+
+- [ ] 一部モードの内部状態（Combat の cooldown、Healer の index 等）が未永続化でリロード時に挙動が変わる。Codec 基盤で永続化を検討（挙動が変わる修正のため記述量削減リファクタとは分離して扱う）。
 - [ ] 移動モード enum 値名 `FREEDOM`/`ESCORT`/`TRACER` を `IDLE`/`FOLLOW`/`GUARD` 等へ改称する場合は、lang / DataGen / 描画 caps（`caps_isFreedom` 等）/ 本パラメータの同時更新が必要（ADR-0002 で見送り済み・任意）。
 
 ---
@@ -80,4 +118,5 @@
 - `resource/classloader/`・`maidmodel/`・`GLCompat`・`EntityLittleMaid` スタブ。
 - 保護コア B（ボイスパック形式・`LMSounds`・探索パス・同期パケット形式）。
 - 移動モード旧 byte 形式の後方互換（ADR-0002 で非対応宣言済み）。
+- 各 `Mode` の個別 Behavior 化（`caps_job` 契約保護のため wrapper 方式を採用・§C）。
 - Forge Energy（概念非該当）。
