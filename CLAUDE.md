@@ -13,7 +13,7 @@ LittleMaidNeo は、レガシー Mod 系譜 **LittleMaidRebirth (LMRB)** と **L
 - メインエントリ: `LittleMaidNeo.java`（`@Mod("littlemaidneo")`）／`LittleMaidNeoClient.java`
 - 主要パッケージ:
   - `entity/` — `LittleMaidEntity`（中心エンティティ・約 89KB）、`MultiModelEntity`、`MaidSoulEntity`
-    - `entity/goal/` — AI Goal
+    - `entity/ai/behavior/` — Brain Behavior（`MaidFollowOwnerBehavior`, `MaidFreedomBehavior`, `MaidTraceBehavior`, `MaidWorkModeBehavior` 等）
     - `entity/mode/` — モード実装（`CookingMode`, `FencerMode`, `ArcherMode`, `HealerMode` 等）
     - `entity/targeting/` — ターゲティング
     - `entity/compound/` — `IHasMultiModel` 等の合成 interface
@@ -108,9 +108,8 @@ LittleMaidNeo は、レガシー Mod 系譜 **LittleMaidRebirth (LMRB)** と **L
   - 旧 LMRB の AutoConfig + Cloth Config からは置き換え済み
 - コンフィグ追加手順: (1) `LMRBConfig` に `ModConfigSpec.XxxValue` フィールド追加 → static ブロックで定義 (2) 消費側でゲッター経由参照に置換 (3) lang/{en_us,ja_jp}.json にキー追加
 - ターゲティング設定は `TargetingConfig` ラッパー経由でアクセスする（`TargetingConfig.getAlertRange()` 等）
-- ブロック操作モード（料理・醸造）: `BlockWorkMode` + `WorkStrategy<T>`（Strategy パターン、委譲）
-- ブロック探索: `BlockSearch`（非同期 BFS）+ `SearchCondition`（linkable 条件ビルダー）
-- ブロック排他制御: `BlockReservationManager`（`GlobalPos` でディメンション対応）
+- ブロック操作モード（料理・醸造）の共通ロジックは `entity/mode/ModeHelpers.java` に集約
+- ブロック探索: `util/BlockFinder`（同期 BFS）/ `util/BlockFinderPD`（逐次 BFS・`util/ProcessDivider` で分割）
 - `LMSounds` 定数は `String` 型。`mob.play(LMSounds.COOKING_START)` のように使用
 - `LittleMaidEntity` は以下の委譲クラス・コンポーネントに機能が分割されています：
   - `MaidResurrection` (契約期間延長・復活演出の処理)
@@ -124,7 +123,7 @@ LittleMaidNeo は、レガシー Mod 系譜 **LittleMaidRebirth (LMRB)** と **L
   - `TargetingSystem` (他エンティティの友好/敵対ターゲット評価)
   - `work.nemonet.littlemaidneo.entity.ai.control.MaidLookControl` (首振り最大角度制限のクランプおよび視線・頭部向き制御の一元化)
 - `getNavigation()` は `Mob` に定義（`LivingEntity` ではない）— NeoForge / Mojang マッピングでは Yarn 時代の `MobEntity` → `Mob`
-- `initGoals()` は `Mob` コンストラクタ内で呼ばれる — サブクラスのフィールドは未初期化。外部委譲時はラムダで遅延参照すること
+- `registerGoals()` は `Mob` の `initGoals()` 経由でコンストラクタ内に呼ばれる — サブクラスのフィールドは未初期化。外部委譲時はラムダで遅延参照すること。`registerGoals()` は残存 Goal 全廃後に削除予定（§A 参照）
 
 ### Networking
 - NeoForge `RegisterPayloadHandlersEvent` ベース（`network/NetworkHandler.register(event)`）。旧 Architectury Networking API からは置き換え済み
