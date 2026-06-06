@@ -20,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Comparator;
 
-public class MaidPlaySnowBehavior extends Behavior<LittleMaidEntity> {
+public class MaidPlaySnowBehavior extends AbstractMaidBehavior {
     private final int maxCraftSnowballTime = 60;
     private final int maxLookTargetTime = 30;
     private final int maxWaitNextTime = 30;

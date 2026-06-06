@@ -23,7 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Optional;
 
-public class MaidCollectSalaryBehavior extends Behavior<LittleMaidEntity> {
+public class MaidCollectSalaryBehavior extends AbstractMaidBehavior {
 
     @Nullable
     protected BlockPos targetContainerPos;

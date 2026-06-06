@@ -23,7 +23,7 @@ import work.nemonet.littlemaidneo.util.BlockFinderPD;
 import net.minecraft.util.Mth;
 import org.jetbrains.annotations.Nullable;
 
-public class MaidStoreItemBehavior extends Behavior<LittleMaidEntity> {
+public class MaidStoreItemBehavior extends AbstractMaidBehavior {
     @Nullable
     protected BlockPos containerPos;
     @Nullable
@@ -100,9 +100,7 @@ public class MaidStoreItemBehavior extends Behavior<LittleMaidEntity> {
 
     protected boolean isExceptItem(LittleMaidEntity entity, ItemStack stack) {
         return stack.is(LMTags.Items.MAIDS_SALARY) ||
-                entity.hasModeImpl.getMode()
-                        .filter(mode -> mode.getModeType().isModeItem(stack))
-                        .isPresent();
+                work.nemonet.littlemaidneo.entity.util.MaidJobManager.isModeItemForJob(entity.getActiveJobName(), stack);
     }
 
     protected void storeItems(LittleMaidEntity entity) {

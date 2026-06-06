@@ -5,13 +5,10 @@
   "minVersion": "0.8",
   "mixins": [
     "MixinAbstractFurnaceBlockEntity",
-    "MixinCandleCakeBlock",
-    "MixinCrossBowItem",
     "MixinExperienceOrbEntity",
     "MixinItemEntity",
     "MixinPlayerEntity",
-    "MixinRangedWeaponItem",
-    "MixinServerPlayerEntity"
+    "MixinRangedWeaponItem"
   ],
   "client": [],
   "injectors": {

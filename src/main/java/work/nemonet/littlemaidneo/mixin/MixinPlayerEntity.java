@@ -33,14 +33,6 @@ public abstract class MixinPlayerEntity
         super(entityType, world);
     }
 
-    @Inject(method = "<init>", at = @At("RETURN"))
-    public void onInit(
-        Level world,
-        GameProfile gameProfile,
-        CallbackInfo ci
-    ) {
-    }
-
     @Inject(method = "readAdditionalSaveData", at = @At("RETURN"))
     public void onRead(ValueInput input, CallbackInfo ci) {
         var oldTags = input.childrenListOrEmpty("targetTagMap");
@@ -95,10 +87,5 @@ public abstract class MixinPlayerEntity
         entity.setYHeadRot(yaw);
     }
 
-    @Inject(method = "stopSleepInBed(ZZ)V", at = @At("RETURN"))
-    private void onStopSleepInBed(
-        boolean skipSleepTimer,
-        boolean updateSleepingPlayers,
-        CallbackInfo ci
-    ) {}
+
 }

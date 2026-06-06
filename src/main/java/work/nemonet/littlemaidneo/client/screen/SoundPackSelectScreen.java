@@ -2,14 +2,9 @@ package work.nemonet.littlemaidneo.client.screen;
 
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.input.CharacterEvent;
-import net.minecraft.client.input.KeyEvent;
-import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
-import net.neoforged.api.distmarker.Dist;
 import work.nemonet.littlemaidneo.LittleMaidNeo;
 import work.nemonet.littlemaidneo.client.screen.component.FilterPredicate;
 import work.nemonet.littlemaidneo.client.screen.component.FilterableListGUI;
@@ -21,13 +16,13 @@ import work.nemonet.littlemaidneo.resource.holder.ConfigHolder;
 import work.nemonet.littlemaidneo.resource.manager.LMConfigManager;
 
 import java.util.stream.Collectors;
-public class SoundPackSelectScreen<T extends Entity & SoundPlayable> extends Screen {
+
+public class SoundPackSelectScreen<T extends Entity & SoundPlayable> extends AbstractFilterableListScreen<SoundPackSelectScreen.SoundPackGUI> {
     public static final Identifier MODEL_SELECT_GUI_TEXTURE =
             Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, "textures/gui/model_select.png");
     private static final int GUI_WIDTH = 256;
     private static final int GUI_HEIGHT = 196;
     private final T entity;
-    private FilterableListGUI<SoundPackGUI> soundPackListGUI;
 
     public SoundPackSelectScreen(Component titleIn, T owner) {
         super(titleIn);
@@ -51,7 +46,7 @@ public class SoundPackSelectScreen<T extends Entity & SoundPlayable> extends Scr
             return combinedText.contains(filterText.toLowerCase());
         };
 
-        this.soundPackListGUI = FilterableListGUI.<SoundPackGUI>builder()
+        this.listGUI = FilterableListGUI.<SoundPackGUI>builder()
                 .position((width - totalWidth) / 2, (height - totalHeight) / 2)
                 .size(totalWidth, totalHeight)
                 .elementSize(totalWidth, elementHeight)
@@ -73,47 +68,18 @@ public class SoundPackSelectScreen<T extends Entity & SoundPlayable> extends Scr
         context.blit(MODEL_SELECT_GUI_TEXTURE, relX, relY, GUI_WIDTH, GUI_HEIGHT, 0.0f, 0.0f, (float) GUI_WIDTH, (float) GUI_HEIGHT);
 
         super.extractRenderState(context, mouseX, mouseY, delta);
-        this.soundPackListGUI.extractRenderState(context, mouseX, mouseY, delta);
-    }
-
-    @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean handled) {
-        return this.soundPackListGUI.mouseClicked(event, handled);
-    }
-
-    @Override
-    public boolean mouseReleased(MouseButtonEvent event) {
-        return this.soundPackListGUI.mouseReleased(event);
-    }
-
-    @Override
-    public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
-        return this.soundPackListGUI.mouseDragged(event, deltaX, deltaY);
-    }
-
-    @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
-        if (this.soundPackListGUI.mouseScrolled(mouseX, mouseY, deltaX, deltaY)) return true;
-        return super.mouseScrolled(mouseX, mouseY, deltaX, deltaY);
-    }
-
-    @Override
-    public boolean keyPressed(KeyEvent event) {
-        if (super.keyPressed(event)) return true;
-        return this.soundPackListGUI.keyPressed(event);
-    }
-
-    @Override
-    public boolean charTyped(CharacterEvent event) {
-        if (this.soundPackListGUI.charTyped(event)) return true;
-        return super.charTyped(event);
+        if (this.listGUI != null) {
+            this.listGUI.extractRenderState(context, mouseX, mouseY, delta);
+        }
     }
 
     @Override
     public void removed() {
         super.removed();
-        soundPackListGUI.getSelectedItem()
-                .ifPresent(gui -> NetworkHandler.sendSyncSoundPackC2S(this.entity, gui.getConfigHolder()));
+        if (listGUI != null) {
+            listGUI.getSelectedItem()
+                    .ifPresent(gui -> NetworkHandler.sendSyncSoundPackC2S(this.entity, gui.getConfigHolder()));
+        }
     }
 
     public static class SoundPackGUI extends GUIElement implements ListGUIElement {

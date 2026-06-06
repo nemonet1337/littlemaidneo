@@ -11,7 +11,7 @@ import work.nemonet.littlemaidneo.entity.util.MaidMode;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 import work.nemonet.littlemaidneo.setup.ModRegistration;
 
-public class MaidTeleportBehavior extends Behavior<LittleMaidEntity> {
+public class MaidTeleportBehavior extends AbstractMaidBehavior {
     private LivingEntity owner;
     private int updateCountdownTicks;
 

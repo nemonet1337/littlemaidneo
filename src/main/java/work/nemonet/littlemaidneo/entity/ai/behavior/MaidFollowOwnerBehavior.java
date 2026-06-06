@@ -13,7 +13,7 @@ import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.util.MaidMode;
 import work.nemonet.littlemaidneo.setup.ModRegistration;
 
-public class MaidFollowOwnerBehavior extends Behavior<LittleMaidEntity> {
+public class MaidFollowOwnerBehavior extends AbstractMaidBehavior {
     public MaidFollowOwnerBehavior() {
         super(ImmutableMap.of(
                 ModRegistration.OWNER.get(), MemoryStatus.VALUE_PRESENT,

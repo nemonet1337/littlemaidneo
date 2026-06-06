@@ -75,22 +75,19 @@ import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
 import org.jetbrains.annotations.Nullable;
 import work.nemonet.littlemaidneo.LittleMaidNeo;
 import work.nemonet.littlemaidneo.advancement.criterion.LMRBCriteria;
-import work.nemonet.littlemaidneo.api.mode.Mode;
-import work.nemonet.littlemaidneo.api.mode.ModeManager;
+import work.nemonet.littlemaidneo.common.MultiModelHolder;
+import work.nemonet.littlemaidneo.common.SoundHolder;
 import work.nemonet.littlemaidneo.config.LMRBConfig;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
 import work.nemonet.littlemaidneo.entity.compound.MultiModelCompound;
 import work.nemonet.littlemaidneo.entity.compound.SoundPlayable;
 import work.nemonet.littlemaidneo.entity.compound.SoundPlayableCompound;
-import work.nemonet.littlemaidneo.entity.mode.HasMode;
-import work.nemonet.littlemaidneo.entity.mode.HasModeImpl;
 import work.nemonet.littlemaidneo.entity.targeting.TargetIdentifier;
 import work.nemonet.littlemaidneo.entity.targeting.TargetTagManager;
 import work.nemonet.littlemaidneo.entity.targeting.TargetTagManagerImpl;
 import work.nemonet.littlemaidneo.entity.targeting.TargetingSystem;
 import work.nemonet.littlemaidneo.entity.util.*;
 import work.nemonet.littlemaidneo.maidmodel.IModelCaps;
-import work.nemonet.littlemaidneo.mixin.CrossbowItemInvoker;
 import work.nemonet.littlemaidneo.multimodel.IMultiModel;
 import work.nemonet.littlemaidneo.multimodel.layer.MMPose;
 import work.nemonet.littlemaidneo.network.NetworkHandler;
@@ -115,16 +112,15 @@ import com.mojang.serialization.Dynamic;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
-//メイドさん本体
+//????????????
 public class LittleMaidEntity
         extends TamableAnimal
         implements
         IEntityWithComplexSpawn,
         HasInventory,
         Contractable,
-        HasMode,
-        IHasMultiModel,
-        SoundPlayable,
+        MultiModelHolder,
+        SoundHolder,
         HasMaidMode,
         CrossbowAttackMob,
         SalaryBoxPosListener,
@@ -138,7 +134,7 @@ public class LittleMaidEntity
                 stack.is(Items.PUMPKIN_SEEDS));
     }
 
-    // LMM_FLAGSのindex
+    // LMM_FLAGS??index
     private static final int WAIT_INDEX = 0;
     private static final int AIMING_INDEX = 1;
     private static final int BEGGING_INDEX = 2;
@@ -166,62 +162,83 @@ public class LittleMaidEntity
     private static final EntityDataAccessor<Integer> CONTRACT_TIME = SynchedEntityData.defineId(
             LittleMaidEntity.class,
             EntityDataSerializers.INT);
-    // エンチャントの瓶はランダムな経験値を排出するため、その平均値を作成コストとする
-    // LMInteractionHandler から参照するためパッケージプライベート
+    // ?????????????????????????????????????????????????????????????????????
+    // LMInteractionHandler ???????????????????????????????
     static final int EXPERIENCE_BOTTLE_COST = 7;
 
-    // 移譲s
+    // ????s
     public final LMHasInventory littleMaidInventory = new LMHasInventory();
     public final LMItemContractable<LittleMaidEntity> itemContractable = new LMItemContractable<>(
             this,
             () -> getConfig().contract.consumeSalaryInterval,
             () -> getConfig().contract.unpaidDaysLimit,
             (ItemStack stack) -> stack.is(LMTags.Items.MAIDS_SALARY));
-    public final HasModeImpl hasModeImpl = new HasModeImpl(
-            this,
-            this,
-            new HashSet<>(),
-            mode -> {
-                setModeName(mode != null ? mode.getName() : "");
-            });
+    public final work.nemonet.littlemaidneo.entity.ai.behavior.MaidCombatBehavior combatBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidCombatBehavior();
+    public final work.nemonet.littlemaidneo.entity.ai.behavior.MaidCookingBehavior cookingBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidCookingBehavior();
+    public final work.nemonet.littlemaidneo.entity.ai.behavior.MaidHealerBehavior healerBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidHealerBehavior();
+    public final work.nemonet.littlemaidneo.entity.ai.behavior.MaidPharmcistBehavior pharmcistBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidPharmcistBehavior();
+    public final work.nemonet.littlemaidneo.entity.ai.behavior.MaidRipperBehavior ripperBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidRipperBehavior();
+    public final work.nemonet.littlemaidneo.entity.ai.behavior.MaidTorcherBehavior torcherBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidTorcherBehavior();
+
+    public final work.nemonet.littlemaidneo.entity.ai.behavior.MaidLookAroundBehavior lookAroundBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidLookAroundBehavior();
+    public final work.nemonet.littlemaidneo.entity.ai.behavior.MaidPanicBehavior panicBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidPanicBehavior(1.5f);
+    public final work.nemonet.littlemaidneo.entity.ai.behavior.MaidAvoidBehavior avoidBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidAvoidBehavior();
+
+    public String getActiveJobName() {
+        if (this.isStrike()) {
+            return "none";
+        }
+        return this.getBrain().getMemory(ModRegistration.ACTIVE_JOB_NAME.get()).orElse("none");
+    }
+
+    public String getActiveBattleMode() {
+        return this.getBrain().getMemory(ModRegistration.ACTIVE_BATTLE_MODE.get()).orElse("none");
+    }
     public final MultiModelCompound multiModel;
     public final SoundPlayableCompound soundPlayer;
     private final LMScreenHandlerFactory screenFactory = new LMScreenHandlerFactory(this);
     private final IModelCaps caps = new LittleMaidModelCaps(this);
     private final TargetTagManager targetTagManager;
 
-    private final Map<Mob, Predicate<Mob>> fleeEntities = new HashMap<>();
+    @Override
+    public MultiModelCompound getMultiModel() {
+        return multiModel;
+    }
+
+    @Override
+    public SoundPlayableCompound getSoundPlayer() {
+        return soundPlayer;
+    }
+
+    public final Map<Mob, java.util.function.Predicate<Mob>> fleeEntities = new HashMap<>();
 
     @Nullable
     private BlockPos freedomPos;
 
-    // 首傾げのやつ
+    // ?????????
 private float interestedAngle;
 private float prevInterestedAngle;
 
     private int playSoundCool;
     private int idFactor;
     public int experiencePickUpDelay;
-    // accelerationTicks はサーバー権威。クライアントへは ACCELERATE フラグ(SynchedEntityData)と
-    // スポーンパケット(writeVarInt/readVarInt)で同期されるため、クライアント側の生値は描画補助以上の用途に使わない。
-    private int accelerationTicks;
+    private final MaidAcceleration acceleration = new MaidAcceleration(this);
     private boolean maidManagerRegistered;
 
-    // コンストラクタ
+    // ?????????????
     public LittleMaidEntity(EntityType<LittleMaidEntity> type, Level worldIn) {
         super(type, worldIn);
         this.moveControl = new FixedMoveControl(this);
-        this.lookControl = new work.nemonet.littlemaidneo.entity.ai.control.MaidLookControl(this);
+        this.lookControl = new work.nemonet.littlemaidneo.entity.ai.MaidLookControl(this);
         ((GroundPathNavigation) getNavigation()).setCanOpenDoors(true);
         multiModel = new MultiModelCompound(
                 this,
                 LMTextureManager.INSTANCE.getTexture("Default").orElseThrow(() -> new IllegalStateException(
-                        "デフォルトテクスチャが存在しません。")),
+                        "??????????????????????????????")),
                 LMTextureManager.INSTANCE.getTexture("Default").orElseThrow(() -> new IllegalStateException(
-                        "デフォルトテクスチャが存在しません。")));
+                        "??????????????????????????????")));
         soundPlayer = new SoundPlayableCompound(this,
                 () -> multiModel.getTextureHolder(Layer.SKIN, Part.HEAD).getTextureName());
-        addDefaultModes(this);
         initIdFactor();
         setRandomTexture();
         setRandomVoice();
@@ -239,8 +256,8 @@ private float prevInterestedAngle;
         return builder;
     }
 
-    // 自然スポーン条件: 足元が完全な当たり判定を持つブロックで、明るさが 8 超であること。
-    // スポーン条件の細分化（明るさ閾値・バイオーム等のコンフィグ化）は機能バックログ（Phase 6）で扱う。
+    // ???????????????: ?????????????????????????????????????? 8 ???????????
+    // ??????????????????????????????????????????????????????????????????????hase 6?????????
     public static boolean isValidNaturalSpawn(
             LevelAccessor world,
             BlockPos pos) {
@@ -257,16 +274,18 @@ private float prevInterestedAngle;
         return MaidResurrection.resurrect(world, pos, player);
     }
 
-    // 視線制御の役割分担:
-    //   - 移動 (WALK_TARGET) を消費するのは MoveToTargetSink。MaidFollowOwner/Stare/Freedom が WALK_TARGET を設定するため必須。
-    //   - 頭部向きは GoalSelector の LookAtPlayerGoal / RandomLookAroundGoal が担当し、MaidStareBehavior は
-    //     getLookControl().setLookAt(...) で直接制御する。いずれも最終的に MaidLookControl で角度クランプされる。
-    //   - バニラの LookAtTargetSink は LOOK_TARGET メモリを消費するが、本 Mod では LOOK_TARGET を設定する
-    //     プロデューサが存在せず常に no-op だったため登録しない（孤立した不活性 Behavior の混入を防ぐ）。
+    // ????????????????:
+    //   - ???? (WALK_TARGET) ????????????? MoveToTargetSink??aidFollowOwner/Stare/Freedom ?? WALK_TARGET ??????????????????
+    //   - ????????? GoalSelector ?? LookAtPlayerGoal / RandomLookAroundGoal ????????aidStareBehavior ??
+    //     getLookControl().setLookAt(...) ??????????????????????????? MaidLookControl ????????????????????
+    //   - ??????? LookAtTargetSink ?? LOOK_TARGET ???????????????????? Mod ???? LOOK_TARGET ?????????
+    //     ?????????????????????? no-op ???????????????????????????????? Behavior ???????????????
     private static final Brain.Provider<LittleMaidEntity> BRAIN_PROVIDER = Brain.<LittleMaidEntity>provider(
             ImmutableList.of(
                     ModRegistration.IS_WAITING.get(),
                     ModRegistration.OWNER.get(),
+                    ModRegistration.ACTIVE_JOB_NAME.get(),
+                    ModRegistration.ACTIVE_BATTLE_MODE.get(),
                     MemoryModuleType.WALK_TARGET,
                     MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE,
                     MemoryModuleType.PATH,
@@ -279,11 +298,18 @@ private float prevInterestedAngle;
                     ActivityData.<LittleMaidEntity>create(Activity.CORE, 0, ImmutableList.<BehaviorControl<? super LittleMaidEntity>>of(
                             new net.minecraft.world.entity.ai.behavior.Swim(0.8f),
                             net.minecraft.world.entity.ai.behavior.InteractWithDoor.create(),
+                            entity.avoidBehavior,
+                            entity.panicBehavior,
                             new work.nemonet.littlemaidneo.entity.ai.behavior.MaidTeleportBehavior(),
                             new work.nemonet.littlemaidneo.entity.ai.behavior.MaidWaitBehavior(),
                             new work.nemonet.littlemaidneo.entity.ai.behavior.MaidHealSelfBehavior(),
                             new work.nemonet.littlemaidneo.entity.ai.behavior.MaidTargetBehavior(),
-                            new work.nemonet.littlemaidneo.entity.ai.behavior.MaidWorkModeBehavior(),
+                            entity.combatBehavior,
+                            entity.cookingBehavior,
+                            entity.healerBehavior,
+                            entity.pharmcistBehavior,
+                            entity.ripperBehavior,
+                            entity.torcherBehavior,
                             new work.nemonet.littlemaidneo.entity.ai.behavior.MaidCollectSalaryBehavior(),
                             new work.nemonet.littlemaidneo.entity.ai.behavior.MaidStoreItemBehavior(),
                             new work.nemonet.littlemaidneo.entity.ai.behavior.MaidMoveToDropItemBehavior(),
@@ -291,6 +317,7 @@ private float prevInterestedAngle;
                             new work.nemonet.littlemaidneo.entity.ai.behavior.MaidFreedomBehavior(),
                             new work.nemonet.littlemaidneo.entity.ai.behavior.MaidTraceBehavior(),
                             new work.nemonet.littlemaidneo.entity.ai.behavior.MaidPlaySnowBehavior(),
+                            entity.lookAroundBehavior,
                             new work.nemonet.littlemaidneo.entity.ai.behavior.MaidStareBehavior(),
                             new net.minecraft.world.entity.ai.behavior.MoveToTargetSink()
                     ))
@@ -308,60 +335,10 @@ private float prevInterestedAngle;
         return (Brain<LittleMaidEntity>) super.getBrain();
     }
 
-    // 登録メソッドたち
+    // ??????????????
 
     @Override
     protected void registerGoals() {
-        int priority = -1;
-        LMRBConfig config = getConfig();
-
-        // 危険な敵からの逃避
-        this.goalSelector.addGoal(
-                ++priority,
-                new AvoidEntityGoal<>(
-                        this,
-                        Mob.class,
-                        config.target.dangerousAvoidDistance,
-                        config.movement.followSpeed,
-                        config.movement.sprintSpeed,
-                        entity -> fleeEntities.containsKey(entity)) {
-                    @Override
-                    public void tick() {
-                        fleeEntities
-                                .entrySet()
-                                .removeIf(entry -> entry.getValue().test(entry.getKey()));
-                        super.tick();
-                    }
-
-                    @Override
-                    public void stop() {
-                        super.stop();
-                        this.mob.getNavigation().stop();
-                    }
-                });
-
-        // 野良
-        this.goalSelector.addGoal(
-                ++priority,
-                new PanicGoal(this, config.movement.escapeSpeed) {
-                    @Override
-                    public boolean canUse() {
-                        return (!TameableUtil.hasTameOwner(LittleMaidEntity.this) &&
-                                super.canUse());
-                    }
-                });
-
-
-        // 視線
-        // 既定の確率 0.02 では稀にしかプレイヤーを見ないため、メイドさんが
-        // 近くのプレイヤーを目で追うよう確率を引き上げる（プレイヤー優先）。
-        this.goalSelector.addGoal(
-                ++priority,
-                new LookAtPlayerGoal(this, Player.class, 8.0F, 0.8F, false));
-        this.goalSelector.addGoal(
-                priority,
-                new LookAtPlayerGoal(this, LivingEntity.class, 8.0F));
-        this.goalSelector.addGoal(priority, new RandomLookAroundGoal(this));
     }
 
     @Override
@@ -376,11 +353,9 @@ private float prevInterestedAngle;
         builder.define(CONTRACT_TIME, 0);
     }
 
-    public void addDefaultModes(LittleMaidEntity maid) {
-        this.hasModeImpl.addAllMode(ModeManager.INSTANCE.createModes(maid));
-    }
 
-    // 読み書き系
+
+    // ??????????
 
     @Override
     public void addAdditionalSaveData(ValueOutput output) {
@@ -404,7 +379,7 @@ private float prevInterestedAngle;
         this.multiModel.writeToNbt(output);
         output.putString("SoundConfigName", getConfigHolder().getName());
 
-        output.putInt("accelerationTicks", accelerationTicks);
+        acceleration.save(output);
     }
 
     @Override
@@ -453,64 +428,23 @@ private float prevInterestedAngle;
                 .ifPresent(name -> LMConfigManager.INSTANCE.getConfig(name).ifPresent(
                         this::setConfigHolder));
 
-        accelerationTicks = input.getIntOr("accelerationTicks", 0);
+        acceleration.load(input);
     }
 
-    // idFactor は initIdFactor()（コンストラクタおよび setUUID() 内）で UUID から確定する。
-    // 本メソッドはコンストラクタ末尾で idFactor 確定後に呼ばれるため、ここでは確定済みの値を前提にできる。
+    // idFactor ?? initIdFactor()??????????????????? setUUID() ????? UUID ????????????
+    // ?????????????????????????????? idFactor ?????????????????????????????????????????????????
     public void setRandomTexture() {
-        var textureHolderList = LMTextureManager.INSTANCE.getAllTextures()
-                .stream()
-                .filter(h -> h.hasSkinTexture(false)) // 野生テクスチャがある
-                .filter(h -> LMModelManager.INSTANCE.hasModel(h.getModelName()))
-                .toList();
-        if (textureHolderList.isEmpty()) {
-            return;
-        }
-        var textureHolder = textureHolderList.get(
-                idFactor % textureHolderList.size());
-        var colorList = Arrays.stream(TextureColors.values())
-                .filter(c -> textureHolder.getTexture(c, false, false).isPresent())
-                .toList();
-        if (colorList.isEmpty()) {
-            return;
-        }
-        var color = colorList.get(idFactor % colorList.size());
-        this.setColorMM(color);
-        this.setTextureHolder(textureHolder, Layer.SKIN, Part.HEAD);
-        if (textureHolder.hasArmorTexture()) {
-            setTextureHolder(textureHolder, Layer.INNER, Part.HEAD);
-            setTextureHolder(textureHolder, Layer.INNER, Part.BODY);
-            setTextureHolder(textureHolder, Layer.INNER, Part.LEGS);
-            setTextureHolder(textureHolder, Layer.INNER, Part.FEET);
-            setTextureHolder(textureHolder, Layer.OUTER, Part.HEAD);
-            setTextureHolder(textureHolder, Layer.OUTER, Part.BODY);
-            setTextureHolder(textureHolder, Layer.OUTER, Part.LEGS);
-            setTextureHolder(textureHolder, Layer.OUTER, Part.FEET);
-        }
+        MaidRandomizer.setRandomTexture(this);
     }
 
     public void setRandomVoice() {
-        if (getConfig().spawn.silentDefaultVoice) {
-            soundPlayer.setConfigHolder(LMConfigManager.EMPTY_CONFIG);
-        } else {
-            List<ConfigHolder> configs = LMConfigManager.INSTANCE.getAllConfig();
-            soundPlayer.setConfigHolder(configs.get(idFactor % configs.size()));
-        }
-        String defaultSoundPackName = getConfig().spawn.defaultSoundPackName;
-        if (!defaultSoundPackName.isEmpty()) {
-            LMConfigManager.INSTANCE.getAllConfig()
-                    .stream()
-                    .filter(c -> c.packName().equalsIgnoreCase(defaultSoundPackName))
-                    .findAny()
-                    .ifPresent(soundPlayer::setConfigHolder);
-        }
+        MaidRandomizer.setRandomVoice(this);
     }
 
-    // 鯖
+    // ??
     @Override
     public void writeSpawnData(RegistryFriendlyByteBuf buf) {
-        // モデル
+        // ?????
         buf.writeEnum(getColorMM());
         buf.writeBoolean(isContractMM());
         buf.writeUtf(getTextureHolder(Layer.SKIN, Part.HEAD).getTextureName());
@@ -518,22 +452,22 @@ private float prevInterestedAngle;
             buf.writeUtf(getTextureHolder(Layer.INNER, part).getTextureName());
             buf.writeUtf(getTextureHolder(Layer.OUTER, part).getTextureName());
         }
-        // サウンド
+        // ????????
         buf.writeUtf(getConfigHolder().getName());
-        // 頭の装飾品が表示されない対策
-        // 原因はインベントリを開くまで同期されないため
+        // ??????????????????????????
+        // ????????????????????????????????????
         ItemStack.OPTIONAL_STREAM_CODEC.encode(buf, getInventory().getItem(17));
-        // architectury側のミスでPitchYawが逆に与えられているのを修正
+        // architectury?????????PitchYaw????????????????????????
         buf.writeFloat(this.getXRot());
         buf.writeFloat(this.getYRot());
-        buf.writeVarInt(this.accelerationTicks);
+        acceleration.writeSpawnData(buf);
     }
 
-    // 蔵
+    // ??
     @Override
     public void readSpawnData(RegistryFriendlyByteBuf buf) {
-        // モデル
-        // readString()はクラ処理。このメソッドでは、クラ側なので問題なし
+        // ?????
+        // readString()??????????????????????????????????????????????
         setColorMM(buf.readEnum(TextureColors.class));
         setContractMM(buf.readBoolean());
         LMTextureManager textureManager = LMTextureManager.INSTANCE;
@@ -548,31 +482,31 @@ private float prevInterestedAngle;
                     .getTexture(buf.readUtf())
                     .ifPresent(textureHolder -> setTextureHolder(textureHolder, Layer.OUTER, part));
         }
-        // サウンド
+        // ????????
         LMConfigManager.INSTANCE.getConfig(buf.readUtf()).ifPresent(
                 this::setConfigHolder);
 
         getInventory().setItem(17, ItemStack.OPTIONAL_STREAM_CODEC.decode(buf));
         this.setXRot(buf.readFloat());
         this.setYRot(buf.readFloat());
-        this.accelerationTicks = buf.readVarInt();
+        acceleration.readSpawnData(buf);
     }
 
     @Override
     public void handleEntityEvent(byte status) {
         switch (status) {
             case 70 -> {
-                // 雇用時
+                // ?????
                 spawnTamingParticles(true);
                 play(LMSounds.GET_CAKE);
             }
             case 71 -> {
-                // 再雇用時
+                // ???????
                 spawnTamingParticles(true);
                 play(LMSounds.RECONTRACT);
             }
             case 72 -> {
-                // 砂糖あげた時
+                // ??????????
                 double maxInterval = getConfig().contract.consumeSalaryInterval;
                 double remaining = Math.max(0, maxInterval - this.getContractTime());
                 double ratio = remaining / maxInterval;
@@ -589,47 +523,20 @@ private float prevInterestedAngle;
             case 73 -> showFreedomParticle(); // toFreedom
             case 74 -> spawnTamingParticles(false); // toEscort
             case 75 -> showTracerParticle(); // toTracer
-            case 76 -> showTransAmParticles(); // トランザムのエフェクト
+            case 76 -> showTransAmParticles(); // ????????????????????
             default -> super.handleEntityEvent(status);
         }
     }
 
     protected void showFreedomParticle() {
-        for (int i = 0; i < 7; ++i) {
-            double d = this.random.nextGaussian() * 0.02;
-            double e = this.random.nextGaussian() * 0.02;
-            double f = this.random.nextGaussian() * 0.02;
-            int rgb = ((int) (this.random.nextFloat() * 255) << 16) |
-                    ((int) (this.random.nextFloat() * 255) << 8) |
-                    (int) (this.random.nextFloat() * 255);
-            this.level().addParticle(
-                    new DustParticleOptions(rgb, 1.0f),
-                    this.getRandomX(1.0),
-                    this.getRandomY() + 0.5,
-                    this.getRandomZ(1.0),
-                    d,
-                    e,
-                    f);
-        }
+        MaidParticle.showFreedomParticle(this);
     }
 
     protected void showTracerParticle() {
-        for (int i = 0; i < 7; ++i) {
-            double d = this.random.nextGaussian() * 0.02;
-            double e = this.random.nextGaussian() * 0.02;
-            double f = this.random.nextGaussian() * 0.02;
-            this.level().addParticle(
-                    ParticleTypes.CLOUD,
-                    this.getRandomX(1.0),
-                    this.getRandomY() + 0.5,
-                    this.getRandomZ(1.0),
-                    d,
-                    e,
-                    f);
-        }
+        MaidParticle.showTracerParticle(this);
     }
 
-    // バニラメソッズ
+    // ????????????
 
     @Override
     public void tick() {
@@ -681,14 +588,14 @@ private float prevInterestedAngle;
             pickupItem();
         }
         itemContractable.tick();
-        hasModeImpl.tick();
+        work.nemonet.littlemaidneo.entity.util.MaidJobManager.tick(this);
 
-        // つまみ食い
+        // ?????????
         if (this.tickCount % 40 == 0 && this.getHealth() < this.getMaxHealth()) {
             tryEatingFromInventory();
         }
 
-        // 水没時のお座り（待機）解除
+        // ?????????????????????????
         if (TameableUtil.isWait(this) && this.isInWater()) {
             TameableUtil.setWait(this, false);
         }
@@ -702,7 +609,7 @@ private float prevInterestedAngle;
         if (this.getHealth() <= 0 || this.isSpectator()) {
             return;
         }
-        // 乗り物にライド中の処理は省略
+        // ?????????????????????????
         var aabb = this.getBoundingBox().inflate(1.0, 0.5, 1.0);
         var aroundItems = this.level().getEntities(this, aabb);
         var exps = Lists.newArrayList();
@@ -736,8 +643,8 @@ private float prevInterestedAngle;
                 TameableUtil.getTameOwnerUuid(this).isEmpty());
     }
 
-    // canSpawn 等でも使われる経路コスト評価。足場が完全ブロックなら高評価(10.0)、
-    // それ以外は明るさベースのコストを返す。閾値のコンフィグ化は機能バックログ（Phase 6）。
+    // canSpawn ?????????????????????????????????????????????????????(10.0)??
+    // ???????????????????????????????????????????????????????????????hase 6????
     @Override
     public float getWalkTargetValue(BlockPos pos, LevelReader world) {
         return world
@@ -758,11 +665,11 @@ private float prevInterestedAngle;
         return null;
     }
 
-    // 騎乗オフセットはモデル定義（getMountedYOffset / getyOffset）から算出し、
-    // getPassengerRidingPosition / getVehicleAttachmentPoint で反映する。
+    // ????????????????????????etMountedYOffset / getyOffset????????????
+    // getPassengerRidingPosition / getVehicleAttachmentPoint ??????????
 
     /**
-     * 上に乗ってるエンティティへのオフセット (1.21.1ではgetPassengerRidingPositionに統合)
+     * ??????????????????????????????? (1.21.1????getPassengerRidingPosition??????)
      */
     public double getMountedYOffset() {
         IMultiModel model = getModel(Layer.SKIN, Part.HEAD).orElse(
@@ -771,7 +678,7 @@ private float prevInterestedAngle;
     }
 
     /**
-     * 騎乗時のオフセット
+     * ???????????????
      */
     public double getRidingYOffset() {
         IMultiModel model = getModel(Layer.SKIN, Part.HEAD).orElse(
@@ -791,9 +698,9 @@ private float prevInterestedAngle;
         return new Vec3(defaultPoint.x, -getRidingYOffset(), defaultPoint.z);
     }
 
-    // 毎回 EntityDimensions を生成するが、頻繁に呼ばれるメソッドではないためキャッシュしない。
-    // キャッシュ化はモデル変更・ポーズ・成長スケール全ての無効化が必要で、得られる効果に対し
-    // 複雑さ（無効化漏れによるヒットボックス不整合）のリスクが見合わないため見送る（設計判断）。
+    // ??? EntityDimensions ????????????????????????????????????????????????????????
+    // ???????????????????????????????????????????????????????????????????????????
+    // ????????????????????????????????????????????????????????????????????????????
     @Override
     public EntityDimensions getDefaultDimensions(Pose pose) {
         IMultiModel model = getModel(Layer.SKIN, Part.HEAD).orElse(
@@ -811,235 +718,38 @@ private float prevInterestedAngle;
     @Override
     public void restoreFrom(Entity entity) {
         super.restoreFrom(entity);
-        // ディメンション移動の時に、自由行動地点を削除する
+        // ?????????????????????????????????????????
         if (entity instanceof LittleMaidEntity oldMaid &&
                 oldMaid.getMaidMode() == MaidMode.FREEDOM) {
             this.setFreedomPos(null);
         }
     }
 
-    // 環境音（昼夜・天候・体力・時計所持）に応じた周囲ボイス再生。
-    // 発声頻度は外部ボイスパックの "LivingVoiceRate" パラメタ（保護コア B・既定 0.2）で制御する。
+    // ?????????????????????????????????????????????????
+    // ????????????????????????? "LivingVoiceRate" ????????????????? B?????? 0.2????????????
     @Override
     public void playAmbientSound() {
-        if (this.level().isClientSide() ||
-                this.dead ||
-                getConfigHolder()
-                        .getParameter("LivingVoiceRate")
-                        .map(s -> {
-                            try {
-                                return Float.parseFloat(s);
-                            } catch (Exception e) {
-                                return null;
-                            }
-                        })
-                        .orElse(0.2f) < random.nextFloat()) {
-            return;
-        }
-        if (getHealth() / getMaxHealth() < 0.3F) {
-            play(LMSounds.LIVING_WHINE);
-        } else {
-            if (tickCount % 4 == 0 &&
-                    this.level().canSeeSky(this.blockPosition())) {
-                Biome biome = this.level().getBiome(blockPosition()).value();
-                if (biome.coldEnoughToSnow(
-                        blockPosition(),
-                        this.level().getSeaLevel())) {
-                    play(LMSounds.LIVING_COLD);
-                } else if (2 <= biome.getBaseTemperature()) {
-                    play(LMSounds.LIVING_HOT);
-                }
-            } else if (tickCount % 4 == 1 && this.level().isRaining()) {
-                var pos = blockPosition();
-                Biome biome = this.level().getBiome(pos).value();
-                if (biome.getPrecipitationAt(pos, pos.getY()) == Biome.Precipitation.RAIN)
-                    play(LMSounds.LIVING_RAIN);
-                else if (biome.getPrecipitationAt(pos, pos.getY()) == Biome.Precipitation.SNOW)
-                    play(LMSounds.LIVING_SNOW);
-            } else {
-                if (this.getMainHandItem().getItem() == Items.CLOCK ||
-                        this.getOffhandItem().getItem() == Items.CLOCK) {
-                    int time = (int) (this.level().getGameTime() % 24000);
-                    // 時間約23500-1500はse_living_morning
-                    // 時間約12500-23500はse_living_night
-                    if (time < 1500 || 23500 <= time) {
-                        play(LMSounds.LIVING_MORNING);
-                    } else if (12500 <= time) {
-                        play(LMSounds.LIVING_NIGHT);
-                    } else {
-                        play(LMSounds.LIVING_DAYTIME);
-                    }
-                } else {
-                    play(LMSounds.LIVING_DAYTIME);
-                }
-            }
-        }
+        MaidVoice.playAmbientSound(this);
     }
 
-    @Override
-    public void die(DamageSource source) {
-        super.die(source);
-        // 死亡ボイスは必ず聞かせる
-        this.playSoundCool = 0;
-        play(LMSounds.DEATH);
-
-        if (!this.level().isClientSide()) {
-            TameableUtil.getTameOwner(this).ifPresent(owner -> {
-                if (owner instanceof net.minecraft.server.level.ServerPlayer player) {
-                    player.sendSystemMessage(
-                            net.minecraft.network.chat.Component.translatable(
-                                    "chat.littlemaidneo.maid_died",
-                                    this.getDisplayName(),
-                                    source.getLocalizedDeathMessage(this)));
-                }
-            });
-        }
-    }
-
-    @Override
-    public void remove(RemovalReason reason) {
-        super.remove(reason);
-        if (this.level() instanceof ServerLevel serverWorld &&
-                reason.shouldDestroy()) {
-            TameableUtil.getTameOwnerUuid(this).ifPresent(id -> {
-                var maidSoulEntity = new MaidSoulEntity(
-                        serverWorld,
-                        MaidSoulData.create(this));
-                maidSoulEntity.setPos(this.getX(), this.getY(), this.getZ());
-                maidSoulEntity.setDeltaMovement(
-                        new Vec3(
-                                random.nextGaussian() * 0.02,
-                                0.2,
-                                random.nextGaussian() * 0.02));
-                serverWorld.addFreshEntity(maidSoulEntity);
-            });
-        }
-    }
-
-    public void installMaidSoul(MaidSoulData maidSoul) {
-        load(
-                TagValueInput.create(
-                        ProblemReporter.DISCARDING,
-                        this.registryAccess(),
-                        maidSoul.getNbt()));
-        this.setHealth(getMaxHealth());
-        this.unsetRemoved();
-        this.dead = false;
-        this.deathTime = 0;
-    }
-
-    // 攻撃時: 吸血/通常ボイスを再生し、攻撃が通った場合はメインハンド武器の耐久を減らす。
-    // hurtEnemy は他 Mod がプレイヤー前提で実装している可能性があるため try/catch で保護する。
     @Override
     public boolean doHurtTarget(ServerLevel serverLevel, Entity target) {
-        boolean result = super.doHurtTarget(serverLevel, target);
-        if (this.isBloodSuck()) {
-            this.play(LMSounds.ATTACK_BLOOD_SUCK);
-        } else {
-            this.play(LMSounds.ATTACK);
-        }
-        // PlayerEntityのattack処理を参考に、武器の耐久地を減らす処理を実装する
-        if (result) {
-            ItemStack mainHandStack = this.getMainHandItem();
-            Entity entity = target;
-            if (target instanceof EnderDragonPart) {
-                entity = ((EnderDragonPart) target).parentMob;
-            }
-            if (!mainHandStack.isEmpty() && entity instanceof LivingEntity) {
-                // バニラではこのメソッドの第三引数にはプレイヤーエンティティしか渡されない
-                // そのため、他Modにおいて必ずプレイヤーであると仮定して実装した場合にクラッシュする可能性がある
-                // その対策にtry/catchを置いておく
-                try {
-                    mainHandStack
-                            .getItem()
-                            .hurtEnemy(mainHandStack, (LivingEntity) entity, this);
-                } catch (Exception e) {
-                    LittleMaidNeo.LOGGER.error(
-                            "メイドさんの攻撃時に例外が発生しました。",
-                            e);
-                }
-                if (mainHandStack.isEmpty()) {
-                    this.setItemInHand(
-                            InteractionHand.MAIN_HAND,
-                            ItemStack.EMPTY);
-                }
-            }
-        }
-        return result;
+        return MaidCombat.doHurtTarget(this, serverLevel, target, super.doHurtTarget(serverLevel, target));
     }
 
-    // 被ダメージ処理: 不死/落下/非Mod耐性などのコンフィグ判定 → フレンドファイア除外 →
-    // 戦闘/非戦闘モードによるダメージ係数適用 → 待機解除 → 状況別の被弾ボイス再生。
+    // ??????????????: ????/????/??od??????????????????????? ?? ?????????????????? ??
+    // ????/????????????????????????????? ?? ???????? ?? ?????????????????????
     @Override
     public boolean hurtServer(
             ServerLevel serverLevel,
             DamageSource source,
             float amount) {
-        if (this.dead) {
-            return super.hurtServer(serverLevel, source, amount);
-        }
-        // 味方のが当たってもちゃんと動くようにフレンド判定より前
-        if (amount <= 0 && source.getDirectEntity() instanceof Snowball) {
-            play(LMSounds.HURT_SNOW);
-            return false;
-        }
-        LMRBConfig config = getConfig();
-        if (config.health.nonMobDamageImmunity && source.getEntity() == null) {
-            return false;
-        }
-        if (config.health.immortal &&
-                !source.is(DamageTypes.FELL_OUT_OF_WORLD) &&
-                !source.isCreativePlayer()) {
-            return false;
-        }
-        if (config.health.fallImmunity && source.is(DamageTypes.FALL)) {
-            return false;
-        }
-        Entity attacker = source.getEntity();
-        // Friendからの攻撃を除外
-        if (!config.health.enableFriendlyFire &&
-                attacker instanceof LivingEntity &&
-                isFriend((LivingEntity) attacker)) {
-            return false;
-        }
-
-        float factor = config.health.generalMaidDamageFactor;
-        if ((config.health.enableWorkInEmergency || !isEmergency()) &&
-                !TameableUtil.isWait(this) &&
-                this.getMode().map(Mode::isBattleMode).orElse(false)) {
-            factor *= config.health.battleModeMaidDamageFactor;
-        } else {
-            factor *= config.health.nonBattleModeMaidDamageFactor;
-        }
-        amount *= factor;
-
-        boolean isHurtTime = 0 < this.hurtTime;
-        boolean result = super.hurtServer(serverLevel, source, amount);
-        if (!isHurtTime) {
-            if (result &&
-                    0 < amount &&
-                    TameableUtil.isWait(this) &&
-                    TameableUtil.getTameOwnerUuid(this).isPresent()) {
-                TameableUtil.setWait(this, false);
-            }
-            if (!result || amount <= 0F) {
-                play(LMSounds.HURT_NO_DAMAGE);
-            } else if (amount > 0F && this.isBlocking()) {
-                play(LMSounds.HURT_GUARD);
-            } else if (source.is(DamageTypes.FALL)) {
-                play(LMSounds.HURT_FALL);
-            } else if (source.type().effects() == DamageEffects.BURNING) {
-                play(LMSounds.HURT_FIRE);
-            } else {
-                play(LMSounds.HURT);
-            }
-        }
-        return result;
+        return MaidCombat.hurtServer(this, serverLevel, source, amount, 0 < this.hurtTime, super::hurtServer);
     }
 
     public boolean isEmergency() {
         LMRBConfig config = getConfig();
-        // 危機閾値以下の体力の場合、危機状態とする
+        // ?????????????????????????????????
         return (this.getHealth() / this.getMaxHealth() <= config.health.emergencyMaidHealthThreshold);
     }
 
@@ -1058,69 +768,18 @@ private float prevInterestedAngle;
             ServerLevel world,
             LivingEntity other,
             DamageSource source) {
-        if (isBloodSuck())
-            play(LMSounds.LAUGHTER);
-
-        int xp = other.getExperienceReward(world, source.getEntity());
-        if (xp > 0) {
-            this.xpReward = Math.min(100000, this.xpReward + xp);
-        }
-
-        return super.killedEntity(world, other, source);
+        return MaidCombat.killedEntity(this, world, other, source, super.killedEntity(world, other, source));
     }
 
-    // 射撃
+    // ???
 
-    // 弓/クロスボウによる遠隔攻撃。弾の取得・矢の生成・射出・効果音までを担当する。
+    // ??/?????????????????????????????????????????????????????????????????
     @Override
     public void performRangedAttack(LivingEntity target, float pullProgress) {
-        var stack = this.getMainHandItem();
-        // 弾が無い場合は実行されないはずだが、念のためチェック
-        var arrowStack = this.getProjectile(stack);
-        // メイドさんの弓は Infinity（無限矢）を意図的にサポートせず、常に矢を消費する仕様。
-        // 弾が無ければ射撃自体を行わない。
-        boolean isInfinite = false;
-        if (arrowStack.isEmpty() && !isInfinite) {
-            return;
-        }
-        if (stack.getItem() instanceof BowItem bowItem) {
-            var arrow = ProjectileUtil.getMobArrow(
-                    this,
-                    arrowStack,
-                    pullProgress,
-                    stack);
-            if (arrowStack.getItem() instanceof ArrowItem && !isInfinite) {
-                arrow.pickup = AbstractArrow.Pickup.ALLOWED;
-            }
-            arrow = EPEntityUtil.arrowCustomHook(bowItem, arrow);
-            double xDiff = target.getX() - this.getX();
-            double yDiff = target.getEyeY() - arrow.getY();
-            double zDiff = target.getZ() - this.getZ();
-            double horizonLen = Math.sqrt(xDiff * xDiff + zDiff * zDiff);
-            arrow.shoot(
-                    xDiff,
-                    yDiff + horizonLen * 0.025,
-                    zDiff,
-                    pullProgress *
-                            3.0f *
-                            getConfig().work.archerShootVelocityFactor,
-                    14 - 2 * 4);
-            this.playSound(
-                    SoundEvents.ARROW_SHOOT,
-                    1.0f,
-                    1.0f / (this.getRandom().nextFloat() * 0.4f + 1.2f) +
-                            pullProgress * 0.5f);
-            this.level().addFreshEntity(arrow);
-            arrowStack.shrink(1);
-        } else if (stack.getItem() instanceof CrossbowItem) {
-            this.performCrossbowAttack(
-                    this,
-                    CrossbowItemInvoker.getSpeed(
-                            stack.get(DataComponents.CHARGED_PROJECTILES)));
-        }
+        MaidCombat.performRangedAttack(this, target, pullProgress);
     }
 
-    // クロスボウ
+    // ?????????
 
     public boolean isCharging() {
         return this.entityData.get(CHARGING);
@@ -1131,24 +790,24 @@ private float prevInterestedAngle;
         this.entityData.set(CHARGING, charging);
     }
 
-    // 1.21.1: CrossbowAttackMobからshootCrossbowProjectile/shootメソッドが削除された。
-    // performCrossbowAttack(default) が CrossbowItem.performShooting を直接呼ぶ形に変更されている。
-    // クロスボウには弓の archerShootVelocityFactor を適用していない（バニラ初速のまま）。
-    // 弾道調整が必要になった場合は performCrossbowAttack をオーバーライドする。
+    // 1.21.1: CrossbowAttackMob???shootCrossbowProjectile/shoot???????????????????
+    // performCrossbowAttack(default) ?? CrossbowItem.performShooting ??????????????????????????
+    // ???????????????? archerShootVelocityFactor ????????????????????????????????
+    // ?????????????????????????? performCrossbowAttack ???????????????????
 
     @Override
     public void onCrossbowAttackPerformed() {
     }
 
-    // 安全移動: 落下/危険ブロックでメイドさんが死なないよう、縁での移動ベクトルを押し戻す。
-    // ロジックは LMSafeMovement へ委譲（override 本体のみ残す）。
+    // ???????: ????/????????????????????????????????????????????????????????????
+    // ????????? LMSafeMovement ????????verride ??????????????
     @Override
     protected Vec3 maybeBackOffFromEdge(Vec3 movement, MoverType type) {
         return LMSafeMovement.maybeBackOffFromEdge(this, movement, type);
     }
 
-    // --- LMSafeMovement への移譲ブリッジ（protected メソッド / フィールドの同パッケージ公開） ---
-    // 危険高度のしきい値。マイナスの値も返すことを利用しているため、バージョンアップ/mixin での仕様変更に注意。
+    // --- LMSafeMovement ????????????????rotected ??????? / ?????????????????????????? ---
+    // ???????????????????????????????????????????????????????????????????/mixin ???????????????????
     float getDangerHeightThreshold_LM() {
         int fallDamage = calculateFallDamage(0, 1);
         return -fallDamage;
@@ -1158,19 +817,14 @@ private float prevInterestedAngle;
         return this.fallDistance;
     }
 
-    // 経験値（Mob.xpReward は protected のため LMInteractionHandler 向けに公開）
-    int getXpReward_LM() {
-        return this.xpReward;
-    }
-
-    // リード接続位置。getEyeHeight() ベースで算出するため、モデルごとに eyeHeight が
-    // 異なっても（getDefaultDimensions で per-model に設定済み）破綻せず追従する。
+    // ???????????????etEyeHeight() ??????????????????????????? eyeHeight ??
+    // ????????????etDefaultDimensions ?? per-model ???????????????????????????
     @Override
     public Vec3 getLeashOffset() {
         return new Vec3(0.0, this.getEyeHeight() - 0.15f, 1f / 16f);
     }
 
-    // 右クリック処理。アイテム別の分岐ロジックは LMInteractionHandler へ委譲（override 本体のみ残す）。
+    // ????????????????????????????????????? LMInteractionHandler ????????verride ??????????????
     @Override
     public InteractionResult mobInteract(Player player, InteractionHand hand) {
         return LMInteractionHandler.mobInteract(this, player, hand);
@@ -1208,7 +862,7 @@ private float prevInterestedAngle;
         }
         this.setOwnerUUID(player.getUUID());
         setContractMM(true);
-        // 契約状態の更新
+        // ????????????
         if (!this.level().isClientSide()) {
             NetworkHandler.sendSyncMultiModelS2C(this, this);
         }
@@ -1232,7 +886,7 @@ private float prevInterestedAngle;
                 Integer.MAX_VALUE);
     }
 
-    // GUI開くやつ
+    // GUI??????
     public void openInventory(Player player) {
         if (player.level().isClientSide()) {
             return;
@@ -1289,7 +943,7 @@ private float prevInterestedAngle;
         this.fleeEntities.put(entity, removePredicate);
     }
 
-    // インベントリ関連
+    // ??????????????
 
     @Override
     public Container getInventory() {
@@ -1314,53 +968,19 @@ private float prevInterestedAngle;
         this.littleMaidInventory.setWorkItemSlotSize(num);
     }
 
-    // 防具耐久消費。バニラ準拠でダメージの 1/4（最低 1）を各防具スロットに適用する。
-    // DAMAGE_RESISTANT な装備および非 EQUIPPABLE はスキップ。
+    // ????????????????????????????????? 1/4????? 1??????????????????????????
+    // DAMAGE_RESISTANT ???????????? EQUIPPABLE ???????????
     @Override
     protected void hurtArmor(DamageSource source, float amount) {
-        if (!(amount <= 0.0f)) {
-            if ((amount /= 4.0f) < 1.0f) {
-                amount = 1.0f;
-            }
-            EquipmentSlot[] armorSlots = {
-                    EquipmentSlot.FEET,
-                    EquipmentSlot.LEGS,
-                    EquipmentSlot.CHEST,
-                    EquipmentSlot.HEAD,
-            };
-            for (EquipmentSlot slot : armorSlots) {
-                ItemStack stack = this.getItemBySlot(slot);
-                if (stack.isEmpty())
-                    continue;
-                var resistant = stack.get(DataComponents.DAMAGE_RESISTANT);
-                if (resistant != null && resistant.isResistantTo(source))
-                    continue;
-                if (!stack.has(DataComponents.EQUIPPABLE))
-                    continue;
-                stack.hurtAndBreak((int) amount, this, slot);
-            }
-        }
+        MaidCombat.hurtArmor(this, source, amount);
     }
 
     @Override
     protected void hurtHelmet(DamageSource source, float amount) {
-        if (!(amount <= 0.0f)) {
-            if ((amount /= 4.0f) < 1.0f) {
-                amount = 1.0f;
-            }
-            var stack = getItemBySlot(EquipmentSlot.HEAD);
-            if (stack.isEmpty())
-                return;
-            var resistant = stack.get(DataComponents.DAMAGE_RESISTANT);
-            if (resistant != null && resistant.isResistantTo(source))
-                return;
-            if (!stack.has(DataComponents.EQUIPPABLE))
-                return;
-            stack.hurtAndBreak((int) amount, this, EquipmentSlot.HEAD);
-        }
+        MaidCombat.hurtHelmet(this, source, amount);
     }
 
-    // コマンド等によるメイドインベントリの操作用（/item replaceコマンドなどから参照されます）
+    // ?????????????????????????????????????/item replace?????????????????????????
     @Override
     public SlotAccess getSlot(int mappedIndex) {
         var inv = getInventory();
@@ -1373,32 +993,14 @@ private float prevInterestedAngle;
         return super.getSlot(mappedIndex);
     }
 
-    // 射撃武器に対応する弾を返す。手持ち優先 → インベントリ走査の順で探索し、
-    // EPEntityUtil.arrowCustomHook で他 Mod の矢カスタムフックを通す。
+    // ????????????????????????????????? ?? ???????????????????????????
+    // EPEntityUtil.arrowCustomHook ???? Mod ????????????????????????
     @Override
     public ItemStack getProjectile(ItemStack stack) {
-        if (!(stack.getItem() instanceof ProjectileWeaponItem ranged)) {
-            return ItemStack.EMPTY;
-        }
-        Predicate<ItemStack> predicate = ranged.getSupportedHeldProjectiles();
-        ItemStack itemStack = ProjectileWeaponItem.getHeldProjectile(
-                this,
-                predicate);
-        if (!itemStack.isEmpty()) {
-            return EPEntityUtil.arrowCustomHook(this, stack, itemStack);
-        }
-        predicate = ranged.getAllSupportedProjectiles();
-        var inv = getInventory();
-        for (int i = 0; i < inv.getContainerSize(); ++i) {
-            ItemStack itemStack2 = inv.getItem(i);
-            if (predicate.test(itemStack2)) {
-                return EPEntityUtil.arrowCustomHook(this, stack, itemStack2);
-            }
-        }
-        return EPEntityUtil.arrowCustomHook(this, stack, ItemStack.EMPTY);
+        return MaidCombat.getProjectile(this, stack);
     }
 
-    // 防具の更新
+    // ??????????
     @Override
     public void setItemSlot(EquipmentSlot slot, ItemStack stack) {
         super.setItemSlot(slot, stack);
@@ -1440,8 +1042,8 @@ private float prevInterestedAngle;
         return this.xpReward;
     }
 
-    // idFactor は UUID から決まる安定した擬似乱数シード（テクスチャ/ボイスの個体差に使用）。
-    // UUID 変更時に必ず再計算されるよう setUUID をフックする。
+    // idFactor ?? UUID ???????????????????????????????????????/???????????????????????
+    // UUID ?????????????????????? setUUID ???????????
     @Override
     public void setUUID(UUID uuid) {
         super.setUUID(uuid);
@@ -1456,13 +1058,23 @@ private float prevInterestedAngle;
         return idFactor;
     }
 
-    // テイム関連
+    // ?????????
 
     public void setOwnerUUID(@Nullable UUID uuid) {
         if (uuid != null) {
             TameableUtil.setTameOwnerUuid(this, uuid);
         }
         this.setContract(true);
+    }
+
+    public void installMaidSoul(MaidSoulData maidSoul) {
+        load(
+                TagValueInput.create(
+                        ProblemReporter.DISCARDING,
+                        registryAccess(),
+                        maidSoul.getNbt()));
+        setUUID(maidSoul.getUuid());
+        setOwnerUUID(maidSoul.getOwnerUUID().orElse(null));
     }
 
     public void setFreedomPos(@Nullable BlockPos freedomPos) {
@@ -1503,8 +1115,8 @@ private float prevInterestedAngle;
         return TameableUtil.getTameOwnerUuid(this).isPresent();
     }
 
-    // 1.21.1: method_48926 -> level() に変更
-    // OwnableEntityインターフェースの要求を満たす
+    // 1.21.1: method_48926 -> level() ?????
+    // OwnableEntity???????????????????????????
     public net.minecraft.world.level.EntityGetter getWorld() {
         return this.level();
     }
@@ -1538,40 +1150,37 @@ private void tickInterestedAngle() {
         }
     }
 
-    // 加速機能
+    // ???????
 
     public int getTickMultiple() {
-        return this.isAcceleration()
-                ? getConfig().misc.accelerationMultiple
-                : 1;
+        return acceleration.getTickMultiple();
     }
 
     public void setAccelerationTicks(int ticks) {
-        this.accelerationTicks = ticks;
-        if (ticks > 0) {
-            this.entityData.set(ACCELERATE, true);
-        }
+        acceleration.setAccelerationTicks(ticks);
     }
 
     public void decAccelerationTicks() {
-        if (this.accelerationTicks > 0) {
-            this.accelerationTicks--;
-        }
-        if (this.accelerationTicks <= 0) {
-            this.accelerationTicks = 0;
-            this.entityData.set(ACCELERATE, false);
-        }
+        acceleration.decAccelerationTicks();
     }
 
     public int getAccelerationTicks() {
-        return this.accelerationTicks;
+        return acceleration.getAccelerationTicks();
     }
 
     public boolean isAcceleration() {
+        return acceleration.isAcceleration();
+    }
+
+    boolean isAcceleration_LM() {
         return this.entityData.get(ACCELERATE);
     }
 
-    // お給料
+    void setAccelerationData_LM(boolean accelerate) {
+        this.entityData.set(ACCELERATE, accelerate);
+    }
+
+    // ??????
 
     @Override
     public boolean isContract() {
@@ -1611,39 +1220,23 @@ private void tickInterestedAngle() {
         return itemContractable.getUnpaidTimes();
     }
 
-    // お給料受け取り
+    // ????????????
 
     @Override
     public void listenSalaryBoxPos(BlockPos pos) {
         itemContractable.listenSalaryBoxPos(pos);
     }
 
-    // モード機能
+    // 移譲s
 
-    @Override
-    public Optional<Mode> getMode() {
-        if (this.isStrike()) {
-            return Optional.empty();
-        }
-        return hasModeImpl.getMode();
-    }
-
-    @Override
     public void writeModeData(ValueOutput output) {
-        hasModeImpl.writeModeData(output);
+        cookingBehavior.writeBehaviorData(output.child("cooking"));
+        pharmcistBehavior.writeBehaviorData(output.child("pharmcist"));
     }
 
-    @Override
     public void readModeData(ValueInput input) {
-        hasModeImpl.readModeData(input);
-    }
-
-    public void addMode(Mode mode) {
-        hasModeImpl.addMode(mode);
-    }
-
-    public void addAllMode(Collection<Mode> mode) {
-        hasModeImpl.addAllMode(mode);
+        input.child("cooking").ifPresent(cookingBehavior::readBehaviorData);
+        input.child("pharmcist").ifPresent(pharmcistBehavior::readBehaviorData);
     }
 
     public void setModeName(String modeName) {
@@ -1695,14 +1288,14 @@ public Optional<String> getModeName() {
     }
 
     public boolean isFriend(LivingEntity entity) {
-        // 注: 本来 isFriend と ATTACK_PROHIBITED は別概念。専用のフレンドタグ体系の導入は
-        //     機能バックログ（Phase 7・TargetingSystem 拡張）で扱う。現状は以下の暫定判定:
-        // 暫定でテイム済みのモブは攻撃対象から外す
+        // ??: ???? isFriend ?? ATTACK_PROHIBITED ????????????????????????????????????
+        //     ??????????????hase 7??TargetingSystem ??????????????????????????????:
+        // ??????????????????????????????????
         if (entity instanceof OwnableEntity tameable &&
                 TameableUtil.hasTameOwner(tameable)) {
             return true;
         }
-        // 暫定: ご主人がいるなら、プレイヤーを攻撃対象にしない
+        // ????: ?????????????????????????????????????????
         if (TameableUtil.hasTameOwner(this) && entity instanceof Player) {
             return true;
         }
@@ -1715,7 +1308,7 @@ public Optional<String> getModeName() {
                 TargetingSystem.TargetTag.ATTACK_PROHIBITED);
     }
 
-    // 構え
+    // ???
 
     public boolean isAimingBow() {
         return this.getLMMFlag(AIMING_INDEX);
@@ -1725,88 +1318,22 @@ public Optional<String> getModeName() {
         this.setLMMFlag(AIMING_INDEX, aiming);
     }
 
-    // マルチモデル関連
-
-    @Override
-    public boolean isAllowChangeTexture(
-            Entity entity,
-            TextureHolder textureHolder,
-            Layer layer,
-            Part part) {
-        return multiModel.isAllowChangeTexture(
-                entity,
-                textureHolder,
-                layer,
-                part);
-    }
+    // ?????????????
 
     @Override
     public void setTextureHolder(
             TextureHolder textureHolder,
             Layer layer,
             Part part) {
-        multiModel.setTextureHolder(textureHolder, layer, part);
+        MultiModelHolder.super.setTextureHolder(textureHolder, layer, part);
         if (layer == Layer.SKIN) {
             refreshDimensions();
         }
     }
 
     @Override
-    public TextureHolder getTextureHolder(Layer layer, Part part) {
-        return multiModel.getTextureHolder(layer, part);
-    }
-
-    @Override
-    public void setColorMM(TextureColors textureColor) {
-        multiModel.setColorMM(textureColor);
-    }
-
-    @Override
-    public TextureColors getColorMM() {
-        return multiModel.getColorMM();
-    }
-
-    @Override
-    public void setContractMM(boolean isContract) {
-        multiModel.setContractMM(isContract);
-    }
-
-    /**
-     * マルチモデルの使用テクスチャが契約時のものかどうか
-     * ※実際に契約状態かどうかをチェックする場合、
-     * {@link TameableUtil#getTameOwnerUuid(OwnableEntity)}がisPresent()かでチェックすること
-     */
-    @Override
-    public boolean isContractMM() {
-        return multiModel.isContractMM();
-    }
-
-    @Override
-    public Optional<IMultiModel> getModel(Layer layer, Part part) {
-        return multiModel.getModel(layer, part);
-    }
-
-    @Override
-    public Optional<Identifier> getTexture(
-            Layer layer,
-            Part part,
-            boolean isLight) {
-        return multiModel.getTexture(layer, part, isLight);
-    }
-
-    @Override
     public IModelCaps getCaps() {
         return caps;
-    }
-
-    @Override
-    public boolean isArmorVisible(Part part) {
-        return multiModel.isArmorVisible(part);
-    }
-
-    @Override
-    public boolean isArmorGlint(Part part) {
-        return multiModel.isArmorGlint(part);
     }
 
     public boolean isPlayingSnow() {
@@ -1817,11 +1344,11 @@ public Optional<String> getModeName() {
         this.setLMMFlag(PLAYING_SNOW_INDEX, isPlayingSnow);
     }
 
-    // 音声関係
+    // ????????
 
-    // 通常ボイス再生。クールダウン(playSoundCool)中は再生しない。
-    // 強制再生が必要な場合はクールダウンを無視する playForce() を使う。
-    // クールダウン長は getConfig().misc.playSoundInterval でコンフィグ化済み。
+    // ?????????????????????????(playSoundCool)??????????????
+    // ??????????????????????????????????????? playForce() ????????
+    // ???????????????? getConfig().misc.playSoundInterval ??????????????????
     @Override
     public void play(String soundName) {
         if (0 < this.playSoundCool) {
@@ -1835,25 +1362,15 @@ public Optional<String> getModeName() {
                 soundName = LMSounds.ATTACK_BLOOD_SUCK;
             }
         }
-        soundPlayer.play(soundName);
-    }
-
-    @Override
-    public void setConfigHolder(ConfigHolder configHolder) {
-        soundPlayer.setConfigHolder(configHolder);
-    }
-
-    @Override
-    public ConfigHolder getConfigHolder() {
-        return soundPlayer.getConfigHolder();
+        SoundHolder.super.play(soundName);
     }
 
     public static LMRBConfig getConfig() {
         return LMRBConfig.get();
     }
 
-    // 注: 旧 LMStareAtHeldItemGoal（手持ちアイテム注視 Goal）は Phase 7 で
-    //     MaidStareBehavior（Brain Behavior）へ移行済み。Goal 版は孤立デッドコードとなったため削除した。
+    // ??: ?? LMStareAtHeldItemGoal????????????????? Goal??? Phase 7 ??
+    //     MaidStareBehavior??rain Behavior????????????oal ???????????????????????????????????
 
 
 
@@ -1888,26 +1405,14 @@ public Optional<String> getModeName() {
                 var config = getConfig();
                 this.heal(config.health.healAmount);
                 this.playSound(SoundEvents.GENERIC_EAT.value(), 0.5f, 0.5f + this.random.nextFloat() * 0.5f);
-                this.level().broadcastEntityEvent(this, (byte) 72); // 音符パーティクル
+                this.level().broadcastEntityEvent(this, (byte) 72); // ??????????????
                 break;
             }
         }
     }
 
     protected void showTransAmParticles() {
-        for (int i = 0; i < 20; ++i) {
-            double d = this.random.nextGaussian() * 0.02;
-            double e = this.random.nextGaussian() * 0.02;
-            double f = this.random.nextGaussian() * 0.02;
-            this.level().addParticle(
-                    ParticleTypes.FLAME,
-                    this.getRandomX(1.0),
-                    this.getRandomY() + 0.5,
-                    this.getRandomZ(1.0),
-                    d,
-                    e,
-                    f);
-        }
+        MaidParticle.showTransAmParticles(this);
     }
 
     @Override
@@ -1930,5 +1435,13 @@ public Optional<String> getModeName() {
             }
         }
         return name;
+    }
+
+    public int getXpReward_LM() {
+        return this.xpReward;
+    }
+
+    public void setXpReward_LM(int xpReward) {
+        this.xpReward = xpReward;
     }
 }

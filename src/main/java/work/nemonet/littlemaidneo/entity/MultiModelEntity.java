@@ -27,7 +27,10 @@ import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 import java.util.Optional;
 
-public class MultiModelEntity extends PathfinderMob implements IHasMultiModel, SoundPlayable {
+import work.nemonet.littlemaidneo.common.MultiModelHolder;
+import work.nemonet.littlemaidneo.common.SoundHolder;
+
+public class MultiModelEntity extends PathfinderMob implements MultiModelHolder, SoundHolder {
 
     private MultiModelCompound multiModel;
     private SoundPlayableCompound soundPlayer;
@@ -77,78 +80,12 @@ public class MultiModelEntity extends PathfinderMob implements IHasMultiModel, S
     }
 
     @Override
-    public void setTextureHolder(TextureHolder textureHolder, Layer layer, Part part) {
-        multiModel.setTextureHolder(textureHolder, layer, part);
+    public MultiModelCompound getMultiModel() {
+        return multiModel;
     }
 
     @Override
-    public TextureHolder getTextureHolder(Layer layer, Part part) {
-        return multiModel.getTextureHolder(layer, part);
-    }
-
-    @Override
-    public Optional<IMultiModel> getModel(Layer layer, Part part) {
-        return multiModel.getModel(layer, part);
-    }
-
-    @Override
-    public Optional<Identifier> getTexture(Layer layer, Part part, boolean isLight) {
-        return multiModel.getTexture(layer, part, isLight);
-    }
-
-    @Override
-    public IModelCaps getCaps() {
-        return multiModel.getCaps();
-    }
-
-    @Override
-    public boolean isArmorVisible(Part part) {
-        return multiModel.isArmorVisible(part);
-    }
-
-    @Override
-    public boolean isArmorGlint(Part part) {
-        return multiModel.isArmorGlint(part);
-    }
-
-    @Override
-    public boolean isAllowChangeTexture(@Nullable net.minecraft.world.entity.Entity changer,
-                                         TextureHolder textureHolder, Layer layer, Part part) {
-        return multiModel.isAllowChangeTexture(changer, textureHolder, layer, part);
-    }
-
-    @Override
-    public boolean isContractMM() {
-        return multiModel.isContractMM();
-    }
-
-    @Override
-    public void setColorMM(TextureColors color) {
-        multiModel.setColorMM(color);
-    }
-
-    @Override
-    public TextureColors getColorMM() {
-        return multiModel.getColorMM();
-    }
-
-    @Override
-    public void setContractMM(boolean isContract) {
-        multiModel.setContractMM(isContract);
-    }
-
-    @Override
-    public void setConfigHolder(ConfigHolder configHolder) {
-        soundPlayer.setConfigHolder(configHolder);
-    }
-
-    @Override
-    public ConfigHolder getConfigHolder() {
-        return soundPlayer.getConfigHolder();
-    }
-
-    @Override
-    public void play(String soundName) {
-        soundPlayer.play(soundName);
+    public SoundPlayableCompound getSoundPlayer() {
+        return soundPlayer;
     }
 }

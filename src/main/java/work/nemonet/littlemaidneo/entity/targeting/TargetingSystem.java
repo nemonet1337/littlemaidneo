@@ -2,7 +2,6 @@ package work.nemonet.littlemaidneo.entity.targeting;
 
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
-import work.nemonet.littlemaidneo.api.mode.Mode;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 import org.jetbrains.annotations.Nullable;
@@ -18,6 +17,12 @@ import java.util.stream.Collectors;
  * 3段階優先度システム（CRITICAL > HIGH > NORMAL）
  */
 public class TargetingSystem {
+
+    public enum BattleModeType {
+        NONE,
+        SWORD,
+        BOW
+    }
 
     /**
      * 3段階ターゲット優先度
@@ -100,10 +105,14 @@ public class TargetingSystem {
             this.maid = maid;
         }
 
-        public Mode.BattleModeType getCombatType() {
-            return maid.getMode()
-                    .map(mode -> mode.getBattleModeType())
-                    .orElse(Mode.BattleModeType.NONE);
+        public BattleModeType getCombatType() {
+            String mode = maid.getActiveBattleMode();
+            if ("sword".equals(mode)) {
+                return BattleModeType.SWORD;
+            } else if ("bow".equals(mode)) {
+                return BattleModeType.BOW;
+            }
+            return BattleModeType.NONE;
         }
     }
 
@@ -232,7 +241,7 @@ public class TargetingSystem {
         long currentAttackers = otherMaids.stream()
                 .filter(maid -> !TameableUtil.isWait(maid.maid))
                 .filter(maid -> maid.isTargeting(target))
-                .filter(maid -> maid.getCombatType() != Mode.BattleModeType.NONE)
+                .filter(maid -> maid.getCombatType() != BattleModeType.NONE)
                 .filter(maid -> !maid.isInjured())
                 .count();
 
@@ -256,22 +265,22 @@ public class TargetingSystem {
         // 接近禁止対象は武器に応じて判定
         if (hasApproachProhibitedTag(target, targetTagManager)) {
             // 弓持ちの場合は遠距離から攻撃可能（ただし遠距離攻撃禁止でない場合のみ）
-            if (maid.getCombatType() == Mode.BattleModeType.BOW
+            if (maid.getCombatType() == BattleModeType.BOW
                     && !hasRangedAttackProhibitedTag(target, targetTagManager)) {
                 float distance = (float) target.getPosition().distanceTo(maid.getPosition());
                 return distance < TargetingConfig.getCombatRange(); // 近い場合は回避
             }
             // 剣持ちの場合は基本的に回避
-            return maid.getCombatType() == Mode.BattleModeType.SWORD;
+            return maid.getCombatType() == BattleModeType.SWORD;
         }
 
         // 武器種別に応じた攻撃禁止判定
-        if (maid.getCombatType() == Mode.BattleModeType.SWORD
+        if (maid.getCombatType() == BattleModeType.SWORD
                 && hasMeleeAttackProhibitedTag(target, targetTagManager)) {
             return true; // 近距離攻撃禁止対象は剣で攻撃不可
         }
 
-        if (maid.getCombatType() == Mode.BattleModeType.BOW
+        if (maid.getCombatType() == BattleModeType.BOW
                 && hasRangedAttackProhibitedTag(target, targetTagManager)) {
             return true; // 遠距離攻撃禁止対象は弓で攻撃不可
         }

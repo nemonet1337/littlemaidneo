@@ -3,7 +3,6 @@ package work.nemonet.littlemaidneo.entity;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.BushBlock;
-import work.nemonet.littlemaidneo.api.mode.Mode;
 import work.nemonet.littlemaidneo.config.LMRBConfig;
 import work.nemonet.littlemaidneo.entity.util.MaidMode;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
@@ -31,7 +30,7 @@ public class LittleMaidModelCaps extends EntityCaps {
             case caps_isWait -> TameableUtil.isWait(maid) &&
                 (LMRBConfig.get().client.enableWaitPoseOnMoving ||
                     maid.getDeltaMovement().lengthSqr() < 0.01);
-            case caps_isWorking -> maid.getMode().isPresent();
+            case caps_isWorking -> !maid.getActiveJobName().equals("none");
             case caps_isContract -> maid.isContractMM();
             case caps_isClock -> maid.getMainHandItem().getItem() ==
                 Items.CLOCK ||
@@ -47,9 +46,16 @@ public class LittleMaidModelCaps extends EntityCaps {
             case caps_interestedAngle -> maid.getInterestedAngle(
                 (Float) pArg[0]
             );
-            case caps_job -> maid.getMode()
-                .map(Mode::getJobName)
-                .orElse(null);
+            case caps_job -> {
+                String jobName = maid.getActiveJobName();
+                if ("none".equals(jobName)) {
+                    yield null;
+                }
+                if ("combat".equals(jobName)) {
+                    yield "bow".equals(maid.getActiveBattleMode()) ? "archer" : "fencer";
+                }
+                yield jobName;
+            }
             default -> super.getCapsValue(pIndex, pArg);
         };
     }

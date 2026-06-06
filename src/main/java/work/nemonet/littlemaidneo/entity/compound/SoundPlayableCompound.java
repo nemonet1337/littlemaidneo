@@ -1,7 +1,7 @@
 package work.nemonet.littlemaidneo.entity.compound;
 
 import net.minecraft.world.entity.Entity;
-import work.nemonet.littlemaidneo.client.resource.manager.LMSoundManager;
+import work.nemonet.littlemaidneo.client.resource.LMSoundManager;
 import work.nemonet.littlemaidneo.network.NetworkHandler;
 import work.nemonet.littlemaidneo.resource.holder.ConfigHolder;
 import work.nemonet.littlemaidneo.resource.manager.LMConfigManager;

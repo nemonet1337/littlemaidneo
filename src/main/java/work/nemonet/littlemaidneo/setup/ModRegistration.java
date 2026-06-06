@@ -78,9 +78,13 @@ public class ModRegistration {
             MEMORY_MODULES.register("is_waiting", () -> new MemoryModuleType<>(java.util.Optional.empty()));
     public static final DeferredHolder<MemoryModuleType<?>, MemoryModuleType<net.minecraft.world.entity.player.Player>> OWNER =
             MEMORY_MODULES.register("owner", () -> new MemoryModuleType<>(java.util.Optional.empty()));
+    public static final DeferredHolder<MemoryModuleType<?>, MemoryModuleType<String>> ACTIVE_JOB_NAME =
+            MEMORY_MODULES.register("active_job_name", () -> new MemoryModuleType<>(java.util.Optional.of(com.mojang.serialization.Codec.STRING)));
+    public static final DeferredHolder<MemoryModuleType<?>, MemoryModuleType<String>> ACTIVE_BATTLE_MODE =
+            MEMORY_MODULES.register("active_battle_mode", () -> new MemoryModuleType<>(java.util.Optional.of(com.mojang.serialization.Codec.STRING)));
 
-    public static final DeferredHolder<SensorType<?>, SensorType<work.nemonet.littlemaidneo.entity.ai.sensor.LittleMaidSensor>> LITTLE_MAID_SENSOR =
-            SENSORS.register("little_maid_sensor", () -> new SensorType<>(work.nemonet.littlemaidneo.entity.ai.sensor.LittleMaidSensor::new));
+    public static final DeferredHolder<SensorType<?>, SensorType<work.nemonet.littlemaidneo.entity.ai.LittleMaidSensor>> LITTLE_MAID_SENSOR =
+            SENSORS.register("little_maid_sensor", () -> new SensorType<>(work.nemonet.littlemaidneo.entity.ai.LittleMaidSensor::new));
 
     public static final DeferredRegister<AttachmentType<?>> ATTACHMENT_TYPES =
             DeferredRegister.create(NeoForgeRegistries.Keys.ATTACHMENT_TYPES, LittleMaidNeo.MODID);

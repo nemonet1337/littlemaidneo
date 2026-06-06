@@ -27,7 +27,7 @@ import work.nemonet.littlemaidneo.setup.ModRegistration;
  * 実行時間上限は実質無制限とし、継続可否は {@link #canStillUse} で旧 {@code canContinueToUse}
  * と同一条件で判定する。
  */
-public class MaidTraceBehavior extends Behavior<LittleMaidEntity> {
+public class MaidTraceBehavior extends AbstractMaidBehavior {
 
     private final List<BlockPos> aroundSignalPos = Lists.newArrayList();
     private int recalcTimer;

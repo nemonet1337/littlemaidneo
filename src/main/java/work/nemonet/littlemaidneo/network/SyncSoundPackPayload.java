@@ -1,6 +1,7 @@
 package work.nemonet.littlemaidneo.network;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
@@ -14,17 +15,11 @@ public record SyncSoundPackPayload(
     public static final CustomPacketPayload.Type<SyncSoundPackPayload> TYPE =
             new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, "sync_sound_pack"));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, SyncSoundPackPayload> STREAM_CODEC =
-            StreamCodec.of(SyncSoundPackPayload::encode, SyncSoundPackPayload::decode);
-
-    private static void encode(RegistryFriendlyByteBuf buf, SyncSoundPackPayload payload) {
-        buf.writeInt(payload.entityId());
-        buf.writeUtf(payload.soundPackName());
-    }
-
-    private static SyncSoundPackPayload decode(RegistryFriendlyByteBuf buf) {
-        return new SyncSoundPackPayload(buf.readInt(), buf.readUtf());
-    }
+    public static final StreamCodec<RegistryFriendlyByteBuf, SyncSoundPackPayload> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.VAR_INT, SyncSoundPackPayload::entityId,
+            ByteBufCodecs.STRING_UTF8, SyncSoundPackPayload::soundPackName,
+            SyncSoundPackPayload::new
+    ).cast();
 
     @Override
     public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {

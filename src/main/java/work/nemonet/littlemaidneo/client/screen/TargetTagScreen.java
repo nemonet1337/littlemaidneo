@@ -20,6 +20,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import work.nemonet.littlemaidneo.client.screen.component.*;
+import work.nemonet.littlemaidneo.client.util.ClientScreenHelper;
 import work.nemonet.littlemaidneo.entity.targeting.TargetIdentifier;
 import work.nemonet.littlemaidneo.entity.targeting.TargetTagManager;
 import work.nemonet.littlemaidneo.entity.targeting.TargetingSystem;
@@ -33,10 +34,9 @@ import java.util.stream.Collectors;
  * TargetTagを設定するためのスクリーン
  * 閉じたときにパケットで結果を返す
  */
-public class TargetTagScreen extends Screen {
+public class TargetTagScreen extends AbstractFilterableListScreen<TargetTagScreen.TargetTagGUIElement> {
     private final Entity entity;
     private final Map<TargetIdentifier, Set<TargetingSystem.TargetTag>> targetTags;
-    private FilterableListGUI<TargetTagGUIElement> targetTagGui;
 
     public TargetTagScreen(Entity entity, Map<TargetIdentifier, Set<TargetingSystem.TargetTag>> targetTags) {
         super(Component.empty());
@@ -68,7 +68,7 @@ public class TargetTagScreen extends Screen {
                 .sorted(Comparator.comparing(e -> e.targetIdentifier.toString()))
                 .collect(Collectors.toList());
 
-        this.targetTagGui = FilterableListGUI.<TargetTagGUIElement>builder()
+        this.listGUI = FilterableListGUI.<TargetTagGUIElement>builder()
                 .position(Mth.floor((this.width - totalWidth) / 2f), 0)
                 .size(totalWidth, this.height)
                 .elementSize(elementWidth, elementHeight)
@@ -84,54 +84,22 @@ public class TargetTagScreen extends Screen {
     public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         context.fill(0, 0, this.width, this.height, 0x40000000);
 
-        targetTagGui.extractRenderState(context, mouseX, mouseY, delta);
-    }
-
-    @Override
-    public boolean mouseClicked(MouseButtonEvent event, boolean handled) {
-        return targetTagGui.mouseClicked(event, handled);
-    }
-
-    @Override
-    public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
-        return targetTagGui.mouseDragged(event, deltaX, deltaY);
-    }
-
-    @Override
-    public boolean mouseReleased(MouseButtonEvent event) {
-        return targetTagGui.mouseReleased(event);
-    }
-
-    @Override
-    public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double amount) {
-        return targetTagGui.mouseScrolled(mouseX, mouseY, horizontalAmount, amount);
-    }
-
-    @Override
-    public boolean keyPressed(KeyEvent event) {
-        if (super.keyPressed(event)) {
-            return true;
+        if (listGUI != null) {
+            listGUI.extractRenderState(context, mouseX, mouseY, delta);
         }
-        return targetTagGui.keyPressed(event);
-    }
-
-    @Override
-    public boolean charTyped(CharacterEvent event) {
-        if (targetTagGui.charTyped(event)) {
-            return true;
-        }
-        return super.charTyped(event);
     }
 
     @Override
     public void removed() {
         super.removed();
-        // 全てのtargetTagsを収集
-        Map<TargetIdentifier, Set<TargetingSystem.TargetTag>> updatedTargetTags = new HashMap<>();
-        for (TargetTagGUIElement element : targetTagGui.getListGUI().getAllElements()) {
-            updatedTargetTags.put(element.getTargetIdentifier(), element.getTags());
+        if (listGUI != null) {
+            // 全てのtargetTagsを収集
+            Map<TargetIdentifier, Set<TargetingSystem.TargetTag>> updatedTargetTags = new HashMap<>();
+            for (TargetTagGUIElement element : listGUI.getListGUI().getAllElements()) {
+                updatedTargetTags.put(element.getTargetIdentifier(), element.getTags());
+            }
+            send(updatedTargetTags);
         }
-        send(updatedTargetTags);
     }
 
     public <T extends Entity & TargetTagManager> void send(
@@ -268,46 +236,7 @@ public class TargetTagScreen extends Screen {
 
             // エンティティタイプ名を表示
             var entityTypeName = Component.translatable(this.targetIdentifier.getEntityType().getDescriptionId());
-            int textWidth = textRenderer.width(entityTypeName);
-            if (textWidth <= this.width) {
-                context.text(textRenderer, entityTypeName,
-                        this.x, this.y, 0xFFFFFFFF, true);
-            } else {
-                // 長すぎるテキストをスクロール表示
-                double seconds = Util.getMillis() / 1000.0;
-                var entityTypeNameStr = entityTypeName.getString();
-
-                // スクロール速度 (ピクセル/秒)
-                double scrollSpeed = 20.0;
-
-                // 表示可能な幅（少し余裕を持たせる）
-                int displayWidth = this.width - 8;
-
-                // スクロールが必要な距離
-                int scrollDistance = textWidth - displayWidth;
-
-                // 一往復にかかる時間を計算（テキスト幅 + 表示幅分だけスクロール）
-                double cycleTime = (scrollDistance + displayWidth) / scrollSpeed;
-
-                // 現在のサイクル内での位置
-                double cyclePosition = (seconds % cycleTime) / cycleTime;
-
-                // スクロールオフセットを計算（左→右→左のパターン）
-                int scrollOffset;
-                if (cyclePosition < 0.8) {
-                    // 80%の時間で左から右へスクロール
-                    scrollOffset = (int) (cyclePosition / 0.8 * scrollDistance);
-                } else {
-                    // 20%の時間で一時停止
-                    scrollOffset = scrollDistance;
-                }
-
-                // クリップ領域を設定してテキストを描画
-                context.enableScissor(this.x, this.y, this.x + displayWidth, this.y + textRenderer.lineHeight);
-                context.text(textRenderer, entityTypeNameStr,
-                        this.x - scrollOffset, this.y, 0xFFFFFFFF, true);
-                context.disableScissor();
-            }
+            ClientScreenHelper.drawScrollingText(context, textRenderer, entityTypeName, this.x, this.y, this.width, 0xFFFFFFFF, true);
 
             // ボタンの位置を設定してレンダリング（エンティティタイプ名の下）
             int buttonY = this.y + textRenderer.lineHeight;

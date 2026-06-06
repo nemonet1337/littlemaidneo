@@ -20,8 +20,8 @@ import net.neoforged.fml.event.config.ModConfigEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import work.nemonet.littlemaidneo.advancement.criterion.LMRBCriteria;
-import work.nemonet.littlemaidneo.client.resource.loader.LMSoundLoader;
-import work.nemonet.littlemaidneo.client.resource.manager.LMSoundManager;
+import work.nemonet.littlemaidneo.client.resource.LMSoundLoader;
+import work.nemonet.littlemaidneo.client.resource.LMSoundManager;
 import work.nemonet.littlemaidneo.config.LMMLConfig;
 import work.nemonet.littlemaidneo.config.LMRBConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
@@ -74,6 +74,7 @@ public class LittleMaidNeo {
         modEventBus.addListener(this::onModConfig);
 
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(work.nemonet.littlemaidneo.command.LMCommands::register);
+        work.nemonet.littlemaidneo.event.PlayerEventHandler.register(net.neoforged.neoforge.common.NeoForge.EVENT_BUS);
     }
 
     private void onCommonSetup(FMLCommonSetupEvent event) {

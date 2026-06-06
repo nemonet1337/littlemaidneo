@@ -21,7 +21,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class MaidMoveToDropItemBehavior extends Behavior<LittleMaidEntity> {
+public class MaidMoveToDropItemBehavior extends AbstractMaidBehavior {
 
     public MaidMoveToDropItemBehavior() {
         super(ImmutableMap.of(

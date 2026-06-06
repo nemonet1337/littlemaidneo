@@ -16,7 +16,7 @@ import work.nemonet.littlemaidneo.entity.util.MaidMode;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 import work.nemonet.littlemaidneo.setup.ModRegistration;
 
-public class MaidFreedomBehavior extends Behavior<LittleMaidEntity> {
+public class MaidFreedomBehavior extends AbstractMaidBehavior {
     private int reCalcCool;
 
     public MaidFreedomBehavior() {

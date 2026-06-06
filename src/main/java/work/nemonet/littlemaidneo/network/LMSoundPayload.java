@@ -1,6 +1,7 @@
 package work.nemonet.littlemaidneo.network;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.Identifier;
@@ -14,17 +15,11 @@ public record LMSoundPayload(
     public static final CustomPacketPayload.Type<LMSoundPayload> TYPE =
             new CustomPacketPayload.Type<>(Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, "lm_sound"));
 
-    public static final StreamCodec<RegistryFriendlyByteBuf, LMSoundPayload> STREAM_CODEC =
-            StreamCodec.of(LMSoundPayload::encode, LMSoundPayload::decode);
-
-    private static void encode(RegistryFriendlyByteBuf buf, LMSoundPayload payload) {
-        buf.writeVarInt(payload.entityId());
-        buf.writeUtf(payload.soundName());
-    }
-
-    private static LMSoundPayload decode(RegistryFriendlyByteBuf buf) {
-        return new LMSoundPayload(buf.readVarInt(), buf.readUtf());
-    }
+    public static final StreamCodec<RegistryFriendlyByteBuf, LMSoundPayload> STREAM_CODEC = StreamCodec.composite(
+            ByteBufCodecs.VAR_INT, LMSoundPayload::entityId,
+            ByteBufCodecs.STRING_UTF8, LMSoundPayload::soundName,
+            LMSoundPayload::new
+    ).cast();
 
     @Override
     public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {

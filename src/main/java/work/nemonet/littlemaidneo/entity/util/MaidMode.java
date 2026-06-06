@@ -67,15 +67,6 @@ public enum MaidMode {
         return FREEDOM;
     }
 
-    public static MaidMode fromName(String name) {
-        for (MaidMode mode : values()) {
-            if (mode.getName().equals(name)) {
-                return mode;
-            }
-        }
-        throw new IllegalArgumentException("存在しないMaidModeです。 : " + name);
-    }
-
     public static MaidMode fromId(int id) {
         for (MaidMode mode : values()) {
             if (mode.getId() == id) {

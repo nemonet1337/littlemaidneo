@@ -12,7 +12,7 @@ import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.event.AddPackFindersEvent;
-import work.nemonet.littlemaidneo.client.key.LMKeys;
+import work.nemonet.littlemaidneo.client.LMKeys;
 import work.nemonet.littlemaidneo.client.renderer.MaidModelRenderer;
 import work.nemonet.littlemaidneo.client.renderer.MaidSoulRenderer;
 import work.nemonet.littlemaidneo.client.renderer.MultiModelRenderer;

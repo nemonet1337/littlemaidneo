@@ -72,7 +72,7 @@ public class TameableUtil {
 
     /**
      * 待機状態（orderedToSit）を Brain の IS_WAITING メモリへ即時反映する。
-     * <p>このメモリ同期は {@link work.nemonet.littlemaidneo.entity.ai.sensor.LittleMaidSensor}
+     * <p>このメモリ同期は {@link work.nemonet.littlemaidneo.entity.ai.LittleMaidSensor}
      * が 20 tick ごとに行うため、砂糖などで待機を切り替えた直後の最大 1 秒間は
      * Behavior が反応せず「待機にならない」ように見える（特にワープ/追従中に顕著）。
      * 切り替え時にここで直接同期することで遅延を解消する。

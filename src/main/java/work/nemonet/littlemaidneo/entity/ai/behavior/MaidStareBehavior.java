@@ -15,7 +15,7 @@ import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 import work.nemonet.littlemaidneo.setup.ModRegistration;
 import work.nemonet.littlemaidneo.tags.LMTags;
 
-public class MaidStareBehavior extends Behavior<LittleMaidEntity> {
+public class MaidStareBehavior extends AbstractMaidBehavior {
     private Player stareTarget;
     private int reCalcCool;
 

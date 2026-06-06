@@ -14,7 +14,7 @@ import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 
 import java.util.List;
 
-public class MaidTargetBehavior extends Behavior<LittleMaidEntity> {
+public class MaidTargetBehavior extends AbstractMaidBehavior {
     private Mob target;
     private int recalc = 0;
 

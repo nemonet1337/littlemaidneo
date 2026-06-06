@@ -14,7 +14,7 @@ import work.nemonet.littlemaidneo.resource.util.LMSounds;
 import work.nemonet.littlemaidneo.setup.ModRegistration;
 import work.nemonet.littlemaidneo.tags.LMTags;
 
-public class MaidHealSelfBehavior extends Behavior<LittleMaidEntity> {
+public class MaidHealSelfBehavior extends AbstractMaidBehavior {
     private int cool;
     private int healItemSlot = -1;
 

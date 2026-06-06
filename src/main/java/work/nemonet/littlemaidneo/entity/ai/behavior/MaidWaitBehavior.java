@@ -8,16 +8,11 @@ import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.setup.ModRegistration;
 
-public class MaidWaitBehavior extends Behavior<LittleMaidEntity> {
+public class MaidWaitBehavior extends AbstractMaidBehavior {
     public MaidWaitBehavior() {
         super(ImmutableMap.of(
                 ModRegistration.IS_WAITING.get(), MemoryStatus.VALUE_PRESENT
         ));
-    }
-
-    @Override
-    protected boolean checkExtraStartConditions(ServerLevel level, LittleMaidEntity entity) {
-        return true;
     }
 
     // canStillUse 既定は false のため、override しないと start()/stop() を毎 tick 繰り返し
