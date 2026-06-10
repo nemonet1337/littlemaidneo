@@ -5,7 +5,7 @@ import net.minecraft.client.sounds.WeighedSoundEvents;
 import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundSource;
 import net.neoforged.api.distmarker.Dist;
-import work.nemonet.littlemaidneo.config.LMMLConfig;
+import work.nemonet.littlemaidneo.config.LMNModelConfig;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -35,7 +35,7 @@ public class LMSoundManager {
     public void play(String soundFileName, SoundSource soundSource, double x, double y, double z) {
         getSound(soundFileName).ifPresent(soundSet -> {
             LMSoundInstance soundInstance = new LMSoundInstance(soundSet, soundSource,
-                    LMMLConfig.getVoiceVolume(), x, y, z);
+                    LMNModelConfig.getVoiceVolume(), x, y, z);
             Minecraft.getInstance().getSoundManager().play(soundInstance);
         });
     }

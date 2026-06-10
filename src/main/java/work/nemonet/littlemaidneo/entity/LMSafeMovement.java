@@ -12,7 +12,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-import work.nemonet.littlemaidneo.config.LMRBConfig;
+import work.nemonet.littlemaidneo.config.LMNConfig;
 
 /**
  * メイドさんの「安全移動」ロジックの移譲先。
@@ -33,7 +33,7 @@ final class LMSafeMovement {
             return movement;
         }
 
-        LMRBConfig config = LittleMaidEntity.getConfig();
+        LMNConfig config = LittleMaidEntity.getConfig();
 
         if (!config.health.immortal &&
                 !config.health.nonMobDamageImmunity &&

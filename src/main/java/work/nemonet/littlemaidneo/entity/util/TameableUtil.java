@@ -11,7 +11,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.pathfinder.PathType;
 import net.minecraft.world.level.pathfinder.WalkNodeEvaluator;
-import work.nemonet.littlemaidneo.config.LMRBConfig;
+import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.setup.ModRegistration;
 
@@ -108,7 +108,7 @@ public class TameableUtil {
     public static boolean tryTeleportToOwner(LittleMaidEntity tameable, LivingEntity owner, int widthRange, int heightRange) {
         BlockPos ownerPos = owner.blockPosition();
         var navigation = tameable.getNavigation();
-        int maxTry = LMRBConfig.get().movement.maxTryTeleportCount;
+        int maxTry = LMNConfig.get().movement.maxTryTeleportCount;
         for (int i = 0; i < maxTry; ++i) {
             int x = tameable.getRandom().nextInt(widthRange * 2 + 1) - widthRange;
             int y = tameable.getRandom().nextInt(heightRange * 2 + 1) - heightRange;
@@ -131,12 +131,12 @@ public class TameableUtil {
     }
 
     private static boolean isOwnerForwardRange(LivingEntity owner, int x, int y, int z) {
-        if (LMRBConfig.get().movement.canTeleportOwnerForwards) return false;
+        if (LMNConfig.get().movement.canTeleportOwnerForwards) return false;
         Vec3 ownerPos = owner.position();
         Vec3 entityPos = new Vec3(x + 0.5, y, z + 0.5).subtract(ownerPos);
         Vec3 ownerRot = owner.getViewVector(1F);
         double dot = entityPos.dot(ownerRot);
-        double range = LMRBConfig.get().movement.ownerForwardRange;
+        double range = LMNConfig.get().movement.ownerForwardRange;
         return 0 < dot && dot < range * range;
     }
 

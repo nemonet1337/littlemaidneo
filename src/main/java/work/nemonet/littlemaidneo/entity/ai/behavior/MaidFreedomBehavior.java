@@ -10,7 +10,7 @@ import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.ai.util.DefaultRandomPos;
 import net.minecraft.world.entity.ai.util.LandRandomPos;
 import net.minecraft.world.phys.Vec3;
-import work.nemonet.littlemaidneo.config.LMRBConfig;
+import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.util.MaidMode;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
@@ -55,7 +55,7 @@ public class MaidFreedomBehavior extends AbstractMaidBehavior {
         }
         reCalcCool = 20 + entity.getRandom().nextInt(20);
 
-        LMRBConfig config = entity.getConfig();
+        LMNConfig config = entity.getConfig();
         float speed = config.movement.freedomSpeed;
         
         Vec3 randPos;
@@ -82,7 +82,7 @@ public class MaidFreedomBehavior extends AbstractMaidBehavior {
         BlockPos freedomPos = entity.getFreedomPos().orElse(null);
         if (freedomPos == null) return;
 
-        LMRBConfig config = entity.getConfig();
+        LMNConfig config = entity.getConfig();
         double distance = config.movement.freedomRange;
         double distanceSq = distance * distance;
 

@@ -56,7 +56,7 @@
 - [ ] `MixinCrossBowItem` → `MixinRangedWeaponItem` に `instanceof CrossbowItem` 分岐で統合（Mixin 1 件減）。
 - [ ] `mixin/CrossbowItemInvoker`（実は Mixin ではない・誤配置）→ `entity/util/`（`CrossbowSpeedUtil` 等）へ移設 or インライン。
 - [ ] （任意）`MixinAbstractFurnaceBlockEntity.isBurningFire_LM` → ブロックステート `LIT` 由来にして `@Shadow` 削減。
-- 注意: Mixin 撤去時は `littlemaidneo.mixins.json` の登録も同時削除。命名 `_LM`/`_LMRB` 混在は `_LM` へ寄せると一貫（任意）。
+- 注意: Mixin 撤去時は `littlemaidneo.mixins.json` の登録も同時削除。命名は `_LM` サフィックスへ統一済み。
 
 ### §G — ディレクトリ・クラス数の削減（構造刷新）… → HOWTO §G
 
@@ -83,7 +83,7 @@
 - [ ] **E-1 エンティティ委譲**: `LittleMaidEntity`/`MultiModelEntity` 重複の `IHasMultiModel`(13)＋`SoundPlayable`(3) を `common/MultiModelHolder`・`common/SoundHolder`（default メソッド付き）で解消。`NetworkHandler.sendSyncMultiModel{C2S,S2C}` の同一ブロックも `collectTextureNames()` 抽出。パケットワイヤ順不変。
 - [ ] **E-4 作業モード**: 5 モード＋behavior の「接近＋recalc カウントダウン」定型を `ModeNavigation.approachOrStop()`／`RecalcWalker` へ。`BlockFinder.searchTargetBlock`↔`BlockFinderPD.tick` の BFS 二重実装を `BlockFinderPD` 単一ソース化。ドメインロジック（治癒/醸造/strafe）は共通化しない。
 - [ ] **E-5 Behavior 基底**: 13 behavior 共通の `IS_WAITING VALUE_ABSENT` コンストラクタ・`canStillUse` フットガン・`WALK_TARGET`+`EntityTracker` 構築を `AbstractMaidBehavior` 基底＋`walkTo()` へ（§C の `AbstractMaidModeBehavior` もここに乗せる）。
-- 対象外（監査確認済）: `LMRBConfig` 二相パターン／`data/LM*Provider`／`resource/manager` 小文字キー Map（差異実質的）／`resource/loader`（Strategy 済・保護コア B 隣接）／`entity/util` の interface+Impl（意図的分割）。
+- 対象外（監査確認済）: `LMNConfig` 二相パターン／`data/LM*Provider`／`resource/manager` 小文字キー Map（差異実質的）／`resource/loader`（Strategy 済・保護コア B 隣接）／`entity/util` の interface+Impl（意図的分割）。
 
 ### §F — LittleMaidEntity の分割 … → HOWTO §F（中リスク）
 
@@ -131,7 +131,7 @@
 - [ ] 各ボタン動作（ターゲットタグ／サウンドパック選択／モデル選択／移動モード切替・吸血トグル／メイドさん管理／お仕事スロット数）。
 - [ ] `ModelSelectScreen`/`SoundPackSelectScreen` のスクロール・フィルタ検索。GUI 内プレビューのマウス追従。マウスクリック判定のズレ無し。
 - [ ] 全モデル（SR2/AC/RX0/Steve 等）・防具・手持ち・頭部装飾が正常描画。
-- [ ] config 競合なし生成（`littlemaidneo-lmml-common.toml` / `saves/<world>/serverconfig/littlemaidneo-server.toml`）。
+- [ ] config 競合なし生成（`littlemaidneo-common.toml` / `saves/<world>/serverconfig/littlemaidneo-server.toml`）。
 
 ### 📦 互換性・ネットワーク
 - [ ] 既存セーブのロードで NBT エラーが起きない（キー名互換）。

@@ -2,7 +2,7 @@ package work.nemonet.littlemaidneo.resource.loader;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import work.nemonet.littlemaidneo.config.LMMLConfig;
+import work.nemonet.littlemaidneo.config.LMNModelConfig;
 import work.nemonet.littlemaidneo.resource.manager.LMConfigManager;
 import work.nemonet.littlemaidneo.resource.util.ResourceHelper;
 
@@ -37,7 +37,7 @@ public class LMConfigLoader implements LMLoader {
         String fileName = ResourceHelper.removeExtension(ResourceHelper.getFileName(path, isArchive));
         return () -> {
             configManager.addConfig(packName, parentName, fileName, settings);
-            if (LMMLConfig.isDebugMode())
+            if (LMNModelConfig.isDebugMode())
                 LOGGER.debug("Loaded Config : " + packName + "." + parentName + "." + fileName
                         + " : Total " + settings.size());
         };

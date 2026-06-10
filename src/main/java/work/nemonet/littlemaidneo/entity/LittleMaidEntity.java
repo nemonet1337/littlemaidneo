@@ -74,10 +74,10 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
 import org.jetbrains.annotations.Nullable;
 import work.nemonet.littlemaidneo.LittleMaidNeo;
-import work.nemonet.littlemaidneo.advancement.criterion.LMRBCriteria;
+import work.nemonet.littlemaidneo.advancement.criterion.LMNCriteria;
 import work.nemonet.littlemaidneo.common.MultiModelHolder;
 import work.nemonet.littlemaidneo.common.SoundHolder;
-import work.nemonet.littlemaidneo.config.LMRBConfig;
+import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
 import work.nemonet.littlemaidneo.entity.compound.MultiModelCompound;
 import work.nemonet.littlemaidneo.entity.compound.SoundPlayable;
@@ -626,13 +626,13 @@ private float prevInterestedAngle;
             if (entity.isRemoved())
                 continue;
             if (entity instanceof LMCollidable collidable) {
-                collidable.onCollision_LMRB(this);
+                collidable.onCollision_LM(this);
             }
         }
         if (!exps.isEmpty()) {
             var collidable = ((LMCollidable) Util.getRandom(exps, this.random));
             if (collidable != null) {
-                collidable.onCollision_LMRB(this);
+                collidable.onCollision_LM(this);
             }
         }
     }
@@ -748,14 +748,14 @@ private float prevInterestedAngle;
     }
 
     public boolean isEmergency() {
-        LMRBConfig config = getConfig();
+        LMNConfig config = getConfig();
         // ?????????????????????????????????
         return (this.getHealth() / this.getMaxHealth() <= config.health.emergencyMaidHealthThreshold);
     }
 
     @Override
     public void setHealth(float health) {
-        LMRBConfig config = getConfig();
+        LMNConfig config = getConfig();
         if (config.health.disableMaidDeath && health <= 0) {
             super.setHealth(1);
             return;
@@ -855,7 +855,7 @@ private float prevInterestedAngle;
         if (!isReContract) {
             this.level().broadcastEntityEvent(this, (byte) 70);
             if (player instanceof ServerPlayer) {
-                LMRBCriteria.CONTRACT_MAID.trigger((ServerPlayer) player, this);
+                LMNCriteria.CONTRACT_MAID.trigger((ServerPlayer) player, this);
             }
         } else {
             this.level().broadcastEntityEvent(this, (byte) 71);
@@ -1365,8 +1365,8 @@ public Optional<String> getModeName() {
         SoundHolder.super.play(soundName);
     }
 
-    public static LMRBConfig getConfig() {
-        return LMRBConfig.get();
+    public static LMNConfig getConfig() {
+        return LMNConfig.get();
     }
 
     // ??: ?? LMStareAtHeldItemGoal????????????????? Goal??? Phase 7 ??

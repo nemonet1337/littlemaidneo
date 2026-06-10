@@ -4,7 +4,7 @@ import net.minecraft.resources.Identifier;
 import net.neoforged.api.distmarker.Dist;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import work.nemonet.littlemaidneo.config.LMMLConfig;
+import work.nemonet.littlemaidneo.config.LMNModelConfig;
 import work.nemonet.littlemaidneo.resource.loader.LMLoader;
 import work.nemonet.littlemaidneo.resource.util.ResourceHelper;
 
@@ -34,7 +34,7 @@ public class LMSoundLoader implements LMLoader {
         return () -> {
             soundManager.addSound(packName, parent, fileName, location);
             ResourceWrapper.addResourcePath(location, path, folderPath, isArchive);
-            if (LMMLConfig.isDebugMode()) LOGGER.debug("Loaded Sound : " + packName + " : " + fileName);
+            if (LMNModelConfig.isDebugMode()) LOGGER.debug("Loaded Sound : " + packName + " : " + fileName);
         };
     }
 }

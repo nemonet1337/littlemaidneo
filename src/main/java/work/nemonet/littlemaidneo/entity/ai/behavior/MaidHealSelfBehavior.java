@@ -8,7 +8,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.ai.behavior.Behavior;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.item.ItemStack;
-import work.nemonet.littlemaidneo.config.LMRBConfig;
+import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.resource.util.LMSounds;
 import work.nemonet.littlemaidneo.setup.ModRegistration;
@@ -107,6 +107,6 @@ public class MaidHealSelfBehavior extends AbstractMaidBehavior {
     }
 
     private boolean isEnoughHealth(LittleMaidEntity entity) {
-        return entity.getHealth() / entity.getMaxHealth() > LMRBConfig.get().health.healDelayThreshold;
+        return entity.getHealth() / entity.getMaxHealth() > LMNConfig.get().health.healDelayThreshold;
     }
 }

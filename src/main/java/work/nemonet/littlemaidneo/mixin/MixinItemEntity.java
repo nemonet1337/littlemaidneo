@@ -31,7 +31,7 @@ public abstract class MixinItemEntity extends Entity implements LMCollidable {
     }
 
     @Override
-    public void onCollision_LMRB(LittleMaidEntity maid) {
+    public void onCollision_LM(LittleMaidEntity maid) {
         if (this.level().isClientSide()) {
             return;
         }

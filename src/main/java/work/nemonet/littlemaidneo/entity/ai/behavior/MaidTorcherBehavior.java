@@ -15,7 +15,7 @@ import net.minecraft.world.item.context.DirectionalPlaceContext;
 import net.minecraft.world.level.block.TorchBlock;
 import org.jetbrains.annotations.Nullable;
 import work.nemonet.littlemaidneo.LittleMaidNeo;
-import work.nemonet.littlemaidneo.config.LMRBConfig;
+import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.mode.ModeHelpers;
 import work.nemonet.littlemaidneo.entity.util.MaidMode;
@@ -88,7 +88,7 @@ public class MaidTorcherBehavior extends AbstractMaidBehavior {
         }
         return (
                 mob.level().getMaxLocalRawBrightness(pos) <=
-                        LMRBConfig.get().work.torcherLightLevelThreshold
+                        LMNConfig.get().work.torcherLightLevelThreshold
         );
     }
 
@@ -128,7 +128,7 @@ public class MaidTorcherBehavior extends AbstractMaidBehavior {
             return;
         }
         if (60 < ++this.failPlaceTimer ||
-                LMRBConfig.get().work.torcherLightLevelThreshold <
+                LMNConfig.get().work.torcherLightLevelThreshold <
                         mob.level().getMaxLocalRawBrightness(placePos)) {
             this.placePos = null;
             this.failPlaceTimer = 0;

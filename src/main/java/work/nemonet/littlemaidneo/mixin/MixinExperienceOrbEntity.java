@@ -27,7 +27,7 @@ public abstract class MixinExperienceOrbEntity extends Entity implements LMColli
     }
 
     @Override
-    public void onCollision_LMRB(LittleMaidEntity maid) {
+    public void onCollision_LM(LittleMaidEntity maid) {
         if (this.level().isClientSide() || maid.experiencePickUpDelay != 0) {
             return;
         }

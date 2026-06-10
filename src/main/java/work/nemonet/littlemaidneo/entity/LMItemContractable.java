@@ -11,7 +11,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import work.nemonet.littlemaidneo.resource.util.LMSounds;
-import work.nemonet.littlemaidneo.config.LMRBConfig;
+import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.util.MaidMode;
 import work.nemonet.littlemaidneo.entity.util.SalaryBoxPosListener;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
@@ -131,7 +131,7 @@ public class LMItemContractable<T extends LittleMaidEntity> extends ItemContract
     }
 
     protected int getMaxMemorySalaryBoxPos() {
-        return LMRBConfig.get().contract.maxMemorySalaryBoxPos;
+        return LMNConfig.get().contract.maxMemorySalaryBoxPos;
     }
 
     protected void checkAndFixSalaryBoxPosSize() {

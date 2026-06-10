@@ -13,12 +13,12 @@ public abstract class MixinRangedWeaponItem implements IRangedWeapon {
     public abstract int getDefaultProjectileRange();
 
     @Override
-    public float getMaxRange_LMRB(ItemStack stack, LivingEntity user) {
+    public float getMaxRange_LM(ItemStack stack, LivingEntity user) {
         return getDefaultProjectileRange();
     }
 
     @Override
-    public int getInterval_LMRB(ItemStack stack, LivingEntity user) {
+    public int getInterval_LM(ItemStack stack, LivingEntity user) {
         if ((Object) this instanceof net.minecraft.world.item.CrossbowItem) {
             return net.minecraft.world.item.CrossbowItem.getChargeDuration(stack, user);
         }

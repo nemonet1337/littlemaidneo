@@ -15,7 +15,7 @@ import net.minecraft.world.entity.projectile.ProjectileUtil;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.Snowball;
 import net.minecraft.world.item.*;
 import work.nemonet.littlemaidneo.LittleMaidNeo;
-import work.nemonet.littlemaidneo.config.LMRBConfig;
+import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 import work.nemonet.littlemaidneo.util.CrossbowItemInvoker;
 import work.nemonet.littlemaidneo.resource.util.LMSounds;
@@ -63,7 +63,7 @@ public final class MaidCombat {
             mob.play(LMSounds.HURT_SNOW);
             return false;
         }
-        LMRBConfig config = mob.getConfig();
+        LMNConfig config = mob.getConfig();
         if (config.health.nonMobDamageImmunity && source.getEntity() == null) {
             return false;
         }

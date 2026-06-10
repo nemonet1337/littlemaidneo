@@ -12,7 +12,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.ai.behavior.Behavior;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
-import work.nemonet.littlemaidneo.config.LMRBConfig;
+import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.util.MaidMode;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
@@ -93,8 +93,8 @@ public class MaidTraceBehavior extends AbstractMaidBehavior {
     }
 
     private Stream<BlockPos> getAroundSignalPoses(LittleMaidEntity entity) {
-        int horizon = LMRBConfig.get().movement.tracerHorizonRange;
-        int vertical = LMRBConfig.get().movement.tracerVerticalRange;
+        int horizon = LMNConfig.get().movement.tracerHorizonRange;
+        int vertical = LMNConfig.get().movement.tracerVerticalRange;
         return BlockPos.betweenClosedStream(
                 entity.blockPosition().offset(horizon, vertical, horizon),
                 entity.blockPosition().offset(-horizon, -vertical, -horizon))

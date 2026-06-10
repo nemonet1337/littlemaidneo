@@ -7,12 +7,12 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
-import work.nemonet.littlemaidneo.config.LMRBConfig;
+import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.util.HasInventory;
 
 public class LMHasInventory implements HasInventory {
     private final Container inventory;
-    private int workItemSlotSize = LMRBConfig.get().work.defaultWorkItemSlotSize;
+    private int workItemSlotSize = LMNConfig.get().work.defaultWorkItemSlotSize;
 
     public LMHasInventory() {
         this.inventory = new SimpleContainer(18);

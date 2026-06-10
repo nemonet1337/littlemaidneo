@@ -7,7 +7,7 @@ import work.nemonet.littlemaidneo.tags.LMTags;
 import java.util.Arrays;
 import java.util.List;
 
-public class LMRBConfig {
+public class LMNConfig {
 
     public static final ModConfigSpec SPEC;
 
@@ -242,7 +242,7 @@ public class LMRBConfig {
     }
 
     // Singleton instance (populated by bake())
-    private static final LMRBConfig INSTANCE = new LMRBConfig();
+    private static final LMNConfig INSTANCE = new LMNConfig();
 
     public final Spawn spawn = new Spawn();
     public final Health health = new Health();
@@ -253,7 +253,7 @@ public class LMRBConfig {
     public final Target target = new Target();
     public final Client client = new Client();
 
-    public static LMRBConfig get() {
+    public static LMNConfig get() {
         return INSTANCE;
     }
 

@@ -7,7 +7,7 @@ import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.ai.util.DefaultRandomPos;
 import net.minecraft.world.phys.Vec3;
-import work.nemonet.littlemaidneo.config.LMRBConfig;
+import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 
 import java.util.Map;
@@ -30,7 +30,7 @@ public class MaidAvoidBehavior extends AbstractMaidBehavior {
             return false;
         }
 
-        double avoidDist = LMRBConfig.get().target.dangerousAvoidDistance;
+        double avoidDist = LMNConfig.get().target.dangerousAvoidDistance;
         LivingEntity nearest = null;
         double nearestDistSq = avoidDist * avoidDist;
 
@@ -74,8 +74,8 @@ public class MaidAvoidBehavior extends AbstractMaidBehavior {
             this.cooldown = 10;
             Vec3 avoidPos = DefaultRandomPos.getPosAway(mob, 16, 7, this.avoidTarget.position());
             if (avoidPos != null) {
-                float walkSpeed = LMRBConfig.get().movement.followSpeed;
-                float sprintSpeed = LMRBConfig.get().movement.sprintSpeed;
+                float walkSpeed = LMNConfig.get().movement.followSpeed;
+                float sprintSpeed = LMNConfig.get().movement.sprintSpeed;
                 float speed = mob.distanceToSqr(this.avoidTarget) < 49.0 ? sprintSpeed : walkSpeed;
                 mob.getBrain().setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(avoidPos, speed, 1));
             }

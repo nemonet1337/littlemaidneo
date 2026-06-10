@@ -2,7 +2,7 @@ package work.nemonet.littlemaidneo.advancement.criterion;
 
 import net.minecraft.advancements.CriteriaTriggers;
 
-public class LMRBCriteria {
+public class LMNCriteria {
     public static ContractMaidCriterion CONTRACT_MAID;
     public static ResurrectMaidCriterion RESURRECT_MAID;
 

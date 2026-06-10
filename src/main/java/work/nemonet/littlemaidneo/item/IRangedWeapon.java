@@ -13,12 +13,12 @@ public interface IRangedWeapon {
      * 射程範囲を返すメソッド
      * AIの射程判定に使用する
      */
-    float getMaxRange_LMRB(ItemStack stack, LivingEntity user);
+    float getMaxRange_LM(ItemStack stack, LivingEntity user);
 
     /**
      * 射撃間隔を返すメソッド
      * AIの射撃間隔に使用する
      */
-    int getInterval_LMRB(ItemStack stack, LivingEntity user);
+    int getInterval_LM(ItemStack stack, LivingEntity user);
 
 }

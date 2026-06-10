@@ -5,7 +5,7 @@ import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.api.distmarker.Dist;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import work.nemonet.littlemaidneo.config.LMMLConfig;
+import work.nemonet.littlemaidneo.config.LMNModelConfig;
 import work.nemonet.littlemaidneo.resource.holder.TextureHolder;
 import work.nemonet.littlemaidneo.resource.util.ResourceHelper;
 import work.nemonet.littlemaidneo.resource.util.TextureIndexes;
@@ -28,7 +28,7 @@ public class LMTextureManager {
         } else {
             textureHolder.addTexture(index, texturePath);
         }
-        if (LMMLConfig.isDebugMode()) LOGGER.debug("Loaded Texture : " + texturePath);
+        if (LMNModelConfig.isDebugMode()) LOGGER.debug("Loaded Texture : " + texturePath);
     }
 
     public String getArmorName(String fileName) {

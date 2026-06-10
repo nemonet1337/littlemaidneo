@@ -8,7 +8,7 @@ import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.player.Player;
-import work.nemonet.littlemaidneo.config.LMRBConfig;
+import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.util.MaidMode;
 import work.nemonet.littlemaidneo.setup.ModRegistration;
@@ -47,7 +47,7 @@ public class MaidFollowOwnerBehavior extends AbstractMaidBehavior {
         }
 
         double distanceSq = entity.distanceToSqr(owner);
-        LMRBConfig config = entity.getConfig();
+        LMNConfig config = entity.getConfig();
 
         double followStartDist = config.movement.followStartDistance;
         double followEndDist = config.movement.followEndDistance;

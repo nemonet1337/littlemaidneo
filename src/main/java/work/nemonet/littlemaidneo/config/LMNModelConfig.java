@@ -2,7 +2,7 @@ package work.nemonet.littlemaidneo.config;
 
 import net.neoforged.neoforge.common.ModConfigSpec;
 
-public class LMMLConfig {
+public class LMNModelConfig {
     private static ModConfigSpec.DoubleValue VOICE_VOLUME;
     private static ModConfigSpec.BooleanValue ENABLE_ALPHA;
     private static ModConfigSpec.BooleanValue DEBUG_MODE;

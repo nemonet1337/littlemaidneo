@@ -14,7 +14,7 @@ import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.HopperBlockEntity;
 import net.minecraft.world.level.pathfinder.Path;
-import work.nemonet.littlemaidneo.config.LMRBConfig;
+import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 import work.nemonet.littlemaidneo.setup.ModRegistration;
@@ -251,30 +251,30 @@ public class MaidCollectSalaryBehavior extends AbstractMaidBehavior {
     }
 
     protected int getConfigCheckInterval() {
-        return LMRBConfig.get().contract.startIntervalOfAutoSalaryReceipt;
+        return LMNConfig.get().contract.startIntervalOfAutoSalaryReceipt;
     }
 
     protected int getConfigPathReCalcCool() {
-        return LMRBConfig.get().contract.findPathIntervalOfAutoSalaryReceipt;
+        return LMNConfig.get().contract.findPathIntervalOfAutoSalaryReceipt;
     }
 
     protected int getConfigMaxMoveToContainerTime() {
-        return LMRBConfig.get().contract.maxMoveTimeOnAutoSalaryReceipt;
+        return LMNConfig.get().contract.maxMoveTimeOnAutoSalaryReceipt;
     }
 
     protected int getConfigMaxSalarySlots() {
-        return LMRBConfig.get().contract.maxAutoSalaryReceiptSlotSize;
+        return LMNConfig.get().contract.maxAutoSalaryReceiptSlotSize;
     }
 
     protected int getConfigMinSalarySlots() {
-        return LMRBConfig.get().contract.startAutoSalaryReceiptSlotThreshold;
+        return LMNConfig.get().contract.startAutoSalaryReceiptSlotThreshold;
     }
 
     protected float getConfigSalaryBoxRange() {
-        return LMRBConfig.get().contract.searchSalaryBoxDistance;
+        return LMNConfig.get().contract.searchSalaryBoxDistance;
     }
 
     protected int getConfigMaxMoveTimePrevPos() {
-        return LMRBConfig.get().contract.maxMoveTimeAfterAutoSalaryReceipt;
+        return LMNConfig.get().contract.maxMoveTimeAfterAutoSalaryReceipt;
     }
 }

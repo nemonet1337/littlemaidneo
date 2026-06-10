@@ -20,7 +20,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import work.nemonet.littlemaidneo.LittleMaidNeo;
 import work.nemonet.littlemaidneo.advancement.criterion.ContractMaidCriterion;
-import work.nemonet.littlemaidneo.advancement.criterion.LMRBCriteria;
+import work.nemonet.littlemaidneo.advancement.criterion.LMNCriteria;
 import work.nemonet.littlemaidneo.advancement.criterion.ResurrectMaidCriterion;
 import work.nemonet.littlemaidneo.tags.LMTags;
 
@@ -51,7 +51,7 @@ public class LMAdvancementProvider {
                             true,
                             false
                     )
-                    .addCriterion("contracted_maid", LMRBCriteria.CONTRACT_MAID.createCriterion(new ContractMaidCriterion.TriggerInstance(Optional.empty(), Optional.empty())))
+                    .addCriterion("contracted_maid", LMNCriteria.CONTRACT_MAID.createCriterion(new ContractMaidCriterion.TriggerInstance(Optional.empty(), Optional.empty())))
                     .save(saver, LittleMaidNeo.MODID + ":husbandry/contract_maid");
 
             AdvancementHolder resurrectMaid = Advancement.Builder.advancement()
@@ -66,7 +66,7 @@ public class LMAdvancementProvider {
                             true,
                             false
                     )
-                    .addCriterion("resurrected_maid", LMRBCriteria.RESURRECT_MAID.createCriterion(new ResurrectMaidCriterion.TriggerInstance(Optional.empty(), Optional.empty())))
+                    .addCriterion("resurrected_maid", LMNCriteria.RESURRECT_MAID.createCriterion(new ResurrectMaidCriterion.TriggerInstance(Optional.empty(), Optional.empty())))
                     .save(saver, LittleMaidNeo.MODID + ":husbandry/resurrect_maid");
 
             Advancement.Builder.advancement()

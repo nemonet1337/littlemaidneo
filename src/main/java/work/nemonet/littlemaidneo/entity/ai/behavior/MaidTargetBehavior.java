@@ -5,7 +5,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.behavior.Behavior;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
-import work.nemonet.littlemaidneo.config.LMRBConfig;
+import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.targeting.TargetTagManager;
 import work.nemonet.littlemaidneo.entity.targeting.TargetingConfig;
@@ -24,7 +24,7 @@ public class MaidTargetBehavior extends AbstractMaidBehavior {
 
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, LittleMaidEntity entity) {
-        int chance = LMRBConfig.get().target.targetingFrequency;
+        int chance = LMNConfig.get().target.targetingFrequency;
         if (entity.getRandom().nextInt(chance) != 0) {
             return false;
         }

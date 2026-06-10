@@ -1,6 +1,6 @@
 package work.nemonet.littlemaidneo.entity.targeting;
 
-import work.nemonet.littlemaidneo.config.LMRBConfig;
+import work.nemonet.littlemaidneo.config.LMNConfig;
 
 /**
  * メイドさんターゲティングシステムの設定クラス
@@ -14,21 +14,21 @@ public class TargetingConfig {
      * 警戒範囲（先制攻撃やターゲット検出の範囲）
      */
     public static int getAlertRange() {
-        return LMRBConfig.get().target.alertRange;
+        return LMNConfig.get().target.alertRange;
     }
 
     /**
      * 戦闘範囲（実際に戦闘を行う範囲）
      */
     public static int getCombatRange() {
-        return LMRBConfig.get().target.combatRange;
+        return LMNConfig.get().target.combatRange;
     }
 
     /**
      * 危険対象回避距離
      */
     public static int getDangerousAvoidDistance() {
-        return LMRBConfig.get().target.dangerousAvoidDistance;
+        return LMNConfig.get().target.dangerousAvoidDistance;
     }
 
     // ========== 分散ターゲティング設定 ==========
@@ -37,14 +37,14 @@ public class TargetingConfig {
      * 分散ターゲティングの比率（メイドさん数の50%）
      */
     public static double getDistributionRatio() {
-        return LMRBConfig.get().target.distributionRatio;
+        return LMNConfig.get().target.distributionRatio;
     }
 
     /**
      * 一体あたりの最大攻撃者数
      */
     public static int getMaxAttackersPerTarget() {
-        return LMRBConfig.get().target.maxAttackersPerTarget;
+        return LMNConfig.get().target.maxAttackersPerTarget;
     }
 
     // ========== 体力関連設定 ==========
@@ -53,14 +53,14 @@ public class TargetingConfig {
      * 負傷判定の体力閾値（50%）
      */
     public static float getInjuredThreshold() {
-        return LMRBConfig.get().target.injuredThreshold;
+        return LMNConfig.get().target.injuredThreshold;
     }
 
     /**
      * 攻撃判定の有効tick数
      */
     public static int getAttackedByValidTicks() {
-        return LMRBConfig.get().target.attackedByValidTicks;
+        return LMNConfig.get().target.attackedByValidTicks;
     }
 
 }

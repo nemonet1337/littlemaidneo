@@ -11,7 +11,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemUtils;
 import net.minecraft.world.item.Items;
-import work.nemonet.littlemaidneo.config.LMRBConfig;
+import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.util.MaidMode;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 import work.nemonet.littlemaidneo.network.NetworkHandler;
@@ -166,7 +166,7 @@ final class LMInteractionHandler {
         }
         // 砂糖
         if (stack.is(LMTags.Items.MAIDS_SALARY)) {
-            LMRBConfig config = LittleMaidEntity.getConfig();
+            LMNConfig config = LittleMaidEntity.getConfig();
             mob.heal(config.health.healAmount);
             return mob.changeState(player, stack);
         }

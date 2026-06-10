@@ -28,7 +28,7 @@ import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import work.nemonet.littlemaidneo.config.LMRBConfig;
+import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.util.SalaryBoxPosListener;
 import work.nemonet.littlemaidneo.setup.ModRegistration;
 import work.nemonet.littlemaidneo.tags.LMTags;
@@ -200,10 +200,10 @@ public class SalaryBoxBlockEntity extends RandomizableContainerBlockEntity {
     }
 
     private static float getConfigNotifyRange() {
-        return LMRBConfig.get().contract.memorySalaryBoxDistance;
+        return LMNConfig.get().contract.memorySalaryBoxDistance;
     }
 
     private static int getConfigInterval() {
-        return LMRBConfig.get().contract.memorySalaryBoxInterval;
+        return LMNConfig.get().contract.memorySalaryBoxInterval;
     }
 }

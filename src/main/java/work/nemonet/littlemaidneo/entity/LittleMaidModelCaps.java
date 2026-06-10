@@ -3,7 +3,7 @@ package work.nemonet.littlemaidneo.entity;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.BushBlock;
-import work.nemonet.littlemaidneo.config.LMRBConfig;
+import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.util.MaidMode;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 import work.nemonet.littlemaidneo.maidmodel.EntityCaps;
@@ -21,14 +21,14 @@ public class LittleMaidModelCaps extends EntityCaps {
     public Object getCapsValue(int pIndex, Object... pArg) {
         return switch (pIndex) {
             case caps_aimedBow -> maid.isAimingBow();
-            case caps_isLeeding -> maid.isLeashed(); // MobEntityのメソッドなのでLMMLでなくこっち
+            case caps_isLeeding -> maid.isLeashed(); // Mob 側の isLeashed を参照する
             case caps_isBloodsuck -> maid.isBloodSuck();
             case caps_isFreedom -> maid.getMaidMode() == MaidMode.FREEDOM;
             case caps_isTracer -> maid.getMaidMode() == MaidMode.TRACER;
             case caps_isPlaying -> maid.isPlayingSnow();
             case caps_isLookSuger -> maid.isBegging();
             case caps_isWait -> TameableUtil.isWait(maid) &&
-                (LMRBConfig.get().client.enableWaitPoseOnMoving ||
+                (LMNConfig.get().client.enableWaitPoseOnMoving ||
                     maid.getDeltaMovement().lengthSqr() < 0.01);
             case caps_isWorking -> !maid.getActiveJobName().equals("none");
             case caps_isContract -> maid.isContractMM();

@@ -17,7 +17,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
-import work.nemonet.littlemaidneo.config.LMRBConfig;
+import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.util.MaidJobManager;
 import work.nemonet.littlemaidneo.item.IRangedWeapon;
@@ -170,7 +170,7 @@ public class MaidCombatBehavior extends AbstractMaidBehavior {
 
         private boolean isClose(LittleMaidEntity mob, double distanceSq) {
             return distanceSq < ReachAttributeUtil.getAttackRangeSq(mob)
-                    * LMRBConfig.get().work.fencerAttackDistanceFactor;
+                    * LMNConfig.get().work.fencerAttackDistanceFactor;
         }
 
         private boolean canAttack(LittleMaidEntity mob) {
@@ -187,7 +187,7 @@ public class MaidCombatBehavior extends AbstractMaidBehavior {
         private void resetCooldown(LittleMaidEntity mob) {
             double attackSpeed = mob.getAttributeValue(Attributes.ATTACK_SPEED);
             this.cooldown = Mth.ceil(1 / attackSpeed * 20
-                    / LMRBConfig.get().work.fencerAttackRateFactor);
+                    / LMNConfig.get().work.fencerAttackRateFactor);
         }
 
         @Override
@@ -340,15 +340,15 @@ public class MaidCombatBehavior extends AbstractMaidBehavior {
 
         private int getInterval(LittleMaidEntity mob, ItemStack itemStack) {
             return Mth.ceil((itemStack.getItem() instanceof IRangedWeapon rangedWeapon
-                    ? rangedWeapon.getInterval_LMRB(itemStack, mob)
-                    : 20) / LMRBConfig.get().work.archerShootRateFactor);
+                    ? rangedWeapon.getInterval_LM(itemStack, mob)
+                    : 20) / LMNConfig.get().work.archerShootRateFactor);
         }
 
         private float getMaxRange(LittleMaidEntity mob, ItemStack itemStack) {
             return (itemStack.getItem() instanceof IRangedWeapon rangedWeapon
-                    ? rangedWeapon.getMaxRange_LMRB(itemStack, mob)
+                    ? rangedWeapon.getMaxRange_LM(itemStack, mob)
                     : 16F)
-                    * LMRBConfig.get().work.archerShootDistanceFactor;
+                    * LMNConfig.get().work.archerShootDistanceFactor;
         }
 
         @Override

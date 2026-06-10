@@ -9,7 +9,7 @@ import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.level.pathfinder.Path;
 import net.minecraft.world.phys.Vec3;
-import work.nemonet.littlemaidneo.config.LMRBConfig;
+import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.compound.SoundPlayable;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
@@ -107,7 +107,7 @@ public class MaidMoveToDropItemBehavior extends AbstractMaidBehavior {
         Vec3 entityPos = entity.position().subtract(ownerPos);
         Vec3 ownerRot = owner.getViewVector(1F);
         double dot = entityPos.dot(ownerRot);
-        double r = LMRBConfig.get().movement.ownerForwardRange;
+        double r = LMNConfig.get().movement.ownerForwardRange;
         return 0 < dot && dot < r * r;
     }
 }

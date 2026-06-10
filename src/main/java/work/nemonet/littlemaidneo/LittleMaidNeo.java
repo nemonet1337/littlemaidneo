@@ -19,11 +19,11 @@ import net.neoforged.neoforge.registries.RegisterEvent;
 import net.neoforged.fml.event.config.ModConfigEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import work.nemonet.littlemaidneo.advancement.criterion.LMRBCriteria;
+import work.nemonet.littlemaidneo.advancement.criterion.LMNCriteria;
 import work.nemonet.littlemaidneo.client.resource.LMSoundLoader;
 import work.nemonet.littlemaidneo.client.resource.LMSoundManager;
-import work.nemonet.littlemaidneo.config.LMMLConfig;
-import work.nemonet.littlemaidneo.config.LMRBConfig;
+import work.nemonet.littlemaidneo.config.LMNModelConfig;
+import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.MultiModelEntity;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
@@ -63,8 +63,8 @@ public class LittleMaidNeo {
         modEventBus.addListener(work.nemonet.littlemaidneo.data.LMDataGenerator::gatherClientData);
         modEventBus.addListener(work.nemonet.littlemaidneo.data.LMDataGenerator::gatherServerData);
 
-        modContainer.registerConfig(ModConfig.Type.COMMON, LMMLConfig.SPEC, "littlemaidneo-lmml-common.toml");
-        modContainer.registerConfig(ModConfig.Type.SERVER, LMRBConfig.SPEC, "littlemaidneo-server.toml");
+        modContainer.registerConfig(ModConfig.Type.COMMON, LMNModelConfig.SPEC, "littlemaidneo-common.toml");
+        modContainer.registerConfig(ModConfig.Type.SERVER, LMNConfig.SPEC, "littlemaidneo-server.toml");
 
         modEventBus.addListener(this::onCommonSetup);
         modEventBus.addListener(this::onRegisterPayloadHandlers);
@@ -106,12 +106,12 @@ public class LittleMaidNeo {
     }
 
     private void onRegisterEvent(RegisterEvent event) {
-        event.register(Registries.TRIGGER_TYPE, helper -> LMRBCriteria.init());
+        event.register(Registries.TRIGGER_TYPE, helper -> LMNCriteria.init());
     }
 
     private void onModConfig(ModConfigEvent event) {
-        if (event.getConfig().getSpec() == LMRBConfig.SPEC && !(event instanceof ModConfigEvent.Unloading)) {
-            LMRBConfig.bake();
+        if (event.getConfig().getSpec() == LMNConfig.SPEC && !(event instanceof ModConfigEvent.Unloading)) {
+            LMNConfig.bake();
         }
     }
 

@@ -9,7 +9,7 @@ import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import work.nemonet.littlemaidneo.config.LMRBConfig;
+import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 import work.nemonet.littlemaidneo.setup.ModRegistration;
@@ -27,7 +27,7 @@ public class MaidStareBehavior extends AbstractMaidBehavior {
 
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, LittleMaidEntity entity) {
-        LMRBConfig config = entity.getConfig();
+        LMNConfig config = entity.getConfig();
         boolean hasOwner = TameableUtil.hasTameOwner(entity);
         double range = hasOwner ? config.misc.stareAtSalaryRange : config.misc.stareAtEmployItemRange;
 
@@ -59,7 +59,7 @@ public class MaidStareBehavior extends AbstractMaidBehavior {
             return;
         }
 
-        LMRBConfig config = entity.getConfig();
+        LMNConfig config = entity.getConfig();
         entity.getLookControl().setLookAt(stareTarget, 30.0F, 30.0F);
 
         double followRange = hasOwner ? config.misc.followAtHeldSalaryRange : config.misc.followAtHeldEmployItemRange;

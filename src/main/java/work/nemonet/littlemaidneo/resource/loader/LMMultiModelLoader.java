@@ -3,7 +3,7 @@ package work.nemonet.littlemaidneo.resource.loader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import work.nemonet.littlemaidneo.LittleMaidNeo;
-import work.nemonet.littlemaidneo.config.LMMLConfig;
+import work.nemonet.littlemaidneo.config.LMNModelConfig;
 import work.nemonet.littlemaidneo.maidmodel.ModelMultiBase;
 import work.nemonet.littlemaidneo.resource.manager.LMModelManager;
 
@@ -36,7 +36,7 @@ public class LMMultiModelLoader implements LMLoader {
             modelClass = classForName(classpath);
         } catch (Exception e) {
             LOGGER.error("読み込めませんでした。古いモデルの可能性があります : " + path);
-            if (LMMLConfig.isDebugMode()) e.printStackTrace();
+            if (LMNModelConfig.isDebugMode()) e.printStackTrace();
             return null;
         }
         if (modelClass == null || !ModelMultiBase.class.isAssignableFrom(modelClass)) return null;

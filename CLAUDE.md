@@ -28,7 +28,7 @@ LittleMaidNeo は、レガシー Mod 系譜 **LittleMaidRebirth (LMRB)** と **L
   - `client/` — クライアント（`renderer/`, `screen/`, `resource/`, `key/`）
   - `network/` — `NetworkHandler`（NeoForge `RegisterPayloadHandlersEvent` ベース）
   - `mixin/` — Mixin（`littlemaidneo.mixins.json` で登録）
-  - `config/` — `LMRBConfig`（メイン）、`LMMLConfig`（モデルローダー設定）
+  - `config/` — `LMNConfig`（メイン）、`LMNModelConfig`（モデルローダー設定）
   - `setup/` — `Registration`, `ModSetup`, `ClientSetup`
   - `tags/`, `advancement/`, `world/`, `util/`
 - 外部リソース読み込み: ゲームディレクトリの `LMMLResources/` フォルダから（`FMLPaths.GAMEDIR`）
@@ -101,12 +101,12 @@ LittleMaidNeo は、レガシー Mod 系譜 **LittleMaidRebirth (LMRB)** と **L
 - Mixin を追加した際は `src/main/resources/littlemaidneo.mixins.json` への登録を忘れない（未登録の孤立 Mixin は過去にデッドコード化した実績あり）
 
 ### Architecture Notes
-- コンフィグ: `config/LMRBConfig.java`（メイン）と `config/LMMLConfig.java`（モデルローダー）— NeoForge `ModConfigSpec` ベース、TOML
-  - `LMRBConfig` は `ModConfig.Type.SERVER`（`littlemaidneo-server.toml`、ワールド同期設定）
-  - `LMMLConfig` は `ModConfig.Type.COMMON`（`littlemaidneo-lmml-common.toml`、クライアント共有設定）
-  - `LMRBConfig.bake()` は `ModConfigEvent` で呼ばれる
+- コンフィグ: `config/LMNConfig.java`（メイン）と `config/LMNModelConfig.java`（モデルローダー）— NeoForge `ModConfigSpec` ベース、TOML
+  - `LMNConfig` は `ModConfig.Type.SERVER`（`littlemaidneo-server.toml`、ワールド同期設定）
+  - `LMNModelConfig` は `ModConfig.Type.COMMON`（`littlemaidneo-common.toml`、クライアント共有設定）
+  - `LMNConfig.bake()` は `ModConfigEvent` で呼ばれる
   - 旧 LMRB の AutoConfig + Cloth Config からは置き換え済み
-- コンフィグ追加手順: (1) `LMRBConfig` に `ModConfigSpec.XxxValue` フィールド追加 → static ブロックで定義 (2) 消費側でゲッター経由参照に置換 (3) lang/{en_us,ja_jp}.json にキー追加
+- コンフィグ追加手順: (1) `LMNConfig` に `ModConfigSpec.XxxValue` フィールド追加 → static ブロックで定義 (2) 消費側でゲッター経由参照に置換 (3) lang/{en_us,ja_jp}.json にキー追加
 - ターゲティング設定は `TargetingConfig` ラッパー経由でアクセスする（`TargetingConfig.getAlertRange()` 等）
 - ブロック操作モード（料理・醸造）の共通ロジックは `entity/mode/ModeHelpers.java` に集約
 - ブロック探索: `util/BlockFinder`（同期 BFS）/ `util/BlockFinderPD`（逐次 BFS・`util/ProcessDivider` で分割）

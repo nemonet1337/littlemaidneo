@@ -11,7 +11,7 @@ import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.item.Items;
 import net.neoforged.api.distmarker.Dist;
 import work.nemonet.littlemaidneo.LittleMaidNeo;
-import work.nemonet.littlemaidneo.config.LMRBConfig;
+import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
@@ -118,7 +118,7 @@ public class MaidModelRenderer extends MobRenderer<LittleMaidEntity, MaidRenderS
 
         model.setCapsValue(caps_aimedBow, entity.isAimingBow());
         model.setCapsValue(caps_isWait, TameableUtil.isWait(entity)
-                && (LMRBConfig.get().client.enableWaitPoseOnMoving
+                && (LMNConfig.get().client.enableWaitPoseOnMoving
                         || entity.getDeltaMovement().lengthSqr() < 0.01));
         model.setCapsValue(caps_isContract, entity.isContract());
         model.setCapsValue(caps_isBloodsuck, entity.isBloodSuck());

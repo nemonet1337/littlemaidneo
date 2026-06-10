@@ -12,7 +12,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.player.Player;
-import work.nemonet.littlemaidneo.advancement.criterion.LMRBCriteria;
+import work.nemonet.littlemaidneo.advancement.criterion.LMNCriteria;
 import work.nemonet.littlemaidneo.entity.util.MaidManager;
 import work.nemonet.littlemaidneo.entity.util.MaidMode;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
@@ -53,7 +53,7 @@ public final class MaidResurrection {
 
                 world.addFreshEntity(maid);
 
-                LMRBCriteria.RESURRECT_MAID.trigger(
+                LMNCriteria.RESURRECT_MAID.trigger(
                         (ServerPlayer) player,
                         maid);
             }
