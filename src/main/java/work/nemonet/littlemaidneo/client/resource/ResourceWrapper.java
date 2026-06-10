@@ -2,13 +2,13 @@ package work.nemonet.littlemaidneo.client.resource;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import net.minecraft.SharedConstants;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackLocationInfo;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.metadata.MetadataSectionType;
-import net.minecraft.server.packs.metadata.pack.PackFormat;
 import net.minecraft.server.packs.metadata.pack.PackMetadataSection;
 import net.minecraft.util.InclusiveRange;
 import net.minecraft.server.packs.resources.IoSupplier;
@@ -27,8 +27,11 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 public class ResourceWrapper implements PackResources {
     public static final ResourceWrapper INSTANCE = new ResourceWrapper();
+    // pack format を固定値にすると MC 更新のたびに「非互換パック」扱いになり
+    // 外部モデルテクスチャが解決できなくなるため、実行中バージョンの format を常に名乗る
     public static final PackMetadataSection PACK_INFO =
-            new PackMetadataSection(Component.literal("LittleMaid ModelLoader!!!"), new InclusiveRange<>(PackFormat.of(15)));
+            new PackMetadataSection(Component.literal("LittleMaid ModelLoader!!!"),
+                    new InclusiveRange<>(SharedConstants.getCurrentVersion().packVersion(PackType.CLIENT_RESOURCES)));
     protected static final HashMap<Identifier, Resource> PATHS = Maps.newHashMap();
 
     private static final PackLocationInfo LOCATION_INFO = new PackLocationInfo(

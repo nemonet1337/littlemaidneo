@@ -3,6 +3,7 @@ package work.nemonet.littlemaidneo.client.screen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -47,6 +48,8 @@ public class ModelSelectScreen<T extends Entity & IHasMultiModel> extends Screen
     private static final ItemStack CONTRACT = Items.CAKE.getDefaultInstance();
     private static final int GUI_WIDTH = 256;
     private static final int GUI_HEIGHT = 196;
+    // model_select.png のキャンバスサイズ（blit の UV 正規化に必要）
+    private static final int TEXTURE_SIZE = 256;
 
     private final T entity;
     private final DummyModelEntity dummy;
@@ -151,12 +154,12 @@ public class ModelSelectScreen<T extends Entity & IHasMultiModel> extends Screen
         assert this.minecraft != null;
         int relX = (this.width - GUI_WIDTH) / 2;
         int relY = (this.height - GUI_HEIGHT) / 2;
-        context.blit(MODEL_SELECT_GUI_TEXTURE, relX, relY, GUI_WIDTH, GUI_HEIGHT, 0.0f, 0.0f, (float) GUI_WIDTH, (float) GUI_HEIGHT);
+        context.blit(RenderPipelines.GUI_TEXTURED, MODEL_SELECT_GUI_TEXTURE, relX, relY, 0.0f, 0.0f, GUI_WIDTH, GUI_HEIGHT, TEXTURE_SIZE, TEXTURE_SIZE);
 
         context.item(guiSwitch ? ARMOR : MODEL, relX - 24, relY + GUI_HEIGHT - 16);
         context.item(isContract ? WILD : CONTRACT, relX - 24, relY + GUI_HEIGHT - 48);
-        context.blit(MODEL_SELECT_GUI_TEXTURE, relX - 24, relY + GUI_HEIGHT - 16, 16, 16, 0.0f, 240.0f, 16.0f, 16.0f);
-        context.blit(MODEL_SELECT_GUI_TEXTURE, relX - 24, relY + GUI_HEIGHT - 48, 16, 16, 0.0f, 240.0f, 16.0f, 16.0f);
+        context.blit(RenderPipelines.GUI_TEXTURED, MODEL_SELECT_GUI_TEXTURE, relX - 24, relY + GUI_HEIGHT - 16, 0.0f, 240.0f, 16, 16, TEXTURE_SIZE, TEXTURE_SIZE);
+        context.blit(RenderPipelines.GUI_TEXTURED, MODEL_SELECT_GUI_TEXTURE, relX - 24, relY + GUI_HEIGHT - 48, 0.0f, 240.0f, 16, 16, TEXTURE_SIZE, TEXTURE_SIZE);
 
         if (guiSwitch) {
             modelListGUI.extractRenderState(context, mouseX, mouseY, partialTicks);

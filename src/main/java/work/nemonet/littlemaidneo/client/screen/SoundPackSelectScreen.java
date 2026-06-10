@@ -2,6 +2,7 @@ package work.nemonet.littlemaidneo.client.screen;
 
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
@@ -22,6 +23,8 @@ public class SoundPackSelectScreen<T extends Entity & SoundPlayable> extends Abs
             Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, "textures/gui/model_select.png");
     private static final int GUI_WIDTH = 256;
     private static final int GUI_HEIGHT = 196;
+    // model_select.png のキャンバスサイズ（blit の UV 正規化に必要）
+    private static final int TEXTURE_SIZE = 256;
     private final T entity;
 
     public SoundPackSelectScreen(Component titleIn, T owner) {
@@ -65,7 +68,7 @@ public class SoundPackSelectScreen<T extends Entity & SoundPlayable> extends Abs
         assert this.minecraft != null;
         int relX = (this.width - GUI_WIDTH) / 2;
         int relY = (this.height - GUI_HEIGHT) / 2;
-        context.blit(MODEL_SELECT_GUI_TEXTURE, relX, relY, GUI_WIDTH, GUI_HEIGHT, 0.0f, 0.0f, (float) GUI_WIDTH, (float) GUI_HEIGHT);
+        context.blit(RenderPipelines.GUI_TEXTURED, MODEL_SELECT_GUI_TEXTURE, relX, relY, 0.0f, 0.0f, GUI_WIDTH, GUI_HEIGHT, TEXTURE_SIZE, TEXTURE_SIZE);
 
         super.extractRenderState(context, mouseX, mouseY, delta);
         if (this.listGUI != null) {

@@ -2,6 +2,7 @@ package work.nemonet.littlemaidneo.client.screen.component;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
@@ -53,10 +54,10 @@ public class ScrollBar extends GUIElement {
     }
 
     private void draw(GuiGraphicsExtractor context, int x, int y, TextureAddress texture) {
-        context.blit(this.texture, x, y,
-                texture.width(), texture.height(),
+        context.blit(RenderPipelines.GUI_TEXTURED, this.texture, x, y,
                 (float) texture.u(), (float) texture.v(),
-                (float) texture.width(), (float) texture.height()
+                texture.width(), texture.height(),
+                texture.texSizeW(), texture.texSizeH()
         );
     }
 

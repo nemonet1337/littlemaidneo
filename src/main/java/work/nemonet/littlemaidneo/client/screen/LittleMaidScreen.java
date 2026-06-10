@@ -4,6 +4,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -33,6 +34,8 @@ public class LittleMaidScreen
     private static final Identifier GUI = Identifier.fromNamespaceAndPath(
             LittleMaidNeo.MODID,
             "textures/gui/container/littlemaidinventory2.png");
+    // littlemaidinventory2.png のキャンバスサイズ（blit の UV 正規化に必要）
+    private static final int TEXTURE_SIZE = 256;
     private static final ItemStack ARMOR = Items.LEATHER_CHESTPLATE.getDefaultInstance();
     private static final ItemStack BOOK = Items.BOOK.getDefaultInstance();
     private static final ItemStack NOTE = Items.NOTE_BLOCK.getDefaultInstance();
@@ -515,15 +518,16 @@ public class LittleMaidScreen
         int relX = (this.width - this.imageWidth) / 2;
         int relY = (this.height - this.imageHeight) / 2;
         context.blit(
+                RenderPipelines.GUI_TEXTURED,
                 GUI,
                 relX,
                 relY,
+                0.0f,
+                0.0f,
                 this.imageWidth,
                 this.imageHeight,
-                0.0f,
-                0.0f,
-                (float) this.imageWidth,
-                (float) this.imageHeight);
+                TEXTURE_SIZE,
+                TEXTURE_SIZE);
     }
 
     @Override
