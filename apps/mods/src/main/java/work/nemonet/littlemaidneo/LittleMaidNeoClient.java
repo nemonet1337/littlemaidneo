@@ -28,6 +28,11 @@ import java.util.Collection;
 public class LittleMaidNeoClient {
 
     public LittleMaidNeoClient(IEventBus modEventBus, ModContainer container) {
+        // modelloader 側の MultiModelEntity は画面クラスへ直接依存できないため、
+        // モデル選択画面のオープン処理をここで注入する
+        work.nemonet.littlemaidneo.entity.MultiModelEntity.setModelSelectScreenOpener(
+                work.nemonet.littlemaidneo.client.util.ClientScreenHelper::openModelSelectScreen);
+
         modEventBus.addListener(this::onClientSetup);
         modEventBus.addListener(this::onAddPackFinders);
         modEventBus.addListener(this::onRegisterReloadListeners);

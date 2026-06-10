@@ -26,11 +26,20 @@ import work.nemonet.littlemaidneo.resource.util.TextureColors;
 import net.minecraft.resources.Identifier;
 import org.jetbrains.annotations.Nullable;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 
 import work.nemonet.littlemaidneo.common.MultiModelHolder;
 import work.nemonet.littlemaidneo.common.SoundHolder;
 
 public class MultiModelEntity extends PathfinderMob implements MultiModelHolder, SoundHolder {
+
+    // モデル選択画面はクライアント側 (mods モジュール) の責務。
+    // モジュール依存を mods -> modelloader の一方向に保つため、画面オープン処理はフックとして注入する。
+    private static BiConsumer<Level, MultiModelEntity> modelSelectScreenOpener = (level, entity) -> {};
+
+    public static void setModelSelectScreenOpener(BiConsumer<Level, MultiModelEntity> opener) {
+        modelSelectScreenOpener = opener;
+    }
 
     private MultiModelCompound multiModel;
     private SoundPlayableCompound soundPlayer;
@@ -73,7 +82,7 @@ public class MultiModelEntity extends PathfinderMob implements MultiModelHolder,
     @Override
     public InteractionResult mobInteract(Player player, InteractionHand hand) {
         if (player.level().isClientSide()) {
-            work.nemonet.littlemaidneo.client.util.ClientScreenHelper.openModelSelectScreen(this.level(), this);
+            modelSelectScreenOpener.accept(this.level(), this);
             return InteractionResult.SUCCESS;
         }
         return super.mobInteract(player, hand);
