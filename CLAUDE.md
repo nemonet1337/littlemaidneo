@@ -2,40 +2,35 @@
 
 LittleMaidNeo は、レガシー Mod 系譜 **LittleMaidRebirth (LMRB)** と **Little Maid Model Loader (LMML)** を統合し、NeoForge 向けに書き直された Minecraft Mod。テイム可能なメイドさんエンティティ（AI 行動付き）と、外部リソースから動的に読み込むマルチモデルレンダリングシステムを 1 つの Mod として提供する。
 
-- **LMRB 系**: `LittleMaidEntity` を中心としたメイドさんエンティティ・AI・モード（料理・戦闘・治癒など）・契約システム
-- **LMML 系**: `MultiModelEntity`、`multimodel/`、`maidmodel/`、`MultiModel*` レンダラー — 外部モデルパックの読み込み/レンダリング基盤
+- **旧 LMRB 系**: `LittleMaidEntity` を中心としたメイドさんエンティティ・AI・お仕事 Behavior（料理・戦闘・治癒など）・契約システム
+- **旧 LMML 系**: `MultiModelEntity`、`multimodel/`、`maidmodel/`、`MultiModel*` レンダラー — 外部モデルパックの読み込み/レンダリング基盤
 - 旧 Architectury / Fabric / Forge マルチプラットフォーム構成は破棄され、**NeoForge 単一プラットフォーム** に移行済み
+- 名称は **LittleMaidNeo / LMN** に統一済み（旧 LMRB / LMML / LMReengaged の名称はコード上に残さない。ただし保護コア B の `LMMLResources/` 探索パスは外部互換のため不変）
 
 ## Architecture
 
-- 単一モジュール構成（旧 `common/fabric/forge` の三分割は廃止）
-- ルートパッケージ: `work.nemonet.littlemaidneo`
-- メインエントリ: `LittleMaidNeo.java`（`@Mod("littlemaidneo")`）／`LittleMaidNeoClient.java`
-- 主要パッケージ:
-  - `entity/` — `LittleMaidEntity`（中心エンティティ・約 89KB）、`MultiModelEntity`、`MaidSoulEntity`
-    - `entity/ai/behavior/` — Brain Behavior（`MaidFollowOwnerBehavior`, `MaidFreedomBehavior`, `MaidTraceBehavior`, `MaidWorkModeBehavior` 等）
-    - `entity/mode/` — モード実装（`CookingMode`, `FencerMode`, `ArcherMode`, `HealerMode` 等）
+- **Gradle 3 モジュール構成**（依存方向は `mods -> modelloader -> common` の一方向のみ）:
+  - `apps/common/` — 全モジュール共通基盤。`common/LMNLib`（MODID/LOGGER）、汎用 `util/`（`BlockFinder`, `BlockFinderPD`, `ProcessDivider`, `PlayerList`, `Tuple` 等）
+  - `apps/modelloader/` — 外部モデル読み込み基盤（旧 LMML 系・保護コア A/B の本体）。`multimodel/`, `maidmodel/`, `resource/`, `client/resource/`, `client/renderer/MultiModel*`, `entity/compound/`, `entity/MultiModelEntity`, `entity/EntityLittleMaid`(スタブ), `common/MultiModelHolder`/`SoundHolder`, `config/LMNModelConfig`
+  - `apps/mods/` — メイドさん本体の Mod 実装（残り全部）。リソース（`assets`/`data`/`templates`/`src/generated`）と Mixin もここ。最終 jar はこのモジュールが 3 モジュール分のクラスを束ねて生成
+- ルートパッケージ: `work.nemonet.littlemaidneo`（Java パッケージは全モジュール共通。モジュール間で同一パッケージを共有する箇所あり — 例: `entity/`）
+- メインエントリ: `LittleMaidNeo.java`（`@Mod("littlemaidneo")`）／`LittleMaidNeoClient.java`（共に apps/mods）
+- 主要パッケージ（apps/mods）:
+  - `entity/` — `LittleMaidEntity`（中心エンティティ）、`MaidSoulEntity`、`DummyModelEntity`
+    - `entity/ai/behavior/` — Brain Behavior（`MaidFollowOwnerBehavior`, `MaidCombatBehavior`, `MaidCookingBehavior` 等。お仕事 AI も Behavior が直接保持）
     - `entity/targeting/` — ターゲティング
-    - `entity/compound/` — `IHasMultiModel` 等の合成 interface
-  - `api/mode/` — モード API（`Mode`, `ModeType`, `ModeManager`, `Modes`, `ItemMatcher`, `ItemMatchers`）
   - `block/` — `SalaryBoxBlockEntity` 等
   - `item/` — アイテム
-  - `multimodel/` — モデル定義・レイヤー（LMML 由来）
-  - `maidmodel/` — 外部モデルパック互換基盤（**load-bearing、削除厳禁**）
-  - `resource/` — 外部リソース読み込み
-    - `classloader/` — `MultiModelClassLoader` / `MultiModelClassTransformer`（ASM リマップ、**削除厳禁**）
-    - `loader/`, `holder/`, `manager/`, `util/`
-  - `client/` — クライアント（`renderer/`, `screen/`, `resource/`, `key/`）
+  - `client/` — クライアント（`screen/`, `renderer/`(メイドさん固有), `LMKeys`, `ClientNetworkHandler`）
   - `network/` — `NetworkHandler`（NeoForge `RegisterPayloadHandlersEvent` ベース）
   - `mixin/` — Mixin（`littlemaidneo.mixins.json` で登録）
-  - `config/` — `LMNConfig`（メイン）、`LMNModelConfig`（モデルローダー設定）
-  - `setup/` — `Registration`, `ModSetup`, `ClientSetup`
-  - `tags/`, `advancement/`, `world/`, `util/`
+  - `config/` — `LMNConfig`（メイン）
+  - `setup/` — `ModRegistration`, `ModSetup`
+  - `tags/`, `advancement/`, `world/`, `event/`, `command/`, `data/`
+- modelloader 側から mods 側へは依存できない。mods 側の処理が必要な場合はフック注入で逆転する（例: `SoundPlayableCompound.setSoundSyncSender(...)` を `NetworkHandler.register` で設定）
 - 外部リソース読み込み: ゲームディレクトリの `LMMLResources/` フォルダから（`FMLPaths.GAMEDIR`）
-- モード登録: `api/mode/Modes.java` で `ModeType` と `ItemMatcher` を定義し `init()` で一括登録
-- モード判定: `ItemMatcher` の Priority 降順で最初にマッチしたモードが採用（同 Priority 時は登録順）
 - lang: `assets/littlemaidneo/lang/{en_us,ja_jp}.json` — モード名キーは `mode.littlemaidneo.{Name}`
-- タグ: `data/littlemaidneo/tags/items/` — モード用タグは `{mode_name}_mode.json`
+- タグ: `data/littlemaidneo/tags/item/` — モード用タグは `{mode_name}_mode.json`
 
 ### 絶対不変の保護コア（**削除・破壊的変更厳禁**）
 
@@ -57,12 +52,12 @@ LittleMaidNeo は、レガシー Mod 系譜 **LittleMaidRebirth (LMRB)** と **L
 
 旧 LMML/LMRB の `spotless` / `checkstyle` / `spotbugs` は **未導入**（NeoForge MDK ベースのため）。
 
-- `./gradlew build` — フルビルド
-- `./gradlew compileJava` — コンパイルのみ（軽量検証）
-- `./gradlew runClient` — クライアント起動
-- `./gradlew runServer` — サーバー起動（`--nogui`）
-- `./gradlew runGameTestServer` — GameTest 実行（namespace は `littlemaidneo`）
-- `./gradlew runData` — データジェネレータ実行（出力先 `src/generated/resources/`）
+- `./gradlew build` — フルビルド（全モジュール）
+- `./gradlew compileJava` — コンパイルのみ（軽量検証・全モジュール）
+- `./gradlew :apps:mods:runClient` — クライアント起動
+- `./gradlew :apps:mods:runServer` — サーバー起動（`--nogui`）
+- `./gradlew :apps:mods:runGameTestServer` — GameTest 実行（namespace は `littlemaidneo`）
+- `./gradlew :apps:mods:mergeData` — データジェネレータ実行（出力先 `apps/mods/src/generated/resources/`）
 - CI: `.github/workflows/build.yml`（push/PR で `./gradlew build`、Java 25 / temurin）
 
 ## Localization and Communication Guidelines
@@ -98,7 +93,8 @@ LittleMaidNeo は、レガシー Mod 系譜 **LittleMaidRebirth (LMRB)** と **L
 - `@Nullable` フィールドはローカル変数にキャッシュしてから使用する（NPE / SpotBugs NP_NULL_PARAM_DEREF 対策）
 - Mixin Accessor は `util/` または `mixin/` 配下に配置し、メソッド名に `_LM` サフィックスを付ける（例: `getBrewTime_LM()`）
 - protected フィールド/メソッドへの外部アクセスが必要な場合、同パッケージ内ならパッケージプライベートゲッターを追加する（Mixin Accessor より簡潔）
-- Mixin を追加した際は `src/main/resources/littlemaidneo.mixins.json` への登録を忘れない（未登録の孤立 Mixin は過去にデッドコード化した実績あり）
+- Mixin を追加した際は `apps/mods/src/main/resources/littlemaidneo.mixins.json` への登録を忘れない（未登録の孤立 Mixin は過去にデッドコード化した実績あり）
+- モジュール境界: common / modelloader に置くコードは mods 側クラス（`LittleMaidEntity`, `NetworkHandler`, `ModRegistration` 等）へ依存してはならない。MODID/LOGGER は `LMNLib` を参照する
 
 ### Architecture Notes
 - コンフィグ: `config/LMNConfig.java`（メイン）と `config/LMNModelConfig.java`（モデルローダー）— NeoForge `ModConfigSpec` ベース、TOML
@@ -109,7 +105,7 @@ LittleMaidNeo は、レガシー Mod 系譜 **LittleMaidRebirth (LMRB)** と **L
 - コンフィグ追加手順: (1) `LMNConfig` に `ModConfigSpec.XxxValue` フィールド追加 → static ブロックで定義 (2) 消費側でゲッター経由参照に置換 (3) lang/{en_us,ja_jp}.json にキー追加
 - ターゲティング設定は `TargetingConfig` ラッパー経由でアクセスする（`TargetingConfig.getAlertRange()` 等）
 - ブロック操作モード（料理・醸造）の共通ロジックは `entity/mode/ModeHelpers.java` に集約
-- ブロック探索: `util/BlockFinder`（同期 BFS）/ `util/BlockFinderPD`（逐次 BFS・`util/ProcessDivider` で分割）
+- ブロック探索: `util/BlockFinder`（同期 BFS）/ `util/BlockFinderPD`（逐次 BFS・`util/ProcessDivider` で分割）— いずれも apps/common
 - `LMSounds` 定数は `String` 型。`mob.play(LMSounds.COOKING_START)` のように使用
 - `LittleMaidEntity` は以下の委譲クラス・コンポーネントに機能が分割されています：
   - `MaidResurrection` (契約期間延長・復活演出の処理)
@@ -133,7 +129,7 @@ LittleMaidNeo は、レガシー Mod 系譜 **LittleMaidRebirth (LMRB)** と **L
 - エンティティ属性は `EntityAttributeCreationEvent` で登録（`onEntityAttributeCreation`）
 - Brain AI: `ModRegistration.MEMORY_MODULES`（`IS_WAITING`/`OWNER`）と `ModRegistration.SENSORS`（`LITTLE_MAID_SENSOR`）を DeferredRegister で登録
 - Data Attachment: `ModRegistration.ATTACHMENT_TYPES` に `MAID_MANAGER_ATTACHMENT`（`MaidManagerImpl`）と `TARGET_TAG_ATTACHMENT`（`TargetTagManagerImpl`）を登録。プレイヤーステートは Mixin+interface ではなく Attachment 経由で取得する（`player.getData(ModRegistration.MAID_MANAGER_ATTACHMENT.get())`）
-- DataGen: `LMDataGenerator` が `GatherDataEvent.Client`/`GatherDataEvent.Server` を受け取り、Lang/Tag/Recipe/LootTable/Advancement/BiomeModifier を生成。出力は `src/generated/resources/`（git 追跡対象）
+- DataGen: `LMDataGenerator` が `GatherDataEvent.Client`/`GatherDataEvent.Server` を受け取り、Lang/Tag/Recipe/LootTable/Advancement/BiomeModifier を生成。出力は `apps/mods/src/generated/resources/`（git 追跡対象）
 
 ### Rendering Notes
 - カスタムシェーダーは `assets/minecraft/shaders/core/` に配置する（NeoForge / バニラのシェーダー解決が `minecraft` 名前空間前提）
@@ -142,9 +138,9 @@ LittleMaidNeo は、レガシー Mod 系譜 **LittleMaidRebirth (LMRB)** と **L
 - 発光テクスチャ用カスタムシェーダー `lmml_emissive` は NeoForge の `RegisterShadersEvent` で登録
 
 ### GameTest
-- GameTest 用 namespace は `littlemaidneo`（`build.gradle` の `neoforge.enabledGameTestNamespaces`）
-- 旧 LMRB のような `common/fabric/forge` 三分割の委譲は不要。テストは単一ソースセットに直接配置可能
-- ストラクチャーは `src/main/resources/data/littlemaidneo/structures/`
+- GameTest 用 namespace は `littlemaidneo`（`apps/mods/build.gradle.kts` の `neoforge.enabledGameTestNamespaces`）
+- テストは apps/mods のソースセットに直接配置可能
+- ストラクチャーは `apps/mods/src/main/resources/data/littlemaidneo/structure/`
 - FakePlayer ワールド登録が必要な場合は `createWorldPlayer()` + `cleanupWorldPlayers()` ペアで使用
 - コンフィグ変更テスト: try/finally でフィールドを直接書き換え+復元
 
