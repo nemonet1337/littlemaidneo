@@ -609,10 +609,12 @@ private float prevInterestedAngle;
         if (this.getHealth() <= 0 || this.isSpectator()) {
             return;
         }
-        // ?????????????????????????
         var aabb = this.getBoundingBox().inflate(1.0, 0.5, 1.0);
-        var aroundItems = this.level().getEntities(this, aabb);
-        var exps = Lists.newArrayList();
+        // LMCollidable（ItemEntity / ExperienceOrb の Mixin）だけをセクション走査の段階で絞り込む。
+        // 無条件の getEntities は毎 tick 周囲の全エンティティを収集するため、多数のメイドさんがいると重い。
+        var aroundItems = this.level().getEntities(this, aabb,
+                e -> e instanceof LMCollidable && !e.isRemoved());
+        var exps = Lists.<Entity>newArrayList();
         for (Entity entity : aroundItems) {
             if (entity instanceof ExperienceOrb) {
                 if (getConfig().misc.canPickupExperienceOrb) {
@@ -623,11 +625,7 @@ private float prevInterestedAngle;
             if (!getConfig().misc.canPickupItem) {
                 continue;
             }
-            if (entity.isRemoved())
-                continue;
-            if (entity instanceof LMCollidable collidable) {
-                collidable.onCollision_LM(this);
-            }
+            ((LMCollidable) entity).onCollision_LM(this);
         }
         if (!exps.isEmpty()) {
             var collidable = ((LMCollidable) Util.getRandom(exps, this.random));

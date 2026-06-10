@@ -33,7 +33,10 @@ public class LMItemContractable<T extends LittleMaidEntity> extends ItemContract
     @Override
     public void tick() {
         super.tick();
-        if (!this.mob.level().isClientSide()) {
+        // CONTRACT_TIME は SynchedEntityData のため、毎 tick 更新すると契約中の
+        // メイドさん全員分の同期パケットが毎 tick 飛ぶ。用途は残り契約時間の
+        // パーティクル色表示のみなので 1 秒粒度で十分。
+        if (!this.mob.level().isClientSide() && this.mob.tickCount % 20 == 0) {
             this.mob.setContractTime(this.consumeInterval);
         }
     }

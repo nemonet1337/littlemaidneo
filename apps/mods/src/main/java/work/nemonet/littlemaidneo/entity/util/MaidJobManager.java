@@ -27,6 +27,8 @@ public class MaidJobManager {
     private record JobRule(String jobName, Predicate<ItemStack> predicate, int priority) {}
 
     private static final List<JobRule> RULES = new ArrayList<>();
+    // ジョブ名 -> ルールの索引（isModeItemForJob が全ルールを線形探索しないため）
+    private static final Map<String, List<JobRule>> RULES_BY_JOB = new HashMap<>();
 
     static {
         // Priority: HIGHER = 400, HIGH = 300, NORMAL = 200, LOW = 100, LOWER = 0
@@ -62,10 +64,21 @@ public class MaidJobManager {
 
         // 優先度が高い順にソートしておく
         RULES.sort(Comparator.comparingInt(JobRule::priority).reversed());
+        for (JobRule rule : RULES) {
+            RULES_BY_JOB.computeIfAbsent(rule.jobName(), k -> new ArrayList<>()).add(rule);
+        }
     }
+
+    /**
+     * インベントリ全走査（全スロット × 全ルールのタグ判定）を伴う再評価の間隔。
+     * メインハンドの判定は毎 tick 行うため、手持ちアイテムの変更には即応する。
+     */
+    private static final int INVENTORY_SCAN_INTERVAL = 10;
 
     public static void tick(LittleMaidEntity maid) {
         String currentJob = maid.getBrain().getMemory(work.nemonet.littlemaidneo.setup.ModRegistration.ACTIVE_JOB_NAME.get()).orElse(JOB_NONE);
+        // インベントリ全走査は重い（多数のメイドさんがいるサーバーで毎 tick 行うと顕著）ため間引く
+        boolean scanInventory = maid.tickCount % INVENTORY_SCAN_INTERVAL == 0;
 
         // 手持ちアイテムが現在のジョブを継続可能か確認
         if (!currentJob.equals(JOB_NONE)) {
@@ -73,6 +86,10 @@ public class MaidJobManager {
             if (isModeItemForJob(currentJob, mainHand)) {
                 // 継続可能。戦闘の場合は戦闘モードも更新する
                 updateBattleMode(maid);
+                return;
+            }
+
+            if (!scanInventory) {
                 return;
             }
 
@@ -96,6 +113,10 @@ public class MaidJobManager {
             return;
         }
 
+        if (!scanInventory) {
+            return;
+        }
+
         // メインハンドに無ければ、インベントリ内から優先度の高い順に探索
         for (JobRule rule : RULES) {
             int index = findItemInInventory(maid, rule.predicate());
@@ -109,8 +130,8 @@ public class MaidJobManager {
 
     public static boolean isModeItemForJob(String job, ItemStack stack) {
         if (stack.isEmpty()) return false;
-        for (JobRule rule : RULES) {
-            if (rule.jobName().equals(job) && rule.predicate().test(stack)) {
+        for (JobRule rule : RULES_BY_JOB.getOrDefault(job, List.of())) {
+            if (rule.predicate().test(stack)) {
                 return true;
             }
         }
