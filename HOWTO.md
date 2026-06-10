@@ -37,7 +37,7 @@
 - **サウンド名定数**: `resource/util/LMSounds` の **定数文字列**（`se_hurt`/`se_attack` 等＝エンティティ↔`.cfg` 契約）。**変更は全既存ボイスパックを壊す**。
 - **再生・橋渡し**: `entity/compound/SoundPlayable`/`SoundPlayableCompound`、`client/resource/manager/LMSoundManager`、`client/resource/LMSoundInstance`、`client/resource/ResourceWrapper`・`LMPackProvider`、`resource/manager/LMConfigManager`。
 - **ネットワーク形式**: `network/LMSoundPayload`・`SyncSoundPackPayload`・`SyncSoundConfigPayload` のパケットフォーマット（codec）。
-- **音量**: `config/LMMLConfig#getVoiceVolume()`（キー名・範囲不変）。
+- **音量**: `config/LMNModelConfig#getVoiceVolume()`（キー名・範囲不変）。
   > 注: 上記クラスでも「外部契約に関わらない内部実装」は整理可。`SoundPlayable.play(String)` のシグネチャと `LMSounds.*` 文字列・`.cfg` キー解決の振る舞いは不変に保つこと。
 
 ### 0.4 既存実装の事実（推測しないこと）
@@ -260,12 +260,12 @@ C-2 で全 Behavior が揃い CI が通ってから 1 コミットで実施。
   - **⚠️ 要確認（実装前にテストせよ）**: 監査ツールは HEAD インジェクトと `UseItemOnBlockEvent` のタイミングが一致しない可能性を指摘。代替前に GameTest で「着火→Maid 復活」の動作を確認し、イベントが同じタイミング・キャンセル効果を再現できることを実証してから撤去する。再現できない場合は KEEP 扱いとし §D から除外。
 
 **統合・移設**:
-- `MixinCrossBowItem`（`getInterval_LMRB` を override するだけ）→ `MixinRangedWeaponItem` に `instanceof CrossbowItem` 分岐として畳み、`MixinCrossBowItem` を削除（Mixin 1 件減）。`mixins.json` から登録も削除。
+- `MixinCrossBowItem`（`getInterval_LM` を override するだけ）→ `MixinRangedWeaponItem` に `instanceof CrossbowItem` 分岐として畳み、`MixinCrossBowItem` を削除（Mixin 1 件減）。`mixins.json` から登録も削除。
 - `mixin/CrossbowItemInvoker` — **Mixin ではない**（`@Mixin`/`@Invoker` 注釈なし・`mixins.json` 未登録で正しい）。`CrossbowItem.getSpeed` が `private static` のためロジックを定数で再実装した普通のユーティリティ。`mixin/` パッケージにあるのが誤配置。`entity/util/`（例: `CrossbowSpeedUtil`）へ移設、または唯一の呼び出し元（`LittleMaidEntity.java:1118`）へ定数をインライン。
 
 **任意（@Shadow 削減）**: `MixinAbstractFurnaceBlockEntity#isBurningFire_LM` は `litTimeRemaining>0` 相当。呼び出し側（`CookingMode`）でブロックステートの `AbstractFurnaceBlock.LIT` から導けば `@Shadow` を 1 つ減らせる。
 
-**手順（撤去 1 件ごと）**: (1) 代替イベントハンドラを実装し挙動を移す → (2) 旧 Mixin を削除 → (3) `mixins.json` から登録名を削除 → (4) `./gradlew build`（CI）→ (5) 影響系の実機/GameTest 確認（復活儀式・騎乗・就寝ボイス・XP/アイテム拾い・射撃モード分類）。命名は `_LM`/`_LMRB` 混在を `_LM` に寄せると一貫する（任意）。
+**手順（撤去 1 件ごと）**: (1) 代替イベントハンドラを実装し挙動を移す → (2) 旧 Mixin を削除 → (3) `mixins.json` から登録名を削除 → (4) `./gradlew build`（CI）→ (5) 影響系の実機/GameTest 確認（復活儀式・騎乗・就寝ボイス・XP/アイテム拾い・射撃モード分類）。命名は `_LM` サフィックスへ統一済み。
 
 ---
 
@@ -319,7 +319,7 @@ C-2 で全 Behavior が揃い CI が通ってから 1 コミットで実施。
 
 ### 対象外（監査で確認・蒸し返さない）
 
-- `config/LMRBConfig` の define ブロック↔`bake()`: NeoForge `ModConfigSpec` の二相パターン（仕様定義 vs ベイク）であり重複ではない。
+- `config/LMNConfig` の define ブロック↔`bake()`: NeoForge `ModConfigSpec` の二相パターン（仕様定義 vs ベイク）であり重複ではない。
 - `data/LM*Provider`: NeoForge の定型サブクラスで重複ではない。
 - `resource/manager/*`（`LMModelManager`/`LMTextureManager`/`LMConfigManager`/`LMSoundManager`）の `INSTANCE`＋小文字キー Map: 共通面が薄く差異が実質的（~15-20 行のみ）。触るついでに `LowercaseRegistry` 基底にする程度（低優先）。`resource/loader/` は `LMLoader`＋`LMFileLoader` で既に Strategy 化済み・保護コア B 隣接のため触らない。
 - `entity/util` の interface+Impl ペア: 委譲シーム（意図的分割）であり共通化対象ではない（むしろ §B のインライン候補）。

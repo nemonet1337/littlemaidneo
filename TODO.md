@@ -56,34 +56,25 @@
 - [ ] `MixinCrossBowItem` → `MixinRangedWeaponItem` に `instanceof CrossbowItem` 分岐で統合（Mixin 1 件減）。
 - [ ] `mixin/CrossbowItemInvoker`（実は Mixin ではない・誤配置）→ `entity/util/`（`CrossbowSpeedUtil` 等）へ移設 or インライン。
 - [ ] （任意）`MixinAbstractFurnaceBlockEntity.isBurningFire_LM` → ブロックステート `LIT` 由来にして `@Shadow` 削減。
-- 注意: Mixin 撤去時は `littlemaidneo.mixins.json` の登録も同時削除。命名 `_LM`/`_LMRB` 混在は `_LM` へ寄せると一貫（任意）。
+- 注意: Mixin 撤去時は `littlemaidneo.mixins.json` の登録も同時削除。命名は `_LM` サフィックスへ統一済み。
 
-### §G — ディレクトリ・クラス数の削減（構造刷新）… → HOWTO §G
+### §G — ディレクトリ構造刷新 … → ADR 0004
 
-- **現状**: 36 ディレクトリ・220 Java ファイル。単一クラスしか入っていないディレクトリが 9 個あり、機能の散らばりが大きい。
-- [ ] **G-1 単一クラスディレクトリを平坦化**（低リスク・import 変更のみ）:
-  - `entity/ai/control/` (MaidLookControl のみ) → `entity/ai/`
-  - `entity/ai/sensor/` (LittleMaidSensor のみ) → `entity/ai/`
-  - `client/key/` (LMKeys のみ) → `client/`
-  - `client/network/` (ClientNetworkHandler のみ) → `client/`
-  - `client/resource/loader/` + `client/resource/manager/` → `client/resource/`
-- [ ] **G-2 `api/` パッケージ廃止（§C 完了後）**: `api/mode/` が全廃されると `api/` が空になる。`IRangedWeapon` interface（`MixinRangedWeaponItem` 経由で使用）は `entity/ai/behavior/` or `util/` へ移設してから `api/` ディレクトリごと削除。
-- [ ] **G-3 誤配置・判断待ち**:
-  - `mixin/CrossbowItemInvoker.java`（`@Mixin` 無し・`mixins.json` 未登録の普通のユーティリティ）→ `util/` へ移設（§D-4 参照）。
-  - `multimodel/IMultiModel.java`（唯一のファイル）→ `multimodel/layer/` との距離を縮める移設検討（保護コア A 隣接のため慎重に）。
-- [ ] **G-4 `setup/` 整理**: `ClientSetup.java` 削除（§B）後、`ModSetup` + `ModRegistration` の 2 ファイルに。`ModSetup` が薄ければ `LittleMaidNeo.java` にインライン化して `setup/` ごと廃止を検討。
-- **不変（移動厳禁）**: `maidmodel/`・`resource/classloader/`（保護コア A の ASM リマップ基盤）は内部構造含め移動しない。
+- **2026-06-10 完了**: Gradle 3 モジュール構成 `apps/{common,modelloader,mods}` へ再編済み（ADR 0004）。
+  依存方向 `mods -> modelloader -> common` をビルドで強制。G-1 平坦化・G-2 `api/` 廃止・G-3 移設も消化済み。
+- [ ] **G-4 `setup/` 整理**: `ModSetup` が薄ければ `LittleMaidNeo.java` にインライン化して `setup/` ごと廃止を検討。
+- **不変（移動厳禁）**: `maidmodel/`・`resource/classloader/`（保護コア A の ASM リマップ基盤）は apps/modelloader 内でも内部構造を移動しない。
 
 ### §E — 共通化（Mod 全体・`common/` 切り出し）… → HOWTO §E
 
 > 方針: エンティティに限らず Mod 全体の重複スキャフォールディングを共通化。横断的部品は `common/`、ドメイン固有基底は各ドメインパッケージへ（神パッケージ化しない）。足場のみ抽出しガードは呼び出し側に残す。payoff 順: E-2 → E-3 → E-1 → E-4 → E-5。
 
-- [ ] **E-2 ネットワーク（最高 payoff）**: C2S ハンドラ 8 種の「entity 解決→所有者 UUID 照合→実行」定型（~54 行重複）を `network/PayloadHandlers.onOwnedMaid(...)` ＋ codec ファクトリへ。具体的な是正箇所: (a) `SyncMultiModelPayload`/`SyncSoundPackPayload` の `buf.writeInt()` → `VAR_INT` に統一、(b) 3 payload の手書き encode/decode → `StreamCodec.composite()` へ統一、(c) `RegistryFriendlyByteBuf` vs `FriendlyByteBuf` の混在を整理。固有ガード（`isStrike` 等）はラムダに残す。~120–150 行削減。
+- [ ] **E-2 ネットワーク（残: ワイヤ形式統一のみ）**: ハンドラ側の定型は `PayloadHandlers.onOwnedMaid`/`resolveEntity`/`isOwnerOrUnowned` へ集約済み（2026-06-10）。残りは (a) `SyncMultiModelPayload`/`SyncSoundPackPayload` の `buf.writeInt()` → `VAR_INT` 統一、(b) 手書き encode/decode → `StreamCodec.composite()` 統一、(c) `RegistryFriendlyByteBuf` vs `FriendlyByteBuf` の混在整理（ワイヤ形式が変わるため別途実機確認とセットで）。
 - [ ] **E-3 画面（低リスク）**: `MaidManagerScreen`/`TargetTagScreen`/`SoundPackSelectScreen` の 6 イベント転送を `client/screen/AbstractFilterableListScreen<T>` 基底へ。二重実装の `drawScrollingText` を `client/util/ClientScreenHelper` に 1 本化。GUI コンポーネント層は触らない。
 - [ ] **E-1 エンティティ委譲**: `LittleMaidEntity`/`MultiModelEntity` 重複の `IHasMultiModel`(13)＋`SoundPlayable`(3) を `common/MultiModelHolder`・`common/SoundHolder`（default メソッド付き）で解消。`NetworkHandler.sendSyncMultiModel{C2S,S2C}` の同一ブロックも `collectTextureNames()` 抽出。パケットワイヤ順不変。
 - [ ] **E-4 作業モード**: 5 モード＋behavior の「接近＋recalc カウントダウン」定型を `ModeNavigation.approachOrStop()`／`RecalcWalker` へ。`BlockFinder.searchTargetBlock`↔`BlockFinderPD.tick` の BFS 二重実装を `BlockFinderPD` 単一ソース化。ドメインロジック（治癒/醸造/strafe）は共通化しない。
 - [ ] **E-5 Behavior 基底**: 13 behavior 共通の `IS_WAITING VALUE_ABSENT` コンストラクタ・`canStillUse` フットガン・`WALK_TARGET`+`EntityTracker` 構築を `AbstractMaidBehavior` 基底＋`walkTo()` へ（§C の `AbstractMaidModeBehavior` もここに乗せる）。
-- 対象外（監査確認済）: `LMRBConfig` 二相パターン／`data/LM*Provider`／`resource/manager` 小文字キー Map（差異実質的）／`resource/loader`（Strategy 済・保護コア B 隣接）／`entity/util` の interface+Impl（意図的分割）。
+- 対象外（監査確認済）: `LMNConfig` 二相パターン／`data/LM*Provider`／`resource/manager` 小文字キー Map（差異実質的）／`resource/loader`（Strategy 済・保護コア B 隣接）／`entity/util` の interface+Impl（意図的分割）。
 
 ### §F — LittleMaidEntity の分割 … → HOWTO §F（中リスク）
 
@@ -116,7 +107,7 @@
 | 中 | feature | LivingVoiceRate 実装 |
 | 中 | feature | 潜水能力 / 好感度 / メイドさんのグループ分け |
 | 中 | problem | 連続発声問題（射手・明かりモード等での重複発声） |
-| 中 | problem | 大量 Mod マルチ環境での安定性改善（Sensor 最適化） |
+| 中 | problem | 大量 Mod マルチ環境での安定性改善 — 2026-06-10 に MaidJobManager 走査間引き・pickupItem 述語化・CONTRACT_TIME 同期間引きを実施済み。残: Sensor/Behavior のプロファイリング |
 | 中 | problem | 経験値瓶にガラスが大量に必要 |
 | 低 | feature | 利き手設定 / 本で一括設定 / 体力増加 / 成長要素 / 農業モード |
 | 低 | feature/original | Ripper 隠し機能 / 糸 / ポーション等付与 / TNT / 弓と火打ち石 |
@@ -127,11 +118,12 @@
 
 ### 🎮 runClient / runServer
 - [ ] `runClient` が起動しクラッシュしない。
+- [ ] **2026-06-10 修正の確認**: GUI blit 修正（背景・切替ボタン・スクロールバーの描画）と `ResourceWrapper` pack format 修正（外部パックテクスチャの解決）が実機で機能する。
 - [ ] メイドさん右クリックで `LittleMaidScreen`（インベントリ/防具/手持ち）が正常表示（GUI 高さズレ無し）。
 - [ ] 各ボタン動作（ターゲットタグ／サウンドパック選択／モデル選択／移動モード切替・吸血トグル／メイドさん管理／お仕事スロット数）。
 - [ ] `ModelSelectScreen`/`SoundPackSelectScreen` のスクロール・フィルタ検索。GUI 内プレビューのマウス追従。マウスクリック判定のズレ無し。
 - [ ] 全モデル（SR2/AC/RX0/Steve 等）・防具・手持ち・頭部装飾が正常描画。
-- [ ] config 競合なし生成（`littlemaidneo-lmml-common.toml` / `saves/<world>/serverconfig/littlemaidneo-server.toml`）。
+- [ ] config 競合なし生成（`littlemaidneo-common.toml` / `saves/<world>/serverconfig/littlemaidneo-server.toml`）。
 
 ### 📦 互換性・ネットワーク
 - [ ] 既存セーブのロードで NBT エラーが起きない（キー名互換）。
