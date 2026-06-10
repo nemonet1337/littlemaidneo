@@ -2,6 +2,7 @@ package work.nemonet.littlemaidneo.network;
 
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.OwnableEntity;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
@@ -40,5 +41,18 @@ public class PayloadHandlers {
                 handler.accept(player, entityClass.cast(entity));
             }
         });
+    }
+
+    /**
+     * テイム可能エンティティの場合に「送信者が所有者か」を判定する。
+     * テイム対象でないエンティティは常に許可する（従来の各ハンドラのガードと同値）。
+     */
+    public static boolean isOwnerOrUnowned(ServerPlayer player, Entity entity) {
+        if (!(entity instanceof OwnableEntity ownable)) {
+            return true;
+        }
+        return TameableUtil.getTameOwnerUuid(ownable)
+                .filter(ownerId -> ownerId.equals(player.getUUID()))
+                .isPresent();
     }
 }

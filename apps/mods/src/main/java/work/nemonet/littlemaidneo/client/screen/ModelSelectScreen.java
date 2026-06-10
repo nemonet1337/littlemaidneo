@@ -30,8 +30,8 @@ import work.nemonet.littlemaidneo.resource.util.TexturePair;
 
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 public class ModelSelectScreen<T extends Entity & IHasMultiModel> extends Screen {
     public static final Identifier EMPTY_TEXTURE =
@@ -71,13 +71,20 @@ public class ModelSelectScreen<T extends Entity & IHasMultiModel> extends Screen
     protected void init() {
         assert this.minecraft != null;
         Collection<TextureHolder> textureHolders = LMTextureManager.INSTANCE.getAllTextures();
-        Map<String, TextureHolder> map = new HashMap<>();
-        textureHolders.forEach(th -> map.put(th.getTextureName().toLowerCase(), th));
-        initModelGUI(textureHolders, map);
-        initArmorGUI(textureHolders, map);
+        initModelGUI(textureHolders);
+        initArmorGUI(textureHolders);
     }
 
-    protected void initModelGUI(Collection<TextureHolder> textureHolders, Map<String, TextureHolder> textureHolderMap) {
+    /** テクスチャ名（小文字）順に整列し、条件を満たすものだけを返す。 */
+    private static List<TextureHolder> sortedSelectable(Collection<TextureHolder> textureHolders,
+                                                        Predicate<TextureHolder> filter) {
+        return textureHolders.stream()
+                .sorted(Comparator.comparing(th -> th.getTextureName().toLowerCase()))
+                .filter(filter)
+                .collect(Collectors.toList());
+    }
+
+    protected void initModelGUI(Collection<TextureHolder> textureHolders) {
         int allColor = 16;
         LMModelManager modelManager = LMModelManager.INSTANCE;
         int searchInputHeight = 20;
@@ -93,13 +100,10 @@ public class ModelSelectScreen<T extends Entity & IHasMultiModel> extends Screen
                 .position((width - listWidth) / 2, (height - listHeight) / 2)
                 .size(listWidth, listHeight)
                 .elementSize(listWidth, scale * heightRatio)
-                .items(textureHolders.stream()
-                        .map(TextureHolder::getTextureName)
-                        .map(String::toLowerCase)
-                        .sorted(Comparator.naturalOrder())
-                        .map(textureHolderMap::get)
-                        .filter(th -> th.hasSkinTexture(this.isContract) &&
+                .items(sortedSelectable(textureHolders,
+                        th -> th.hasSkinTexture(this.isContract) &&
                                 modelManager.getModel(th.getModelName(), IHasMultiModel.Layer.SKIN).isPresent())
+                        .stream()
                         .map(t -> new MultiModelGUI(t, this.isContract, scale, this.dummy))
                         .collect(Collectors.toList()))
                 .filterBy(multiModelFilter)
@@ -111,7 +115,7 @@ public class ModelSelectScreen<T extends Entity & IHasMultiModel> extends Screen
         restoreModelSelection();
     }
 
-    protected void initArmorGUI(Collection<TextureHolder> textureHolders, Map<String, TextureHolder> map) {
+    protected void initArmorGUI(Collection<TextureHolder> textureHolders) {
         LMModelManager modelManager = LMModelManager.INSTANCE;
         int allColor = 16;
         int searchInputHeight = 20;
@@ -127,13 +131,10 @@ public class ModelSelectScreen<T extends Entity & IHasMultiModel> extends Screen
                 .position((width - listWidth) / 2, (height - listHeight) / 2)
                 .size(listWidth, listHeight)
                 .elementSize(listWidth, scale * heightRatio)
-                .items(textureHolders.stream()
-                        .map(TextureHolder::getTextureName)
-                        .map(String::toLowerCase)
-                        .sorted(Comparator.naturalOrder())
-                        .map(map::get)
-                        .filter(th -> th.hasArmorTexture() &&
+                .items(sortedSelectable(textureHolders,
+                        th -> th.hasArmorTexture() &&
                                 modelManager.getModel(th.getModelName(), IHasMultiModel.Layer.INNER).isPresent())
+                        .stream()
                         .map(t -> new ArmorModelGUI(t, scale, this.dummy, this.armors))
                         .collect(Collectors.toList()))
                 .filterBy(armorModelFilter)
@@ -205,10 +206,7 @@ public class ModelSelectScreen<T extends Entity & IHasMultiModel> extends Screen
             return true;
         } else if (minX <= x && x < minX + 16 && minY - 32 <= y && y < minY - 16) {
             isContract = !isContract;
-            Collection<TextureHolder> textureHolders = LMTextureManager.INSTANCE.getAllTextures();
-            Map<String, TextureHolder> map = new HashMap<>();
-            textureHolders.forEach(th -> map.put(th.getTextureName().toLowerCase(), th));
-            initModelGUI(textureHolders, map);
+            initModelGUI(LMTextureManager.INSTANCE.getAllTextures());
             playDownSound();
             return true;
         }

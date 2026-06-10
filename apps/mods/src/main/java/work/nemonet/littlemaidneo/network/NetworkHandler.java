@@ -6,10 +6,7 @@ import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.OwnableEntity;
-import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.Level;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -172,9 +169,7 @@ public class NetworkHandler {
     }
 
     private static void handleSyncMultiModelServer(SyncMultiModelPayload payload, IPayloadContext context) {
-        context.enqueueWork(() -> {
-            Player player = context.player();
-            Entity entity = player.level().getEntity(payload.entityId());
+        PayloadHandlers.resolveEntity(context, payload.entityId(), Entity.class, (player, entity) -> {
             if (!(entity instanceof IHasMultiModel multiModel)) return;
             multiModel.setContractMM(payload.isContract());
             multiModel.setColorMM(payload.color());
@@ -205,9 +200,7 @@ public static void sendSyncSoundPackC2S(Entity entity, ConfigHolder configHolder
     }
 
     private static void handleSyncSoundPackServer(SyncSoundPackPayload payload, IPayloadContext context) {
-        context.enqueueWork(() -> {
-            Player player = context.player();
-            Entity entity = player.level().getEntity(payload.entityId());
+        PayloadHandlers.resolveEntity(context, payload.entityId(), Entity.class, (player, entity) -> {
             if (!(entity instanceof SoundPlayable soundPlayable)) return;
             ConfigHolder configHolder = LMConfigManager.INSTANCE.getConfig(payload.soundPackName())
                     .orElse(LMConfigManager.EMPTY_CONFIG);
@@ -281,10 +274,7 @@ public static void sendSetMovingStateC2S(Entity entity, MaidMode state) {
             if (!(entity instanceof TargetTagManager targetTagManager)) {
                 return;
             }
-            if (entity instanceof TamableAnimal tamable
-                    && TameableUtil.getTameOwnerUuid(tamable)
-                            .filter(id -> id.equals(player.getUUID()))
-                            .isEmpty()) {
+            if (!PayloadHandlers.isOwnerOrUnowned(player, entity)) {
                 return;
             }
             targetTagManager.readTargetTags(TagValueInput.create(ProblemReporter.DISCARDING, player.level().registryAccess(), payload.tag()));
@@ -337,10 +327,7 @@ public static void sendSetMovingStateC2S(Entity entity, MaidMode state) {
             if (!(entity instanceof SoundPlayable soundPlayable)) {
                 return;
             }
-            if (entity instanceof OwnableEntity tameable
-                    && TameableUtil.getTameOwnerUuid(tameable)
-                            .filter(ownerId -> ownerId.equals(player.getUUID()))
-                            .isEmpty()) {
+            if (!PayloadHandlers.isOwnerOrUnowned(player, entity)) {
                 return;
             }
             LMConfigManager.INSTANCE.getConfig(payload.configName())
@@ -368,10 +355,7 @@ public static void sendSetMovingStateC2S(Entity entity, MaidMode state) {
     private static void handleOpenTargetTagScreenServer(OpenTargetTagScreenC2SPayload payload, IPayloadContext context) {
         PayloadHandlers.resolveEntity(context, payload.entityId(), Entity.class, (player, entity) -> {
             if ((!(entity instanceof TargetTagManager) && !entity.hasData(ModRegistration.TARGET_TAG_ATTACHMENT.get()))
-                    || (entity instanceof TamableAnimal tamable
-                            && TameableUtil.getTameOwnerUuid(tamable)
-                                     .filter(id -> id.equals(player.getUUID()))
-                                     .isEmpty())) {
+                    || !PayloadHandlers.isOwnerOrUnowned(player, entity)) {
                 return;
             }
             sendOpenTargetTagScreenS2C(entity, player);
