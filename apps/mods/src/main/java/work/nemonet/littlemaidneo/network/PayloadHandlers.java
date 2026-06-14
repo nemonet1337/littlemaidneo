@@ -49,10 +49,10 @@ public class PayloadHandlers {
      */
     public static boolean isOwnerOrUnowned(ServerPlayer player, Entity entity) {
         if (!(entity instanceof OwnableEntity ownable)) {
-            return true;
+            return false;
         }
         return TameableUtil.getTameOwnerUuid(ownable)
                 .filter(ownerId -> ownerId.equals(player.getUUID()))
-                .isPresent();
+                .isEmpty();
     }
 }

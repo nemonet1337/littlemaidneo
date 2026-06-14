@@ -3,7 +3,6 @@ package work.nemonet.littlemaidneo.entity.ai.behavior;
 import com.google.common.collect.ImmutableMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.ai.behavior.Behavior;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
@@ -55,7 +54,7 @@ public class MaidFreedomBehavior extends AbstractMaidBehavior {
         }
         reCalcCool = 20 + entity.getRandom().nextInt(20);
 
-        LMNConfig config = entity.getConfig();
+        LMNConfig config = LittleMaidEntity.getConfig();
         float speed = config.movement.freedomSpeed;
         
         Vec3 randPos;
@@ -82,7 +81,7 @@ public class MaidFreedomBehavior extends AbstractMaidBehavior {
         BlockPos freedomPos = entity.getFreedomPos().orElse(null);
         if (freedomPos == null) return;
 
-        LMNConfig config = entity.getConfig();
+        LMNConfig config = LittleMaidEntity.getConfig();
         double distance = config.movement.freedomRange;
         double distanceSq = distance * distance;
 

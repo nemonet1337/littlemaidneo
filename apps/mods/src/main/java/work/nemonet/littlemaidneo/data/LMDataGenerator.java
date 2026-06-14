@@ -1,9 +1,7 @@
 package work.nemonet.littlemaidneo.data;
 
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.RegistrySetBuilder;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.biome.MobSpawnSettings;
@@ -19,7 +17,6 @@ import work.nemonet.littlemaidneo.tags.LMTags;
 
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 
 public class LMDataGenerator {
     public static void gatherClientData(GatherDataEvent.Client event) {
@@ -41,26 +38,24 @@ public class LMDataGenerator {
         event.createProvider(LMEntityTypeTagsProvider::new);
 
         // Recipes & LootTables
-        event.createProvider((output, lookup) -> new LMRecipeProvider.Runner(output, lookup));
-        event.createProvider((output, lookup) -> LMLootTableProvider.create(output, lookup));
+        event.createProvider(LMRecipeProvider.Runner::new);
+        event.createProvider(LMLootTableProvider::create);
 
         // Advancements
         event.createProvider(LMAdvancementProvider::create);
 
         // Datapack built-in entries for Biome Modifiers
         RegistrySetBuilder registrySetBuilder = new RegistrySetBuilder()
-                .add(NeoForgeRegistries.Keys.BIOME_MODIFIERS, context -> {
-                    context.register(
-                            ResourceKey.create(NeoForgeRegistries.Keys.BIOME_MODIFIERS, Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, "maid_spawn")),
-                            new BiomeModifiers.AddSpawnsBiomeModifier(
-                                     context.lookup(Registries.BIOME).getOrThrow(LMTags.Biomes.MAID_SPAWN_BIOME),
-                                    WeightedList.of(List.of(new Weighted<>(new MobSpawnSettings.SpawnerData(
-                                             ModRegistration.LITTLE_MAID_ENTITY.get(),
-                                             1, 3
-                                    ), 5)))
-                            )
-                    );
-                });
+                .add(NeoForgeRegistries.Keys.BIOME_MODIFIERS, context -> context.register(
+                        ResourceKey.create(NeoForgeRegistries.Keys.BIOME_MODIFIERS, Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, "maid_spawn")),
+                        new BiomeModifiers.AddSpawnsBiomeModifier(
+                                 context.lookup(Registries.BIOME).getOrThrow(LMTags.Biomes.MAID_SPAWN_BIOME),
+                                WeightedList.of(List.of(new Weighted<>(new MobSpawnSettings.SpawnerData(
+                                         ModRegistration.LITTLE_MAID_ENTITY.get(),
+                                         1, 3
+                                ), 5)))
+                        )
+                ));
         event.createProvider((output, lookup) -> new DatapackBuiltinEntriesProvider(output, lookup, registrySetBuilder, Set.of(LittleMaidNeo.MODID)));
     }
 }

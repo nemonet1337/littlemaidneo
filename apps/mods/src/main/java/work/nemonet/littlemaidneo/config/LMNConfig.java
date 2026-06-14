@@ -12,107 +12,107 @@ public class LMNConfig {
     public static final ModConfigSpec SPEC;
 
     // --- Spawn ---
-    static ModConfigSpec.BooleanValue SPAWN_CAN_NATURAL_SPAWN;
-    static ModConfigSpec.BooleanValue SPAWN_CAN_DESPAWN;
-    static ModConfigSpec.ConfigValue<List<? extends String>> SPAWN_MAID_SPAWN_BIOME_TAGS;
-    static ModConfigSpec.ConfigValue<List<? extends String>> SPAWN_MAID_SPAWN_EXCLUDE_BIOME_TAGS;
-    static ModConfigSpec.IntValue SPAWN_SPAWN_WEIGHT;
-    static ModConfigSpec.IntValue SPAWN_MIN_SPAWN_GROUP_SIZE;
-    static ModConfigSpec.IntValue SPAWN_MAX_SPAWN_GROUP_SIZE;
-    static ModConfigSpec.BooleanValue SPAWN_SILENT_DEFAULT_VOICE;
-    static ModConfigSpec.ConfigValue<String> SPAWN_DEFAULT_SOUND_PACK_NAME;
+    static final ModConfigSpec.BooleanValue SPAWN_CAN_NATURAL_SPAWN;
+    static final ModConfigSpec.BooleanValue SPAWN_CAN_DESPAWN;
+    static final ModConfigSpec.ConfigValue<List<? extends String>> SPAWN_MAID_SPAWN_BIOME_TAGS;
+    static final ModConfigSpec.ConfigValue<List<? extends String>> SPAWN_MAID_SPAWN_EXCLUDE_BIOME_TAGS;
+    static final ModConfigSpec.IntValue SPAWN_SPAWN_WEIGHT;
+    static final ModConfigSpec.IntValue SPAWN_MIN_SPAWN_GROUP_SIZE;
+    static final ModConfigSpec.IntValue SPAWN_MAX_SPAWN_GROUP_SIZE;
+    static final ModConfigSpec.BooleanValue SPAWN_SILENT_DEFAULT_VOICE;
+    static final ModConfigSpec.ConfigValue<String> SPAWN_DEFAULT_SOUND_PACK_NAME;
 
     // --- Health ---
-    static ModConfigSpec.IntValue HEALTH_HEAL_INTERVAL;
-    static ModConfigSpec.IntValue HEALTH_HEAL_AMOUNT;
-    static ModConfigSpec.DoubleValue HEALTH_HEAL_DELAY_THRESHOLD;
-    static ModConfigSpec.BooleanValue HEALTH_DISABLE_MAID_DEATH;
-    static ModConfigSpec.DoubleValue HEALTH_GENERAL_DAMAGE_FACTOR;
-    static ModConfigSpec.DoubleValue HEALTH_BATTLE_MODE_DAMAGE_FACTOR;
-    static ModConfigSpec.DoubleValue HEALTH_NON_BATTLE_MODE_DAMAGE_FACTOR;
-    static ModConfigSpec.DoubleValue HEALTH_EMERGENCY_HEALTH_THRESHOLD;
-    static ModConfigSpec.BooleanValue HEALTH_ENABLE_WORK_IN_EMERGENCY;
-    static ModConfigSpec.BooleanValue HEALTH_ENABLE_FRIENDLY_FIRE;
-    static ModConfigSpec.BooleanValue HEALTH_ENABLE_SAFE_MOVE;
-    static ModConfigSpec.BooleanValue HEALTH_IMMORTAL;
-    static ModConfigSpec.BooleanValue HEALTH_FALL_IMMUNITY;
-    static ModConfigSpec.BooleanValue HEALTH_NON_MOB_DAMAGE_IMMUNITY;
+    static final ModConfigSpec.IntValue HEALTH_HEAL_INTERVAL;
+    static final ModConfigSpec.IntValue HEALTH_HEAL_AMOUNT;
+    static final ModConfigSpec.DoubleValue HEALTH_HEAL_DELAY_THRESHOLD;
+    static final ModConfigSpec.BooleanValue HEALTH_DISABLE_MAID_DEATH;
+    static final ModConfigSpec.DoubleValue HEALTH_GENERAL_DAMAGE_FACTOR;
+    static final ModConfigSpec.DoubleValue HEALTH_BATTLE_MODE_DAMAGE_FACTOR;
+    static final ModConfigSpec.DoubleValue HEALTH_NON_BATTLE_MODE_DAMAGE_FACTOR;
+    static final ModConfigSpec.DoubleValue HEALTH_EMERGENCY_HEALTH_THRESHOLD;
+    static final ModConfigSpec.BooleanValue HEALTH_ENABLE_WORK_IN_EMERGENCY;
+    static final ModConfigSpec.BooleanValue HEALTH_ENABLE_FRIENDLY_FIRE;
+    static final ModConfigSpec.BooleanValue HEALTH_ENABLE_SAFE_MOVE;
+    static final ModConfigSpec.BooleanValue HEALTH_IMMORTAL;
+    static final ModConfigSpec.BooleanValue HEALTH_FALL_IMMUNITY;
+    static final ModConfigSpec.BooleanValue HEALTH_NON_MOB_DAMAGE_IMMUNITY;
 
     // --- Movement ---
-    static ModConfigSpec.DoubleValue MOVEMENT_FREEDOM_SPEED;
-    static ModConfigSpec.DoubleValue MOVEMENT_FREEDOM_RANGE;
-    static ModConfigSpec.DoubleValue MOVEMENT_TRACER_SPEED;
-    static ModConfigSpec.IntValue MOVEMENT_TRACER_HORIZON_RANGE;
-    static ModConfigSpec.IntValue MOVEMENT_TRACER_VERTICAL_RANGE;
-    static ModConfigSpec.DoubleValue MOVEMENT_FOLLOW_SPEED;
-    static ModConfigSpec.DoubleValue MOVEMENT_FOLLOW_START_DISTANCE;
-    static ModConfigSpec.DoubleValue MOVEMENT_FOLLOW_END_DISTANCE;
-    static ModConfigSpec.DoubleValue MOVEMENT_SPRINT_SPEED;
-    static ModConfigSpec.DoubleValue MOVEMENT_SPRINT_START_DISTANCE;
-    static ModConfigSpec.DoubleValue MOVEMENT_SPRINT_END_DISTANCE;
-    static ModConfigSpec.DoubleValue MOVEMENT_TELEPORT_START_DISTANCE;
-    static ModConfigSpec.DoubleValue MOVEMENT_EMERGENCY_TELEPORT_START_DISTANCE;
-    static ModConfigSpec.IntValue MOVEMENT_TELEPORT_WIDTH;
-    static ModConfigSpec.IntValue MOVEMENT_TELEPORT_HEIGHT;
-    static ModConfigSpec.BooleanValue MOVEMENT_CAN_TELEPORT_OWNER_FORWARDS;
-    static ModConfigSpec.DoubleValue MOVEMENT_OWNER_FORWARD_RANGE;
-    static ModConfigSpec.IntValue MOVEMENT_MAX_TRY_TELEPORT_COUNT;
-    static ModConfigSpec.DoubleValue MOVEMENT_PICKUP_ITEM_SPEED;
-    static ModConfigSpec.DoubleValue MOVEMENT_PICKUP_ITEM_RANGE;
-    static ModConfigSpec.IntValue MOVEMENT_PICKUP_ITEM_FREQUENCY;
-    static ModConfigSpec.DoubleValue MOVEMENT_ESCAPE_SPEED;
+    static final ModConfigSpec.DoubleValue MOVEMENT_FREEDOM_SPEED;
+    static final ModConfigSpec.DoubleValue MOVEMENT_FREEDOM_RANGE;
+    static final ModConfigSpec.DoubleValue MOVEMENT_TRACER_SPEED;
+    static final ModConfigSpec.IntValue MOVEMENT_TRACER_HORIZON_RANGE;
+    static final ModConfigSpec.IntValue MOVEMENT_TRACER_VERTICAL_RANGE;
+    static final ModConfigSpec.DoubleValue MOVEMENT_FOLLOW_SPEED;
+    static final ModConfigSpec.DoubleValue MOVEMENT_FOLLOW_START_DISTANCE;
+    static final ModConfigSpec.DoubleValue MOVEMENT_FOLLOW_END_DISTANCE;
+    static final ModConfigSpec.DoubleValue MOVEMENT_SPRINT_SPEED;
+    static final ModConfigSpec.DoubleValue MOVEMENT_SPRINT_START_DISTANCE;
+    static final ModConfigSpec.DoubleValue MOVEMENT_SPRINT_END_DISTANCE;
+    static final ModConfigSpec.DoubleValue MOVEMENT_TELEPORT_START_DISTANCE;
+    static final ModConfigSpec.DoubleValue MOVEMENT_EMERGENCY_TELEPORT_START_DISTANCE;
+    static final ModConfigSpec.IntValue MOVEMENT_TELEPORT_WIDTH;
+    static final ModConfigSpec.IntValue MOVEMENT_TELEPORT_HEIGHT;
+    static final ModConfigSpec.BooleanValue MOVEMENT_CAN_TELEPORT_OWNER_FORWARDS;
+    static final ModConfigSpec.DoubleValue MOVEMENT_OWNER_FORWARD_RANGE;
+    static final ModConfigSpec.IntValue MOVEMENT_MAX_TRY_TELEPORT_COUNT;
+    static final ModConfigSpec.DoubleValue MOVEMENT_PICKUP_ITEM_SPEED;
+    static final ModConfigSpec.DoubleValue MOVEMENT_PICKUP_ITEM_RANGE;
+    static final ModConfigSpec.IntValue MOVEMENT_PICKUP_ITEM_FREQUENCY;
+    static final ModConfigSpec.DoubleValue MOVEMENT_ESCAPE_SPEED;
 
     // --- Work ---
-    static ModConfigSpec.IntValue WORK_DEFAULT_WORK_ITEM_SLOT_SIZE;
-    static ModConfigSpec.DoubleValue WORK_MAX_TARGET_RANGE;
-    static ModConfigSpec.DoubleValue WORK_FENCER_ATTACK_DISTANCE_FACTOR;
-    static ModConfigSpec.DoubleValue WORK_FENCER_ATTACK_RATE_FACTOR;
-    static ModConfigSpec.DoubleValue WORK_ARCHER_SHOOT_DISTANCE_FACTOR;
-    static ModConfigSpec.DoubleValue WORK_ARCHER_SHOOT_RATE_FACTOR;
-    static ModConfigSpec.DoubleValue WORK_ARCHER_SHOOT_VELOCITY_FACTOR;
-    static ModConfigSpec.IntValue WORK_TORCHER_LIGHT_LEVEL_THRESHOLD;
-    static ModConfigSpec.DoubleValue WORK_SEARCH_CONTAINER_RANGE;
+    static final ModConfigSpec.IntValue WORK_DEFAULT_WORK_ITEM_SLOT_SIZE;
+    static final ModConfigSpec.DoubleValue WORK_MAX_TARGET_RANGE;
+    static final ModConfigSpec.DoubleValue WORK_FENCER_ATTACK_DISTANCE_FACTOR;
+    static final ModConfigSpec.DoubleValue WORK_FENCER_ATTACK_RATE_FACTOR;
+    static final ModConfigSpec.DoubleValue WORK_ARCHER_SHOOT_DISTANCE_FACTOR;
+    static final ModConfigSpec.DoubleValue WORK_ARCHER_SHOOT_RATE_FACTOR;
+    static final ModConfigSpec.DoubleValue WORK_ARCHER_SHOOT_VELOCITY_FACTOR;
+    static final ModConfigSpec.IntValue WORK_TORCHER_LIGHT_LEVEL_THRESHOLD;
+    static final ModConfigSpec.DoubleValue WORK_SEARCH_CONTAINER_RANGE;
 
     // --- Contract ---
-    static ModConfigSpec.IntValue CONTRACT_CONSUME_SALARY_INTERVAL;
-    static ModConfigSpec.IntValue CONTRACT_UNPAID_DAYS_LIMIT;
-    static ModConfigSpec.IntValue CONTRACT_MAX_AUTO_SALARY_RECEIPT_SLOT_SIZE;
-    static ModConfigSpec.IntValue CONTRACT_START_AUTO_SALARY_RECEIPT_SLOT_THRESHOLD;
-    static ModConfigSpec.IntValue CONTRACT_MAX_MEMORY_SALARY_BOX_POS;
-    static ModConfigSpec.DoubleValue CONTRACT_MEMORY_SALARY_BOX_DISTANCE;
-    static ModConfigSpec.IntValue CONTRACT_MEMORY_SALARY_BOX_INTERVAL;
-    static ModConfigSpec.DoubleValue CONTRACT_SEARCH_SALARY_BOX_DISTANCE;
-    static ModConfigSpec.IntValue CONTRACT_START_INTERVAL_OF_AUTO_SALARY_RECEIPT;
-    static ModConfigSpec.IntValue CONTRACT_FIND_PATH_INTERVAL_OF_AUTO_SALARY_RECEIPT;
-    static ModConfigSpec.IntValue CONTRACT_MAX_MOVE_TIME_ON_AUTO_SALARY_RECEIPT;
-    static ModConfigSpec.IntValue CONTRACT_MAX_MOVE_TIME_AFTER_AUTO_SALARY_RECEIPT;
+    static final ModConfigSpec.IntValue CONTRACT_CONSUME_SALARY_INTERVAL;
+    static final ModConfigSpec.IntValue CONTRACT_UNPAID_DAYS_LIMIT;
+    static final ModConfigSpec.IntValue CONTRACT_MAX_AUTO_SALARY_RECEIPT_SLOT_SIZE;
+    static final ModConfigSpec.IntValue CONTRACT_START_AUTO_SALARY_RECEIPT_SLOT_THRESHOLD;
+    static final ModConfigSpec.IntValue CONTRACT_MAX_MEMORY_SALARY_BOX_POS;
+    static final ModConfigSpec.DoubleValue CONTRACT_MEMORY_SALARY_BOX_DISTANCE;
+    static final ModConfigSpec.IntValue CONTRACT_MEMORY_SALARY_BOX_INTERVAL;
+    static final ModConfigSpec.DoubleValue CONTRACT_SEARCH_SALARY_BOX_DISTANCE;
+    static final ModConfigSpec.IntValue CONTRACT_START_INTERVAL_OF_AUTO_SALARY_RECEIPT;
+    static final ModConfigSpec.IntValue CONTRACT_FIND_PATH_INTERVAL_OF_AUTO_SALARY_RECEIPT;
+    static final ModConfigSpec.IntValue CONTRACT_MAX_MOVE_TIME_ON_AUTO_SALARY_RECEIPT;
+    static final ModConfigSpec.IntValue CONTRACT_MAX_MOVE_TIME_AFTER_AUTO_SALARY_RECEIPT;
 
     // --- Misc ---
-    static ModConfigSpec.BooleanValue MISC_CAN_PICKUP_ITEM;
-    static ModConfigSpec.BooleanValue MISC_CAN_PICKUP_EXPERIENCE_ORB;
-    static ModConfigSpec.BooleanValue MISC_CAN_PICKUP_ITEM_BY_NO_OWNER;
-    static ModConfigSpec.BooleanValue MISC_CAN_MILKING;
-    static ModConfigSpec.IntValue MISC_PLAY_SOUND_INTERVAL;
-    static ModConfigSpec.DoubleValue MISC_FOLLOW_AT_HELD_SALARY_RANGE;
-    static ModConfigSpec.DoubleValue MISC_FOLLOW_AT_HELD_EMPLOY_ITEM_RANGE;
-    static ModConfigSpec.DoubleValue MISC_STARE_AT_SALARY_RANGE;
-    static ModConfigSpec.DoubleValue MISC_STARE_AT_EMPLOY_ITEM_RANGE;
-    static ModConfigSpec.IntValue MISC_MAX_ACCELERATION_STACK;
-    static ModConfigSpec.IntValue MISC_ACCELERATION_TICKS_PER_STACK;
-    static ModConfigSpec.IntValue MISC_ACCELERATION_MULTIPLE;
+    static final ModConfigSpec.BooleanValue MISC_CAN_PICKUP_ITEM;
+    static final ModConfigSpec.BooleanValue MISC_CAN_PICKUP_EXPERIENCE_ORB;
+    static final ModConfigSpec.BooleanValue MISC_CAN_PICKUP_ITEM_BY_NO_OWNER;
+    static final ModConfigSpec.BooleanValue MISC_CAN_MILKING;
+    static final ModConfigSpec.IntValue MISC_PLAY_SOUND_INTERVAL;
+    static final ModConfigSpec.DoubleValue MISC_FOLLOW_AT_HELD_SALARY_RANGE;
+    static final ModConfigSpec.DoubleValue MISC_FOLLOW_AT_HELD_EMPLOY_ITEM_RANGE;
+    static final ModConfigSpec.DoubleValue MISC_STARE_AT_SALARY_RANGE;
+    static final ModConfigSpec.DoubleValue MISC_STARE_AT_EMPLOY_ITEM_RANGE;
+    static final ModConfigSpec.IntValue MISC_MAX_ACCELERATION_STACK;
+    static final ModConfigSpec.IntValue MISC_ACCELERATION_TICKS_PER_STACK;
+    static final ModConfigSpec.IntValue MISC_ACCELERATION_MULTIPLE;
 
     // --- Target ---
-    static ModConfigSpec.IntValue TARGET_ALERT_RANGE;
-    static ModConfigSpec.IntValue TARGET_TARGETING_FREQUENCY;
-    static ModConfigSpec.IntValue TARGET_COMBAT_RANGE;
-    static ModConfigSpec.IntValue TARGET_DANGEROUS_AVOID_DISTANCE;
-    static ModConfigSpec.DoubleValue TARGET_DISTRIBUTION_RATIO;
-    static ModConfigSpec.IntValue TARGET_MAX_ATTACKERS_PER_TARGET;
-    static ModConfigSpec.DoubleValue TARGET_INJURED_THRESHOLD;
-    static ModConfigSpec.IntValue TARGET_ATTACKED_BY_VALID_TICKS;
+    static final ModConfigSpec.IntValue TARGET_ALERT_RANGE;
+    static final ModConfigSpec.IntValue TARGET_TARGETING_FREQUENCY;
+    static final ModConfigSpec.IntValue TARGET_COMBAT_RANGE;
+    static final ModConfigSpec.IntValue TARGET_DANGEROUS_AVOID_DISTANCE;
+    static final ModConfigSpec.DoubleValue TARGET_DISTRIBUTION_RATIO;
+    static final ModConfigSpec.IntValue TARGET_MAX_ATTACKERS_PER_TARGET;
+    static final ModConfigSpec.DoubleValue TARGET_INJURED_THRESHOLD;
+    static final ModConfigSpec.IntValue TARGET_ATTACKED_BY_VALID_TICKS;
 
     // --- Client ---
-    static ModConfigSpec.BooleanValue CLIENT_ENABLE_WAIT_POSE_ON_MOVING;
+    static final ModConfigSpec.BooleanValue CLIENT_ENABLE_WAIT_POSE_ON_MOVING;
 
     static {
         ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
@@ -130,7 +130,7 @@ public class LMNConfig {
                         BiomeTags.HAS_VILLAGE_TAIGA.location().toString()),
                 e -> e instanceof String);
         SPAWN_MAID_SPAWN_EXCLUDE_BIOME_TAGS = builder.defineListAllowEmpty("maidSpawnExcludeBiomeTags",
-                Arrays.asList(LMTags.Biomes.MAID_SPAWN_EXCLUDE_BIOME.location().toString()),
+                List.of(LMTags.Biomes.MAID_SPAWN_EXCLUDE_BIOME.location().toString()),
                 e -> e instanceof String);
         SPAWN_SPAWN_WEIGHT = builder.defineInRange("spawnWeight", 5, 0, 1000);
         SPAWN_MIN_SPAWN_GROUP_SIZE = builder.defineInRange("minSpawnGroupSize", 1, 1, 64);

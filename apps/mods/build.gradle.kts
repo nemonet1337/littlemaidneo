@@ -123,6 +123,7 @@ dependencies {
 // This block of code expands all declared replace properties in the specified resource targets.
 // A missing property will result in an error. Properties are expanded using ${} Groovy notation.
 val generateModMetadata = tasks.register<ProcessResources>("generateModMetadata") {
+    description = ""
     val replaceProperties = mapOf(
         "minecraft_version" to minecraft_version,
         "minecraft_version_range" to minecraft_version_range,
@@ -158,6 +159,7 @@ publishing {
 }
 
 tasks.register<Copy>("mergeData") {
+    description = ""
     dependsOn("runClientData", "runServerData")
     from("build/generated/client")
     from("build/generated/server")

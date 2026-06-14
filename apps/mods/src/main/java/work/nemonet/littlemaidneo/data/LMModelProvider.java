@@ -111,17 +111,6 @@ public class LMModelProvider implements DataProvider {
                 }
                 """));
 
-        // 4. models/item/little_maid_spawn_egg.json
-        futures.add(save(cache, assetsDir.resolve("models").resolve("item").resolve("little_maid_spawn_egg.json"),
-                """
-                {
-                  "parent": "minecraft:item/generated",
-                  "textures": {
-                    "layer0": "littlemaidneo:item/little_maid_spawn_egg"
-                  }
-                }
-                """));
-
         // 5. models/item/salary_box.json
         futures.add(save(cache, assetsDir.resolve("models").resolve("item").resolve("salary_box.json"),
                 """
@@ -136,7 +125,17 @@ public class LMModelProvider implements DataProvider {
                 {
                   "model": {
                     "type": "minecraft:model",
-                    "model": "littlemaidneo:item/little_maid_spawn_egg"
+                    "model": "littlemaidneo:item/little_maid_spawn_egg",
+                    "tints": [
+                      {
+                        "type": "minecraft:constant",
+                        "value": -1
+                      },
+                      {
+                        "type": "minecraft:constant",
+                        "value": -8339456
+                      }
+                    ]
                   }
                 }
                 """));

@@ -22,6 +22,7 @@ public class LittleMaidModelCaps extends EntityCaps {
         return switch (pIndex) {
             case caps_aimedBow -> maid.isAimingBow();
             case caps_isLeeding -> maid.isLeashed(); // Mob 側の isLeashed を参照する
+            case caps_isBlocking -> maid.isBlocking();
             case caps_isBloodsuck -> maid.isBloodSuck();
             case caps_isFreedom -> maid.getMaidMode() == MaidMode.FREEDOM;
             case caps_isTracer -> maid.getMaidMode() == MaidMode.TRACER;

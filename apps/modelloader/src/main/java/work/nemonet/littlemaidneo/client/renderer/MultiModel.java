@@ -2,7 +2,6 @@ package work.nemonet.littlemaidneo.client.renderer;
 
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.ModelPart;
-import net.neoforged.api.distmarker.Dist;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
 
 import java.util.List;

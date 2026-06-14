@@ -137,7 +137,7 @@ public class ScrollBar extends GUIElement {
     public void setElemSize(int newElemSize) {
         if (newElemSize < 0) newElemSize = 0;
         this.elemSize = newElemSize;
-        if (elemSize <= 0) {
+        if (elemSize == 0) {
             this.point = 0;
         } else {
             this.point = Mth.clamp(this.point, 0, elemSize - 1);

@@ -3,9 +3,9 @@ package work.nemonet.littlemaidneo.config;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 public class LMNModelConfig {
-    private static ModConfigSpec.DoubleValue VOICE_VOLUME;
-    private static ModConfigSpec.BooleanValue ENABLE_ALPHA;
-    private static ModConfigSpec.BooleanValue DEBUG_MODE;
+    private static final ModConfigSpec.DoubleValue VOICE_VOLUME;
+    private static final ModConfigSpec.BooleanValue ENABLE_ALPHA;
+    private static final ModConfigSpec.BooleanValue DEBUG_MODE;
     public static final ModConfigSpec SPEC;
 
     static {

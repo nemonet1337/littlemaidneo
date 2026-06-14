@@ -16,7 +16,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.Vec3;
-import work.nemonet.littlemaidneo.entity.util.MaidManager;
 import work.nemonet.littlemaidneo.setup.ModRegistration;
 import work.nemonet.littlemaidneo.entity.soul.MaidSoulData;
 import org.jetbrains.annotations.Nullable;
@@ -45,7 +44,7 @@ public class MaidSoulEntity extends Entity {
                 && !this.maidManagerRegistered
                 && this.maidSoul != null) {
             this.maidSoul.getOwnerUUID()
-                    .map(id -> ((ServerLevel) this.level()).getEntity(id))
+                    .map(id -> this.level().getEntity(id))
                     .ifPresent(owner -> {
                         owner.getData(ModRegistration.MAID_MANAGER_ATTACHMENT.get()).registerMaid(this);
                         this.maidManagerRegistered = true;
@@ -58,7 +57,7 @@ public class MaidSoulEntity extends Entity {
                 Mth.PI
                         * ((float) ((this.waveProgress + loop / 4) % (loop / 2)) / (loop / 2f)))
                 * 0.4f + 0.1f;
-        int rotateTicks = 20 * 1;
+        int rotateTicks = 20;
         float rotate = Mth.PI * 2 * ((float) (this.tickCount % rotateTicks) / rotateTicks);
         float waveHeight = 1f;
         float x = (Mth.sin(rotate)) * range;

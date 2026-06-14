@@ -1,6 +1,5 @@
 package work.nemonet.littlemaidneo.resource.util;
 
-import com.google.common.collect.Lists;
 import net.minecraft.resources.Identifier;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
 import work.nemonet.littlemaidneo.multimodel.IMultiModel;
@@ -25,12 +24,12 @@ public class ArmorPart {
     }
 
     public Identifier getTexture(IHasMultiModel.Layer layer, boolean isLight) {
-        if (!layer.isArmor()) throw new IllegalArgumentException("取得できません。");
+        if (layer.isArmor()) throw new IllegalArgumentException("取得できません。");
         return layer == IHasMultiModel.Layer.INNER ? innerTex.getTexture(isLight) : outerTex.getTexture(isLight);
     }
 
     public IMultiModel getModel(IHasMultiModel.Layer layer) {
-        if (!layer.isArmor()) throw new IllegalArgumentException("取得できません。");
+        if (layer.isArmor()) throw new IllegalArgumentException("取得できません。");
         return layer == IHasMultiModel.Layer.INNER ? innerModel : outerModel;
     }
 

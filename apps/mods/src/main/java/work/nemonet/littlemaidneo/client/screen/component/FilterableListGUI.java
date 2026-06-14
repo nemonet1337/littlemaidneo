@@ -22,7 +22,6 @@ public class FilterableListGUI<T extends GUIElement> extends GUIElement {
 
     private final int searchInputHeight;
     private final int elementW;
-    private final int elementH;
 
     public FilterableListGUI(int x, int y, int width, int height,
                              int elementW, int elementH,
@@ -38,28 +37,24 @@ public class FilterableListGUI<T extends GUIElement> extends GUIElement {
         this.filteredItems = new ArrayList<>(items);
         this.searchInputHeight = searchInputHeight;
         this.elementW = elementW;
-        this.elementH = elementH;
 
         int widthStack = Math.max(1, width / elementW);
         int listHeight = height - searchInputHeight;
         int heightStack = Math.max(1, listHeight / elementH);
 
-        int listX = x;
-        int listY = y;
-        int searchX = x;
         int searchY = y + listHeight;
 
-        this.searchInput = new TextInputGUI(searchX, searchY, width, searchInputHeight);
+        this.searchInput = new TextInputGUI(x, searchY, width, searchInputHeight);
         this.searchInput.addTextChangeListener(this::onFilterTextChanged);
 
         if (scrollBarConfig != null) {
             this.listGUI = new ScrollableListGUI<>(
-                    listX, listY, widthStack, heightStack, elementW, elementH,
+                    x, y, widthStack, heightStack, elementW, elementH,
                     filteredItems, scrollBarConfig
             );
         } else {
             this.listGUI = new ScrollableListGUI<>(
-                    listX, listY, widthStack, heightStack, elementW, elementH,
+                    x, y, widthStack, heightStack, elementW, elementH,
                     filteredItems, false
             );
         }
@@ -214,14 +209,14 @@ public class FilterableListGUI<T extends GUIElement> extends GUIElement {
         return false;
     }
 
-    public boolean setSelectedItemBy(Predicate<T> predicate, Consumer<T> consumer) {
+    public void setSelectedItemBy(Predicate<T> predicate, Consumer<T> consumer) {
         for (int i = 0; i < filteredItems.size(); i++) {
             if (predicate.test(filteredItems.get(i))) {
                 consumer.accept(filteredItems.get(i));
-                return setSelectedIndex(i);
+                setSelectedIndex(i);
+                return;
             }
         }
-        return false;
     }
 
     private boolean setSelectedIndex(int index) {

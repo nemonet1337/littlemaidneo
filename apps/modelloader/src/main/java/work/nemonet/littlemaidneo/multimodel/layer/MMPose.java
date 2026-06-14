@@ -3,7 +3,7 @@ package work.nemonet.littlemaidneo.multimodel.layer;
 import com.google.common.collect.ImmutableBiMap;
 import net.minecraft.world.entity.Pose;
 
-public class MMPose {
+public record MMPose(String name) {
     private static final ImmutableBiMap<Pose, MMPose> POSE_MAP;
     public static final MMPose STANDING = new MMPose("Standing");
     public static final MMPose FALL_FLYING = new MMPose("FallFlying");
@@ -12,16 +12,6 @@ public class MMPose {
     public static final MMPose SPIN_ATTACK = new MMPose("SpinAttack");
     public static final MMPose CROUCHING = new MMPose("Crouching");
     public static final MMPose DYING = new MMPose("Dying");
-
-    private final String name;
-
-    public MMPose(String name) {
-        this.name = name;
-    }
-
-    public String getName() {
-        return name;
-    }
 
     public static MMPose convertPose(Pose pose) {
         return POSE_MAP.getOrDefault(pose, STANDING);

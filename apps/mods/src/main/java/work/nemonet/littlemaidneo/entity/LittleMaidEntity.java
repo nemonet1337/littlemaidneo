@@ -3,19 +3,13 @@ package work.nemonet.littlemaidneo.entity;
 import com.google.common.collect.Lists;
 import java.util.*;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import net.minecraft.commands.arguments.EntityAnchorArgument;
+
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.UUIDUtil;
-import net.minecraft.core.component.DataComponents;
-import net.minecraft.core.particles.DustParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -23,64 +17,30 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.util.Util;
 import net.minecraft.world.*;
-import net.minecraft.world.damagesource.DamageEffects;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.*;
-import net.minecraft.world.entity.AgeableMob;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityDimensions;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.ExperienceOrb;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.MoverType;
-import net.minecraft.world.entity.OwnableEntity;
-import net.minecraft.world.entity.Pose;
-import net.minecraft.world.entity.SlotAccess;
-import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.ai.goal.AvoidEntityGoal;
-import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
-import net.minecraft.world.entity.ai.goal.PanicGoal;
-import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
-import net.minecraft.world.entity.boss.enderdragon.EnderDragonPart;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.CrossbowAttackMob;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.projectile.ProjectileUtil;
-import net.minecraft.world.entity.projectile.arrow.AbstractArrow;
-import net.minecraft.world.entity.projectile.throwableitemprojectile.Snowball;
-import net.minecraft.world.item.ArrowItem;
-import net.minecraft.world.item.BowItem;
-import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.ProjectileWeaponItem;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
-import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.storage.TagValueInput;
-import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.api.distmarker.Dist;
 import net.neoforged.neoforge.entity.IEntityWithComplexSpawn;
 import org.jetbrains.annotations.Nullable;
-import work.nemonet.littlemaidneo.LittleMaidNeo;
 import work.nemonet.littlemaidneo.advancement.criterion.LMNCriteria;
 import work.nemonet.littlemaidneo.common.MultiModelHolder;
 import work.nemonet.littlemaidneo.common.SoundHolder;
 import work.nemonet.littlemaidneo.config.LMNConfig;
-import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
 import work.nemonet.littlemaidneo.entity.compound.MultiModelCompound;
-import work.nemonet.littlemaidneo.entity.compound.SoundPlayable;
 import work.nemonet.littlemaidneo.entity.compound.SoundPlayableCompound;
 import work.nemonet.littlemaidneo.entity.targeting.TargetIdentifier;
 import work.nemonet.littlemaidneo.entity.targeting.TargetTagManager;
@@ -91,7 +51,6 @@ import work.nemonet.littlemaidneo.maidmodel.IModelCaps;
 import work.nemonet.littlemaidneo.multimodel.IMultiModel;
 import work.nemonet.littlemaidneo.multimodel.layer.MMPose;
 import work.nemonet.littlemaidneo.network.NetworkHandler;
-import work.nemonet.littlemaidneo.resource.holder.ConfigHolder;
 import work.nemonet.littlemaidneo.resource.holder.TextureHolder;
 import work.nemonet.littlemaidneo.resource.manager.LMConfigManager;
 import work.nemonet.littlemaidneo.resource.manager.LMModelManager;
@@ -108,9 +67,7 @@ import net.minecraft.world.entity.ai.ActivityData;
 import net.minecraft.world.entity.schedule.Activity;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.behavior.BehaviorControl;
-import com.mojang.serialization.Dynamic;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 
 //????????????
 public class LittleMaidEntity
@@ -173,16 +130,16 @@ public class LittleMaidEntity
             () -> getConfig().contract.consumeSalaryInterval,
             () -> getConfig().contract.unpaidDaysLimit,
             (ItemStack stack) -> stack.is(LMTags.Items.MAIDS_SALARY));
-    public final work.nemonet.littlemaidneo.entity.ai.behavior.MaidCombatBehavior combatBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidCombatBehavior();
-    public final work.nemonet.littlemaidneo.entity.ai.behavior.MaidCookingBehavior cookingBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidCookingBehavior();
-    public final work.nemonet.littlemaidneo.entity.ai.behavior.MaidHealerBehavior healerBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidHealerBehavior();
-    public final work.nemonet.littlemaidneo.entity.ai.behavior.MaidPharmcistBehavior pharmcistBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidPharmcistBehavior();
-    public final work.nemonet.littlemaidneo.entity.ai.behavior.MaidRipperBehavior ripperBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidRipperBehavior();
-    public final work.nemonet.littlemaidneo.entity.ai.behavior.MaidTorcherBehavior torcherBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidTorcherBehavior();
+    public work.nemonet.littlemaidneo.entity.ai.behavior.MaidCombatBehavior combatBehavior;
+    public work.nemonet.littlemaidneo.entity.ai.behavior.MaidCookingBehavior cookingBehavior;
+    public work.nemonet.littlemaidneo.entity.ai.behavior.MaidHealerBehavior healerBehavior;
+    public work.nemonet.littlemaidneo.entity.ai.behavior.MaidPharmcistBehavior pharmcistBehavior;
+    public work.nemonet.littlemaidneo.entity.ai.behavior.MaidRipperBehavior ripperBehavior;
+    public work.nemonet.littlemaidneo.entity.ai.behavior.MaidTorcherBehavior torcherBehavior;
 
-    public final work.nemonet.littlemaidneo.entity.ai.behavior.MaidLookAroundBehavior lookAroundBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidLookAroundBehavior();
-    public final work.nemonet.littlemaidneo.entity.ai.behavior.MaidPanicBehavior panicBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidPanicBehavior(1.5f);
-    public final work.nemonet.littlemaidneo.entity.ai.behavior.MaidAvoidBehavior avoidBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidAvoidBehavior();
+    public work.nemonet.littlemaidneo.entity.ai.behavior.MaidLookAroundBehavior lookAroundBehavior;
+    public work.nemonet.littlemaidneo.entity.ai.behavior.MaidPanicBehavior panicBehavior;
+    public work.nemonet.littlemaidneo.entity.ai.behavior.MaidAvoidBehavior avoidBehavior;
 
     public String getActiveJobName() {
         if (this.isStrike()) {
@@ -230,7 +187,8 @@ private float prevInterestedAngle;
         super(type, worldIn);
         this.moveControl = new FixedMoveControl(this);
         this.lookControl = new work.nemonet.littlemaidneo.entity.ai.MaidLookControl(this);
-        ((GroundPathNavigation) getNavigation()).setCanOpenDoors(true);
+        getNavigation().setCanOpenDoors(true);
+        this.setPathfindingMalus(net.minecraft.world.level.pathfinder.PathType.WATER, 0.0F);
         multiModel = new MultiModelCompound(
                 this,
                 LMTextureManager.INSTANCE.getTexture("Default").orElseThrow(() -> new IllegalStateException(
@@ -280,7 +238,7 @@ private float prevInterestedAngle;
     //     getLookControl().setLookAt(...) ??????????????????????????? MaidLookControl ????????????????????
     //   - ??????? LookAtTargetSink ?? LOOK_TARGET ???????????????????? Mod ???? LOOK_TARGET ?????????
     //     ?????????????????????? no-op ???????????????????????????????? Behavior ???????????????
-    private static final Brain.Provider<LittleMaidEntity> BRAIN_PROVIDER = Brain.<LittleMaidEntity>provider(
+    private static final Brain.Provider<LittleMaidEntity> BRAIN_PROVIDER = Brain.provider(
             ImmutableList.of(
                     ModRegistration.IS_WAITING.get(),
                     ModRegistration.OWNER.get(),
@@ -295,8 +253,8 @@ private float prevInterestedAngle;
                     ModRegistration.LITTLE_MAID_SENSOR.get()
             ),
             entity -> ImmutableList.of(
-                    ActivityData.<LittleMaidEntity>create(Activity.CORE, 0, ImmutableList.<BehaviorControl<? super LittleMaidEntity>>of(
-                            new net.minecraft.world.entity.ai.behavior.Swim(0.8f),
+                    ActivityData.create(Activity.CORE, 0, ImmutableList.<BehaviorControl<? super LittleMaidEntity>>of(
+                            new work.nemonet.littlemaidneo.entity.ai.behavior.MaidSwim(0.8f),
                             net.minecraft.world.entity.ai.behavior.InteractWithDoor.create(),
                             entity.avoidBehavior,
                             entity.panicBehavior,
@@ -324,8 +282,23 @@ private float prevInterestedAngle;
             )
     );
 
+    private void initBehaviors() {
+        if (this.combatBehavior == null) {
+            this.combatBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidCombatBehavior();
+            this.cookingBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidCookingBehavior();
+            this.healerBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidHealerBehavior();
+            this.pharmcistBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidPharmcistBehavior();
+            this.ripperBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidRipperBehavior();
+            this.torcherBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidTorcherBehavior();
+            this.lookAroundBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidLookAroundBehavior();
+            this.panicBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidPanicBehavior(1.5f);
+            this.avoidBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidAvoidBehavior();
+        }
+    }
+
     @Override
     protected Brain<?> makeBrain(Brain.Packed packedBrain) {
+        initBehaviors();
         return BRAIN_PROVIDER.makeBrain(this, packedBrain);
     }
 
@@ -424,9 +397,7 @@ private float prevInterestedAngle;
         this.multiModel.readFromNbt(input);
         this.refreshDimensions();
         input
-                .getString("SoundConfigName")
-                .ifPresent(name -> LMConfigManager.INSTANCE.getConfig(name).ifPresent(
-                        this::setConfigHolder));
+                .getString("SoundConfigName").flatMap(LMConfigManager.INSTANCE::getConfig).ifPresent(this::setConfigHolder);
 
         acceleration.load(input);
     }
@@ -554,6 +525,8 @@ private float prevInterestedAngle;
             inTickMultiplePost();
         }
     }
+    protected void inTickMultiplePost() {
+    }
 
     protected void inTickMultiplePre() {
         if (this.experiencePickUpDelay > 0) {
@@ -568,9 +541,6 @@ private float prevInterestedAngle;
         if (this.onClimbable() && this.horizontalCollision) {
             this.setDeltaMovement(this.getDeltaMovement().add(0.0D, 0.2D, 0.0D));
         }
-    }
-
-    protected void inTickMultiplePost() {
     }
 
     @Override
@@ -892,7 +862,7 @@ private float prevInterestedAngle;
         setLastHurtByMob(null);
         getNavigation().stop();
         final LittleMaidEntity maid = this;
-        ((ServerPlayer) player).openMenu(screenFactory, buf -> {
+        player.openMenu(screenFactory, buf -> {
             buf.writeVarInt(maid.getId());
             buf.writeByte(maid.getUnpaidDays());
             buf.writeByte(maid.getWorkItemSlotSize());

@@ -1,6 +1,5 @@
 package work.nemonet.littlemaidneo.entity.ai.behavior;
 
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
@@ -9,7 +8,6 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
-import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.BowItem;
 import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemStack;
@@ -132,7 +130,6 @@ public class MaidCombatBehavior extends AbstractMaidBehavior {
         private final java.util.function.Function<Float, Float> speedFunc;
         private int cooldown;
         private int recalcPathCool = 0;
-        private final int maxRecalcPathCool = 10;
 
         public MeleeStyle(java.util.function.Function<Float, Float> speedFunc) {
             this.speedFunc = speedFunc;
@@ -149,17 +146,44 @@ public class MaidCombatBehavior extends AbstractMaidBehavior {
             mob.getLookControl().setLookAt(target, 30.0F, 30.0F);
             recalcPathCool = Math.max(0, recalcPathCool - 1);
 
+            ItemStack offhand = mob.getOffhandItem();
+            ItemStack mainhand = mob.getMainHandItem();
+            InteractionHand shieldHand = null;
+            if (offhand.getItem() instanceof net.minecraft.world.item.ShieldItem) {
+                shieldHand = InteractionHand.OFF_HAND;
+            } else if (mainhand.getItem() instanceof net.minecraft.world.item.ShieldItem) {
+                shieldHand = InteractionHand.MAIN_HAND;
+            }
+
             double boundingDistSq = getBoundingDistanceSq(mob, this.target);
             if (!isClose(mob, boundingDistSq)) {
                 if (recalcPathCool <= 0) {
+                    int maxRecalcPathCool = 10;
                     recalcPathCool = maxRecalcPathCool;
                     mob.getNavigation().moveTo(this.target, speedFunc.apply(1.0f));
+                }
+                if (shieldHand != null && !mob.isUsingItem() && mob.getSensing().hasLineOfSight(this.target)) {
+                    mob.startUsingItem(shieldHand);
                 }
             } else {
                 mob.getNavigation().stop();
                 if (canAttack(mob)) {
+                    if (mob.isUsingItem()) {
+                        mob.stopUsingItem();
+                    }
                     attack(mob);
+                } else {
+                    if (shieldHand != null && !mob.isUsingItem()) {
+                        mob.startUsingItem(shieldHand);
+                    }
                 }
+            }
+        }
+
+        @Override
+        public void resetTask(LittleMaidEntity mob) {
+            if (mob.isUsingItem()) {
+                mob.stopUsingItem();
             }
         }
 
@@ -305,7 +329,19 @@ public class MaidCombatBehavior extends AbstractMaidBehavior {
                         mob.setChargingCrossbow(true);
                     } else {
                         if (mob.getTicksUsingItem() >= CrossbowItem.getChargeDuration(mob.getUseItem(), mob)) {
-                            mob.releaseUsingItem();
+                            ItemStack crossbow = mob.getMainHandItem();
+                            ItemStack projectile = mob.getProjectile(crossbow);
+                            if (!projectile.isEmpty()) {
+                                ItemStack loadStack = projectile.copy();
+                                loadStack.setCount(1);
+                                if (!mob.hasInfiniteMaterials()) {
+                                    projectile.shrink(1);
+                                }
+                                var charged = net.minecraft.world.item.component.ChargedProjectiles.of(net.minecraft.world.item.ItemStackTemplate.fromNonEmptyStack(loadStack));
+                                crossbow.set(net.minecraft.core.component.DataComponents.CHARGED_PROJECTILES, charged);
+                                mob.playSound(net.minecraft.sounds.SoundEvents.CROSSBOW_LOADING_END.value(), 1.0F, 1.0F / (mob.getRandom().nextFloat() * 0.5F + 1.0F) + 0.2F);
+                            }
+                            mob.stopUsingItem();
                             mob.setChargingCrossbow(false);
                             this.cool = 5;
                             mob.swing(InteractionHand.MAIN_HAND);

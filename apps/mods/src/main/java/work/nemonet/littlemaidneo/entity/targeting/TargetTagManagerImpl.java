@@ -1,30 +1,10 @@
 package work.nemonet.littlemaidneo.entity.targeting;
 
 import com.mojang.serialization.Codec;
-import work.nemonet.littlemaidneo.LittleMaidNeo;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.world.entity.EntitySpawnReason;
-import net.minecraft.world.entity.monster.*;
-import net.minecraft.world.entity.animal.*;
-import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
-import net.minecraft.world.entity.TamableAnimal;
-import net.minecraft.world.entity.animal.chicken.Chicken;
-import net.minecraft.world.entity.animal.cow.Cow;
-import net.minecraft.world.entity.animal.pig.Pig;
-import net.minecraft.world.entity.animal.polarbear.PolarBear;
-import net.minecraft.world.entity.animal.rabbit.Rabbit;
-import net.minecraft.world.entity.animal.sheep.Sheep;
-import net.minecraft.world.entity.decoration.ArmorStand;
-import net.minecraft.world.entity.monster.Creeper;
-import net.minecraft.world.entity.monster.EnderMan;
-import net.minecraft.world.entity.monster.Enemy;
-import net.minecraft.world.entity.monster.zombie.ZombifiedPiglin;
-import net.minecraft.world.entity.monster.piglin.Piglin;
-import net.minecraft.world.entity.monster.warden.Warden;
-import net.minecraft.world.entity.npc.Npc;
-import net.minecraft.world.item.trading.Merchant;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.entity.EntityType;
 import work.nemonet.littlemaidneo.tags.LMEntityTags;
@@ -32,17 +12,14 @@ import work.nemonet.littlemaidneo.tags.LMEntityTags;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 public class TargetTagManagerImpl implements TargetTagManager {
-    private final Level world;
     private final Map<TargetIdentifier, Set<TargetingSystem.TargetTag>> targetTagMap = new HashMap<>();
     private final Map<TargetIdentifier, Set<TargetingSystem.TargetTag>> defaultTagCache = new HashMap<>();
     private int hash = -1;
 
     public TargetTagManagerImpl(Level world) {
-        this.world = world;
     }
 
     @Override
@@ -81,50 +58,39 @@ public class TargetTagManagerImpl implements TargetTagManager {
             return immutableTags;
         }
 
-        // 2. instanceofフォールバック
-        if (this.world != null) {
-            try {
-                net.minecraft.world.entity.Entity e = type.create(this.world, EntitySpawnReason.MOB_SUMMONED);
-                if (e instanceof LivingEntity) {
-                    if (!(e instanceof Enemy)
-                            || e instanceof Piglin
-                            || e instanceof ZombifiedPiglin
-                            || e instanceof EnderMan) {
-                        tags.add(TargetingSystem.TargetTag.PREEMPTIVE_ATTACK_PROHIBITED);
-                    }
-                    if (e instanceof Creeper || e instanceof Warden) {
-                        tags.add(TargetingSystem.TargetTag.APPROACH_PROHIBITED);
-                        tags.add(TargetingSystem.TargetTag.MELEE_WEAPON_PROHIBITED);
-                    }
-                    if (e instanceof EnderMan) {
-                        tags.add(TargetingSystem.TargetTag.RANGED_WEAPON_PROHIBITED);
-                    }
-                    if (e instanceof TamableAnimal
-                            || e instanceof Npc
-                            || e instanceof Merchant
-                            || e instanceof ArmorStand) {
-                        tags.add(TargetingSystem.TargetTag.ATTACK_PROHIBITED);
-                        tags.add(TargetingSystem.TargetTag.PREEMPTIVE_ATTACK_PROHIBITED);
-                    }
-                    if (tags.contains(TargetingSystem.TargetTag.PREEMPTIVE_ATTACK_PROHIBITED)
-                            && !(e instanceof Enemy)) {
-                        tags.add(TargetingSystem.TargetTag.ATTACK_PROHIBITED);
-                    }
-                    if (e instanceof Cow
-                            || e instanceof Chicken
-                            || e instanceof Sheep
-                            || e instanceof Pig
-                            || e instanceof PolarBear
-                            || e instanceof Rabbit
-                    ) {
-                        tags.remove(TargetingSystem.TargetTag.ATTACK_PROHIBITED);
-                    }
-                    if (e instanceof Warden) {
-                        tags.add(TargetingSystem.TargetTag.ATTACK_PROHIBITED);
-                    }
-                }
-            } catch (Exception ex) {
-                // Ignore
+        // 2. 安全なEntityTypeおよびMobCategoryによる判定
+        MobCategory category = type.getCategory();
+        if (category == MobCategory.MISC) {
+            tags.add(TargetingSystem.TargetTag.ATTACK_PROHIBITED);
+            tags.add(TargetingSystem.TargetTag.PREEMPTIVE_ATTACK_PROHIBITED);
+        } else {
+            boolean isMonster = category == MobCategory.MONSTER;
+
+            if (type == EntityType.CREEPER || type == EntityType.WARDEN) {
+                tags.add(TargetingSystem.TargetTag.APPROACH_PROHIBITED);
+                tags.add(TargetingSystem.TargetTag.MELEE_WEAPON_PROHIBITED);
+            }
+            if (type == EntityType.ENDERMAN) {
+                tags.add(TargetingSystem.TargetTag.RANGED_WEAPON_PROHIBITED);
+            }
+            
+            // 先制攻撃禁止の判定
+            if (!isMonster || type == EntityType.PIGLIN || type == EntityType.ZOMBIFIED_PIGLIN || type == EntityType.ENDERMAN) {
+                tags.add(TargetingSystem.TargetTag.PREEMPTIVE_ATTACK_PROHIBITED);
+            }
+
+            // 攻撃禁止の判定
+            if (type == EntityType.VILLAGER || type == EntityType.WANDERING_TRADER || type == EntityType.ARMOR_STAND
+                    || type == EntityType.IRON_GOLEM || type == EntityType.SNOW_GOLEM || type == EntityType.ALLAY
+                    || type == EntityType.BAT || type == EntityType.CAT || type == EntityType.WOLF
+                    || type == EntityType.PARROT || type == EntityType.OCELOT || type == EntityType.FOX
+                    || type == EntityType.PANDA || type == EntityType.BEE || type == EntityType.STRIDER
+                    || type == EntityType.DOLPHIN || type == EntityType.AXOLOTL) {
+                tags.add(TargetingSystem.TargetTag.ATTACK_PROHIBITED);
+            }
+
+            if (type == EntityType.WARDEN) {
+                tags.add(TargetingSystem.TargetTag.ATTACK_PROHIBITED);
             }
         }
 

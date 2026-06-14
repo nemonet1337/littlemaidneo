@@ -9,7 +9,6 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import work.nemonet.littlemaidneo.maidmodel.EntityCaps;
 import work.nemonet.littlemaidneo.maidmodel.IModelCaps;
@@ -211,16 +210,10 @@ public class MultiModelCompound implements IHasMultiModel {
         setColorMM(TextureColors.getColor(input.getByteOr("SkinColor", (byte) 0)));
         setContractMM(input.getBooleanOr("IsContract", false));
         LMTextureManager textureManager = LMTextureManager.INSTANCE;
-        input.getString("SkinTexture")
-                .ifPresent(name -> textureManager.getTexture(name)
-                        .ifPresent(th -> setTextureHolder(th, Layer.SKIN, Part.HEAD)));
+        input.getString("SkinTexture").flatMap(textureManager::getTexture).ifPresent(th -> setTextureHolder(th, Layer.SKIN, Part.HEAD));
         for (Part part : Part.values()) {
-            input.getString("ArmorTextureInner" + part.getPartName())
-                    .ifPresent(name -> textureManager.getTexture(name)
-                            .ifPresent(th -> setTextureHolder(th, Layer.INNER, part)));
-            input.getString("ArmorTextureOuter" + part.getPartName())
-                    .ifPresent(name -> textureManager.getTexture(name)
-                            .ifPresent(th -> setTextureHolder(th, Layer.OUTER, part)));
+            input.getString("ArmorTextureInner" + part.getPartName()).flatMap(textureManager::getTexture).ifPresent(th -> setTextureHolder(th, Layer.INNER, part));
+            input.getString("ArmorTextureOuter" + part.getPartName()).flatMap(textureManager::getTexture).ifPresent(th -> setTextureHolder(th, Layer.OUTER, part));
         }
     }
 

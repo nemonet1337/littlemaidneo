@@ -30,7 +30,7 @@ public class ModelLittleMaid_Beverly7 extends ModelLittleMaidBase {
     protected byte headPosY;
     protected byte bodyPosY;
     protected byte legPosY;
-    protected Random rand = new Random();
+    protected final Random rand = new Random();
 
     public ModelLittleMaid_Beverly7() { this(0F); }
     public ModelLittleMaid_Beverly7(float psize) { this(psize, 0F, 128, 64); }
@@ -239,7 +239,7 @@ public class ModelLittleMaid_Beverly7 extends ModelLittleMaidBase {
         hipBody.rotateAngleX = 0.2F; hipBody.rotateAngleY = 0F; hipBody.rotateAngleZ = 0F;
         mainFrame.rotateAngleX = 0F; mainFrame.rotateAngleY = 0F; mainFrame.rotateAngleZ = 0F;
 
-        bipedHead.rotateAngleZ = ModelCapsHelper.getCapsValueFloat(pEntityCaps, caps_interestedAngle, (Float)pRenderPartialTicks);
+        bipedHead.rotateAngleZ = ModelCapsHelper.getCapsValueFloat(pEntityCaps, caps_interestedAngle, pRenderPartialTicks);
         if (ModelCapsHelper.getCapsValueBoolean(pEntityCaps, caps_isLookSuger)) {
             float fe1 = rand.nextFloat() - 0.5F;
             float fe2 = rand.nextFloat() - 0.5F;
@@ -403,7 +403,7 @@ public class ModelLittleMaid_Beverly7 extends ModelLittleMaidBase {
                 f6 = 1.0F - onGroundR;
                 f7 = mh_sin((1.0F - f6 * f6 * f6 * f6) * (float)Math.PI);
                 f8 = mh_sin(onGroundR * (float)Math.PI) * -(bipedHead.rotateAngleX - 0.7F) * 0.75F;
-                upperRightArm.rotateAngleX -= (double)f7 * 1.2D + (double)f8;
+                upperRightArm.rotateAngleX -= (float) ((double)f7 * 1.2D + (double)f8);
                 upperRightArm.rotateAngleY += bipedBody.rotateAngleY * 2.0F;
                 upperRightArm.rotateAngleZ += mh_sin(onGroundR * 3.141593F) * -0.4F;
             } else {
@@ -413,7 +413,7 @@ public class ModelLittleMaid_Beverly7 extends ModelLittleMaidBase {
                 f6 = 1.0F - onGroundR;
                 f7 = mh_sin((1.0F - f6 * f6 * f6 * f6) * (float)Math.PI);
                 f8 = mh_sin(onGroundL * (float)Math.PI) * -(bipedHead.rotateAngleX - 0.7F) * 0.75F;
-                upperLeftArm.rotateAngleX -= (double)f7 * 1.2D + (double)f8;
+                upperLeftArm.rotateAngleX -= (float) ((double)f7 * 1.2D + (double)f8);
                 upperLeftArm.rotateAngleY += bipedBody.rotateAngleY * 2.0F;
                 upperLeftArm.rotateAngleZ += mh_sin(onGroundL * 3.141593F) * 0.4F;
             } else {

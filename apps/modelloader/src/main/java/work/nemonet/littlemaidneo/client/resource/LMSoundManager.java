@@ -4,7 +4,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.sounds.WeighedSoundEvents;
 import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundSource;
-import net.neoforged.api.distmarker.Dist;
 import work.nemonet.littlemaidneo.config.LMNModelConfig;
 
 import java.util.HashMap;

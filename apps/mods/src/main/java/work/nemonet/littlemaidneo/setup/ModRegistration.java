@@ -25,10 +25,6 @@ import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.attachment.IAttachmentSerializer;
 import net.neoforged.neoforge.attachment.IAttachmentHolder;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.util.ProblemReporter;
-import net.minecraft.world.level.storage.TagValueInput;
-import net.minecraft.world.level.storage.TagValueOutput;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import work.nemonet.littlemaidneo.entity.util.MaidManagerImpl;
@@ -42,7 +38,9 @@ import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.LittleMaidScreenHandler;
 import work.nemonet.littlemaidneo.entity.MaidSoulEntity;
 import work.nemonet.littlemaidneo.entity.MultiModelEntity;
-import work.nemonet.littlemaidneo.item.LittleMaidSpawnEggItem;
+import net.minecraft.world.item.SpawnEggItem;
+import net.minecraft.world.item.component.TypedEntityData;
+import net.minecraft.core.component.DataComponents;
 import work.nemonet.littlemaidneo.entity.DummyModelEntity;
 
 import net.minecraft.core.component.DataComponentType;
@@ -91,13 +89,14 @@ public class ModRegistration {
 
     public static final DeferredHolder<AttachmentType<?>, AttachmentType<MaidManagerImpl>> MAID_MANAGER_ATTACHMENT =
             ATTACHMENT_TYPES.register("maid_manager", () -> AttachmentType.builder(MaidManagerImpl::new)
-                    .serialize(new IAttachmentSerializer<MaidManagerImpl>() {
+                    .serialize(new IAttachmentSerializer<>() {
                         @Override
                         public MaidManagerImpl read(IAttachmentHolder holder, ValueInput input) {
                             MaidManagerImpl manager = new MaidManagerImpl();
                             manager.readMaidManager(input);
                             return manager;
                         }
+
                         @Override
                         public boolean write(MaidManagerImpl manager, ValueOutput output) {
                             manager.writeMaidManager(output);
@@ -109,13 +108,14 @@ public class ModRegistration {
 
     public static final DeferredHolder<AttachmentType<?>, AttachmentType<TargetTagManagerImpl>> TARGET_TAG_ATTACHMENT =
             ATTACHMENT_TYPES.register("target_tag", () -> AttachmentType.builder(() -> new TargetTagManagerImpl(null))
-                    .serialize(new IAttachmentSerializer<TargetTagManagerImpl>() {
+                    .serialize(new IAttachmentSerializer<>() {
                         @Override
                         public TargetTagManagerImpl read(IAttachmentHolder holder, ValueInput input) {
                             TargetTagManagerImpl manager = new TargetTagManagerImpl(null);
                             manager.readTargetTags(input);
                             return manager;
                         }
+
                         @Override
                         public boolean write(TargetTagManagerImpl manager, ValueOutput output) {
                             manager.writeTargetTags(output);
@@ -132,7 +132,7 @@ public class ModRegistration {
     // LML entities
     public static final DeferredHolder<EntityType<?>, EntityType<MultiModelEntity>> MULTI_MODEL_ENTITY =
             ENTITIES.register("multi_model_entity", () ->
-                    EntityType.Builder.<MultiModelEntity>of(MultiModelEntity::new, MobCategory.MISC)
+                    EntityType.Builder.of(MultiModelEntity::new, MobCategory.MISC)
                             .sized(0.5F, 1.35F)
                             .build(ResourceKey.create(Registries.ENTITY_TYPE,
                                     Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, "multi_model_entity"))));
@@ -147,7 +147,7 @@ public class ModRegistration {
     // ReBirth entities
     public static final DeferredHolder<EntityType<?>, EntityType<LittleMaidEntity>> LITTLE_MAID_ENTITY =
             ENTITIES.register("little_maid_mob", () -> {
-                littleMaidEntityTypeInstance = EntityType.Builder.<LittleMaidEntity>of(LittleMaidEntity::new, MobCategory.CREATURE)
+                littleMaidEntityTypeInstance = EntityType.Builder.of(LittleMaidEntity::new, MobCategory.CREATURE)
                         .sized(0.5F, 1.35F)
                         .build(ResourceKey.create(Registries.ENTITY_TYPE,
                                 Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, "little_maid_mob")));
@@ -176,8 +176,13 @@ public class ModRegistration {
             });
 
     // Items
-    public static final DeferredHolder<Item, LittleMaidSpawnEggItem> LITTLE_MAID_SPAWN_EGG_ITEM =
-            ITEMS.register("little_maid_spawn_egg", LittleMaidSpawnEggItem::new);
+    public static final DeferredHolder<Item, SpawnEggItem> LITTLE_MAID_SPAWN_EGG_ITEM =
+            ITEMS.register("little_maid_spawn_egg", () ->
+                    new SpawnEggItem(new Item.Properties()
+                            .setId(ResourceKey.create(Registries.ITEM,
+                                    Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, "little_maid_spawn_egg")))
+                            .delayedComponent(DataComponents.ENTITY_DATA,
+                                    provider -> TypedEntityData.of(LITTLE_MAID_ENTITY.get(), new CompoundTag()))));
 
     public static final DeferredHolder<Item, Item> SALARY_BOX_BLOCK_ITEM =
             ITEMS.register("salary_box", () ->

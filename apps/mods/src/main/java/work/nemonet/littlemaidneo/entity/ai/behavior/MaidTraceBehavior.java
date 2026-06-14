@@ -10,7 +10,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
-import net.minecraft.world.entity.ai.behavior.Behavior;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
@@ -63,7 +62,7 @@ public class MaidTraceBehavior extends AbstractMaidBehavior {
 
     @Override
     protected void start(ServerLevel level, LittleMaidEntity entity, long gameTime) {
-        float speed = entity.getConfig().movement.tracerSpeed;
+        float speed = LittleMaidEntity.getConfig().movement.tracerSpeed;
         this.aroundSignalPos.stream()
                 .min(Comparator.comparingDouble(pos ->
                         // 左 55 度に近い信号を優先し、Y が高い位置を優先する。

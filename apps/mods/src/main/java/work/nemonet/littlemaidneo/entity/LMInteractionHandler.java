@@ -19,7 +19,7 @@ import work.nemonet.littlemaidneo.resource.util.LMSounds;
 import work.nemonet.littlemaidneo.tags.LMTags;
 
 /**
- * メイドさんの右クリック操作（{@link LittleMaidEntity#mobInteract(Player, InteractionHand)}）の
+ * メイドさんの右クリック操作（ ）の
  * アイテム別分岐ロジックの移譲先。
  * <p>
  * 継承元の挙動は使わず、所持アイテムを上から順に判定する。挙動は分離前と同一。

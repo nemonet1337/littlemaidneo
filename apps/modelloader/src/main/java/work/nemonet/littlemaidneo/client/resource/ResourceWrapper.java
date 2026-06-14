@@ -12,7 +12,6 @@ import net.minecraft.server.packs.metadata.MetadataSectionType;
 import net.minecraft.server.packs.metadata.pack.PackMetadataSection;
 import net.minecraft.util.InclusiveRange;
 import net.minecraft.server.packs.resources.IoSupplier;
-import net.neoforged.api.distmarker.Dist;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
@@ -71,7 +70,7 @@ public class ResourceWrapper implements PackResources {
 
     @Nullable
     @Override
-    public <T> T getMetadataSection(MetadataSectionType<T> metaReader) throws java.io.IOException {
+    public <T> T getMetadataSection(MetadataSectionType<T> metaReader) {
         if (metaReader.name().equals("pack")) {
             return (T) PACK_INFO;
         }

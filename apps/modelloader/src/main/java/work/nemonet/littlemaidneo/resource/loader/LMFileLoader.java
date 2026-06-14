@@ -64,7 +64,7 @@ public class LMFileLoader {
         List<Runnable> registrations = parseInParallel(units);
         registrations.forEach(this::runRegistration);
         long end = System.nanoTime();
-        LOGGER.debug("Loading end : " + ((end - start) / (1000D * 1000D)) + "ms");
+        LOGGER.debug("Loading end : {}ms", (end - start) / (1000D * 1000D));
     }
 
     /** 並列タスクの単位（トップレベルの通常ファイル or アーカイブ）。 */
@@ -119,7 +119,7 @@ public class LMFileLoader {
         try (InputStream inputStream = Files.newInputStream(path)) {
             collectParses(relPath, folderPath, inputStream, false, registrations);
         } catch (Exception e) {
-            LOGGER.error("Error! : " + e.getMessage() + " : " + path);
+            LOGGER.error("Error! : {} : {}", e.getMessage(), path);
         }
         return registrations;
     }
@@ -127,7 +127,7 @@ public class LMFileLoader {
     private List<Runnable> parseArchiveWithRetry(Path folderPath, Path path) {
         List<Runnable> registrations = parseArchive(folderPath, path, StandardCharsets.UTF_8);
         if (registrations == null && System.getProperty("os.name").toLowerCase().contains("win")) {
-            LOGGER.info("MS932でリトライします。 : " + path);
+            LOGGER.info("MS932でリトライします。 : {}", path);
             registrations = parseArchive(folderPath, path, Charset.forName("MS932"));
             if (registrations != null) {
                 LOGGER.info("読み込みに成功。");
@@ -148,17 +148,17 @@ public class LMFileLoader {
                 collectParses(entry.getName(), path, zipStream, true, registrations);
             }
         } catch (ZipException e) {
-            LOGGER.error("Zipの読み込み中にエラーが発生。 : " + path);
+            LOGGER.error("Zipの読み込み中にエラーが発生。 : {}", path);
             return null;
         } catch (IllegalArgumentException e) {
             if (e.getCause() instanceof MalformedInputException) {
-                LOGGER.error("Zip内のファイル名に日本語などが入っている可能性があります。 : " + path);
+                LOGGER.error("Zip内のファイル名に日本語などが入っている可能性があります。 : {}", path);
             } else {
-                LOGGER.error("不明なエラーによりZipが読み込めません。 : " + path);
+                LOGGER.error("不明なエラーによりZipが読み込めません。 : {}", path);
             }
             return null;
         } catch (Exception e) {
-            LOGGER.error("不明なエラーによりZipが読み込めません。 : " + path);
+            LOGGER.error("不明なエラーによりZipが読み込めません。 : {}", path);
             return null;
         }
         return registrations;
@@ -177,7 +177,7 @@ public class LMFileLoader {
                 Runnable registration = loader.parse(name, basePath, stream, isArchive);
                 if (registration != null) registrations.add(registration);
             } catch (Exception e) {
-                LOGGER.error("ローダの解析に失敗しました : " + name, e);
+                LOGGER.error("ローダの解析に失敗しました : {}", name, e);
             }
         }
     }

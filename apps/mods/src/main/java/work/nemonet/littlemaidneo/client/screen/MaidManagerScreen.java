@@ -1,7 +1,6 @@
 package work.nemonet.littlemaidneo.client.screen;
 
 import net.minecraft.ChatFormatting;
-import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -10,6 +9,7 @@ import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -36,7 +36,7 @@ public class MaidManagerScreen extends AbstractFilterableListScreen<MaidManagerS
     private final List<MaidManager.LMInfo> lmInfoList;
 
     public MaidManagerScreen(List<MaidManager.LMInfo> lmInfoList) {
-        super(Component.translatable("gui.littlemaidrebirth.maidmanager.title"));
+        super(Component.translatable("gui.littlemaidneo.maidmanager.title"));
         this.lmInfoList = lmInfoList;
     }
 
@@ -138,19 +138,17 @@ public class MaidManagerScreen extends AbstractFilterableListScreen<MaidManagerS
             this.inventoryButton = new LittleMaidScreen.IconButtonWidget(
                     0, 0,
                     new ItemStack(Items.CHEST),
-                    Component.translatable("gui.littlemaidrebirth.maidmanager.open_inventory"),
+                    Component.translatable("gui.littlemaidneo.maidmanager.open_inventory"),
                     (button) -> openInventory());
             this.callWaitButton = new Button.Builder(
                     Component.literal("call"),
-                    onPress -> {
-                        lmInfo.getEntityClient(Minecraft.getInstance().level)
-                                .filter(e -> e instanceof LittleMaidEntity)
-                                .map(e -> (LittleMaidEntity) e)
-                                .ifPresent(e -> NetworkHandler.sendCallWaitC2S(e,
-                                        TameableUtil.isWait(e)
-                                                ? C2SCallWaitPayload.State.CALL
-                                                : C2SCallWaitPayload.State.WAIT));
-                    })
+                    onPress -> lmInfo.getEntityClient(Minecraft.getInstance().level)
+                            .filter(e -> e instanceof LittleMaidEntity)
+                            .map(e -> (LittleMaidEntity) e)
+                            .ifPresent(e -> NetworkHandler.sendCallWaitC2S(e,
+                                    TameableUtil.isWait(e)
+                                            ? C2SCallWaitPayload.State.CALL
+                                            : C2SCallWaitPayload.State.WAIT)))
                     .size(30, 20)
                     .build();
         }
@@ -186,7 +184,7 @@ public class MaidManagerScreen extends AbstractFilterableListScreen<MaidManagerS
             // エンティティが存在し、8ブロック以内の場合のみインベントリを開く
             if (canInteractWithMaid()) {
                 lmInfo.getEntityClient(client.level)
-                        .ifPresent(entity -> NetworkHandler.sendOpenInventoryC2S(entity));
+                        .ifPresent(NetworkHandler::sendOpenInventoryC2S);
             }
         }
 
@@ -235,7 +233,7 @@ public class MaidManagerScreen extends AbstractFilterableListScreen<MaidManagerS
             // 4. XYZ座標と距離を表示（worldIdが空でない場合のみ）
             if (!worldId.isEmpty()) {
                 BlockPos pos = lmInfo.getEntityClient(client.level)
-                        .map(entity -> entity.blockPosition())
+                        .map(Entity::blockPosition)
                         .orElse(lmInfo.getLastPos());
 
                 var coordText = Component.literal(String.format("XYZ: %d, %d, %d",

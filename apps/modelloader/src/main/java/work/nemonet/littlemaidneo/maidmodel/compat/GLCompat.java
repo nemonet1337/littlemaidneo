@@ -13,7 +13,7 @@ public final class GLCompat {
 
     public static int mode = GL11.GL_MODELVIEW;
     public static ModelRenderer modelRenderer;
-    public static PoseStack textureStack = new PoseStack();
+    public static final PoseStack textureStack = new PoseStack();
 
     private static int renderMode;
     // 即時モード（GL_TRIANGLE_STRIP）エミュレーション用の再利用バッファ。
@@ -151,8 +151,6 @@ public final class GLCompat {
         }
     }
 
-    public static void glNormal3f(float f, float f2, float f3) {}
-
     public static void glTexCoord2f(float u, float v) {
         if (renderMode == GL11.GL_TRIANGLE_STRIP) {
             pendingU = u; pendingV = v;
@@ -226,15 +224,4 @@ public final class GLCompat {
                 .setNormal(nx, ny, nz);
     }
 
-    public static void glPushAttrib(int i) {}
-    public static void glPopAttrib() {}
-    public static void glCullFace(int i) {}
-    public static void glEnable(int i) {}
-
-    public static void dummy() {}
-    public static void dummy(int i) {}
-    public static void dummy(float a, float b) {}
-    public static void dummy(float a, float b, float c) {}
-    public static void dummy(FloatBuffer f) {}
-    public static void dummy(int i, FloatBuffer f) {}
 }

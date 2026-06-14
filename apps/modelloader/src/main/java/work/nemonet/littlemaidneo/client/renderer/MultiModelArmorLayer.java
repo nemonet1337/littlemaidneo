@@ -5,7 +5,6 @@ import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.neoforged.api.distmarker.Dist;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
 import work.nemonet.littlemaidneo.maidmodel.IModelCaps;
 import work.nemonet.littlemaidneo.multimodel.layer.MMRenderContext;
@@ -26,11 +25,9 @@ public class MultiModelArmorLayer<S extends MultiModelRenderState, M extends Mul
 
     private void renderArmorPart(PoseStack poseStack, SubmitNodeCollector submitNodeCollector, int light, S state,
                                  float headYaw, float headPitch, IHasMultiModel.Part part) {
-        IHasMultiModel mm = state.multiModel;
-        if (!mm.isArmorVisible(part)) return;
+        if (state.armorsVisible == null || !state.armorsVisible.getArmor(part).orElse(false)) return;
 
-        boolean glint = mm.isArmorGlint(part);
-        IModelCaps caps = mm.getCaps();
+        IModelCaps caps = state.caps;
 
         renderArmorLayer(poseStack, submitNodeCollector, light, state, headYaw, headPitch,
                 part, IHasMultiModel.Layer.INNER, false, caps);
@@ -45,20 +42,28 @@ public class MultiModelArmorLayer<S extends MultiModelRenderState, M extends Mul
     private void renderArmorLayer(PoseStack poseStack, SubmitNodeCollector submitNodeCollector, int light, S state,
                                   float headYaw, float headPitch,
                                   IHasMultiModel.Part part, IHasMultiModel.Layer layer, boolean isLight, IModelCaps caps) {
-        IHasMultiModel mm = state.multiModel;
-        mm.getTexture(layer, part, isLight).ifPresent(texId ->
-                mm.getModel(layer, part).ifPresent(model -> {
-                    model.showArmorParts(part.getIndex(), layer.getPartIndex());
-                    int light0 = isLight ? 0xF00000 : light;
-                    model.animateModel(caps, state.walkAnimationPos, state.walkAnimationSpeed, state.partialTick);
-                    model.setAngles(caps, state.walkAnimationPos, state.walkAnimationSpeed,
-                            state.ageInTicks, headYaw, headPitch);
-                    submitNodeCollector.submitCustomGeometry(poseStack, MultiModelRenderLayer.getDefault(texId), (snapPose, consumer) -> {
-                        PoseStack localStack = new PoseStack();
-                        localStack.last().set(snapPose);
-                        model.render(new MMRenderContext(localStack, consumer, light0, OverlayTexture.NO_OVERLAY, 1F, 1F, 1F, 1F));
-                    });
-                })
-        );
+        net.minecraft.resources.Identifier texId = null;
+        work.nemonet.littlemaidneo.multimodel.IMultiModel model = null;
+        if (layer == IHasMultiModel.Layer.INNER) {
+            texId = isLight ? state.innerTexturesLight.getArmor(part).orElse(null) : state.innerTextures.getArmor(part).orElse(null);
+            model = state.innerModels.getArmor(part).orElse(null);
+        } else {
+            texId = isLight ? state.outerTexturesLight.getArmor(part).orElse(null) : state.outerTextures.getArmor(part).orElse(null);
+            model = state.outerModels.getArmor(part).orElse(null);
+        }
+
+        if (texId != null && model != null) {
+            model.showArmorParts(part.getIndex(), layer.getPartIndex());
+            final int light0 = isLight ? 0xF00000 : light;
+            final work.nemonet.littlemaidneo.multimodel.IMultiModel finalModel = model;
+            model.animateModel(caps, state.walkAnimationPos, state.walkAnimationSpeed, state.partialTick);
+            model.setAngles(caps, state.walkAnimationPos, state.walkAnimationSpeed,
+                    state.ageInTicks, headYaw, headPitch);
+            submitNodeCollector.submitCustomGeometry(poseStack, MultiModelRenderLayer.getDefault(texId), (snapPose, consumer) -> {
+                PoseStack localStack = new PoseStack();
+                localStack.last().set(snapPose);
+                finalModel.render(new MMRenderContext(localStack, consumer, light0, OverlayTexture.NO_OVERLAY, 1F, 1F, 1F, 1F));
+            });
+        }
     }
 }

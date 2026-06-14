@@ -3,7 +3,6 @@ package work.nemonet.littlemaidneo.entity.ai.behavior;
 import com.google.common.collect.ImmutableMap;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.ai.behavior.Behavior;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
@@ -30,7 +29,7 @@ public class MaidTeleportBehavior extends AbstractMaidBehavior {
         if (tameOwner == null || tameOwner.isSpectator()) return false;
 
         double distanceSq = entity.distanceToSqr(tameOwner);
-        LMNConfig config = entity.getConfig();
+        LMNConfig config = LittleMaidEntity.getConfig();
 
         // 通常の追従テレポート条件
         double startDist = config.movement.teleportStartDistance;
@@ -47,7 +46,7 @@ public class MaidTeleportBehavior extends AbstractMaidBehavior {
         if (entity.getMaidMode() != MaidMode.ESCORT) return false;
         if (this.owner == null || !this.owner.isAlive()) return false;
 
-        LMNConfig config = entity.getConfig();
+        LMNConfig config = LittleMaidEntity.getConfig();
         double startDist = config.movement.teleportStartDistance;
 
         return entity.distanceToSqr(this.owner) >= startDist * startDist;
@@ -71,7 +70,7 @@ public class MaidTeleportBehavior extends AbstractMaidBehavior {
         if (--this.updateCountdownTicks > 0) return;
         this.updateCountdownTicks = 10; // adjustedTickDelay(10) の代わり
 
-        LMNConfig config = entity.getConfig();
+        LMNConfig config = LittleMaidEntity.getConfig();
         int width = config.movement.teleportWidth;
         int height = config.movement.teleportHeight;
         

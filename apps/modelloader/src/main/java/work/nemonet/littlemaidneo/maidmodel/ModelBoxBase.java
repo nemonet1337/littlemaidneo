@@ -2,7 +2,6 @@ package work.nemonet.littlemaidneo.maidmodel;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.neoforged.api.distmarker.Dist;
 import work.nemonet.littlemaidneo.maidmodel.compat.GLCompat;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
@@ -37,9 +36,9 @@ public abstract class ModelBoxBase {
         return this;
     }
 public static class PositionTextureVertex {
-        public Vector3f vector3D;
-        public float texturePositionX;
-        public float texturePositionY;
+        public final Vector3f vector3D;
+        public final float texturePositionX;
+        public final float texturePositionY;
 
         public PositionTextureVertex(float x, float y, float z, float u, float v) {
             this(new Vector3f(x, y, z), u, v);
@@ -63,7 +62,7 @@ public static class PositionTextureVertex {
     }
 public static class TexturedQuad {
         public PositionTextureVertex[] vertexPositions;
-        public int nVertices;
+        public final int nVertices;
         private Vector3f normalCache;
 
         public TexturedQuad(PositionTextureVertex[] vertices) {

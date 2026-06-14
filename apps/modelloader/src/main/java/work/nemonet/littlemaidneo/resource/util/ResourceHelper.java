@@ -8,7 +8,7 @@ import java.util.Optional;
 
 public class ResourceHelper {
 
-    protected static String[] defNames = {
+    protected static final String[] defNames = {
             "mob_littlemaid0.png", "mob_littlemaid1.png",
             "mob_littlemaid2.png", "mob_littlemaid3.png",
             "mob_littlemaid4.png", "mob_littlemaid5.png",

@@ -4,16 +4,16 @@ import java.util.Optional;
 
 public interface ProcessDivider<T> {
 
-    default boolean tick(int count) {
+    default void tick(int count) {
         for (int i = 0; i < count; i++) {
             if (isEnd()) {
-                return hasResult();
+                hasResult();
+                return;
             }
             if (tick()) {
-                return true;
+                return;
             }
         }
-        return false;
     }
 
     boolean tick();

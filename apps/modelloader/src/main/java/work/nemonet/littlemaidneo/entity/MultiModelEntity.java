@@ -12,20 +12,11 @@ import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
 import work.nemonet.littlemaidneo.entity.compound.MultiModelCompound;
-import work.nemonet.littlemaidneo.entity.compound.SoundPlayable;
 import work.nemonet.littlemaidneo.entity.compound.SoundPlayableCompound;
-import work.nemonet.littlemaidneo.maidmodel.IModelCaps;
-import work.nemonet.littlemaidneo.multimodel.IMultiModel;
-import work.nemonet.littlemaidneo.resource.holder.ConfigHolder;
 import work.nemonet.littlemaidneo.resource.holder.TextureHolder;
 import work.nemonet.littlemaidneo.resource.manager.LMTextureManager;
-import work.nemonet.littlemaidneo.resource.util.TextureColors;
 
-import net.minecraft.resources.Identifier;
-import org.jetbrains.annotations.Nullable;
-import java.util.Optional;
 import java.util.function.BiConsumer;
 
 import work.nemonet.littlemaidneo.common.MultiModelHolder;
@@ -41,8 +32,8 @@ public class MultiModelEntity extends PathfinderMob implements MultiModelHolder,
         modelSelectScreenOpener = opener;
     }
 
-    private MultiModelCompound multiModel;
-    private SoundPlayableCompound soundPlayer;
+    private final MultiModelCompound multiModel;
+    private final SoundPlayableCompound soundPlayer;
 
     public MultiModelEntity(EntityType<MultiModelEntity> type, Level level) {
         super(type, level);

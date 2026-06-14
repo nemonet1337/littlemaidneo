@@ -280,12 +280,8 @@ public class TargetingSystem {
             return true; // 近距離攻撃禁止対象は剣で攻撃不可
         }
 
-        if (maid.getCombatType() == BattleModeType.BOW
-                && hasRangedAttackProhibitedTag(target, targetTagManager)) {
-            return true; // 遠距離攻撃禁止対象は弓で攻撃不可
-        }
-
-        return false;
+        return maid.getCombatType() == BattleModeType.BOW
+                && hasRangedAttackProhibitedTag(target, targetTagManager); // 遠距離攻撃禁止対象は弓で攻撃不可
     }
 
     /**

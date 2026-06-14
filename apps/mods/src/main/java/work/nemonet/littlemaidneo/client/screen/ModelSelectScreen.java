@@ -15,7 +15,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
-import net.neoforged.api.distmarker.Dist;
 import work.nemonet.littlemaidneo.LittleMaidNeo;
 import work.nemonet.littlemaidneo.client.screen.component.*;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
@@ -157,10 +156,10 @@ public class ModelSelectScreen<T extends Entity & IHasMultiModel> extends Screen
         int relY = (this.height - GUI_HEIGHT) / 2;
         context.blit(RenderPipelines.GUI_TEXTURED, MODEL_SELECT_GUI_TEXTURE, relX, relY, 0.0f, 0.0f, GUI_WIDTH, GUI_HEIGHT, TEXTURE_SIZE, TEXTURE_SIZE);
 
-        context.item(guiSwitch ? ARMOR : MODEL, relX - 24, relY + GUI_HEIGHT - 16);
-        context.item(isContract ? WILD : CONTRACT, relX - 24, relY + GUI_HEIGHT - 48);
         context.blit(RenderPipelines.GUI_TEXTURED, MODEL_SELECT_GUI_TEXTURE, relX - 24, relY + GUI_HEIGHT - 16, 0.0f, 240.0f, 16, 16, TEXTURE_SIZE, TEXTURE_SIZE);
         context.blit(RenderPipelines.GUI_TEXTURED, MODEL_SELECT_GUI_TEXTURE, relX - 24, relY + GUI_HEIGHT - 48, 0.0f, 240.0f, 16, 16, TEXTURE_SIZE, TEXTURE_SIZE);
+        context.item(guiSwitch ? ARMOR : MODEL, relX - 24, relY + GUI_HEIGHT - 16);
+        context.item(isContract ? WILD : CONTRACT, relX - 24, relY + GUI_HEIGHT - 48);
 
         if (guiSwitch) {
             modelListGUI.extractRenderState(context, mouseX, mouseY, partialTicks);
@@ -193,6 +192,34 @@ public class ModelSelectScreen<T extends Entity & IHasMultiModel> extends Screen
                 });
             });
         }
+
+        // ツールチップ表示
+        int minX = relX - 24;
+        int minY = relY + GUI_HEIGHT - 16;
+        if (minX <= mouseX && mouseX < minX + 16 && minY <= mouseY && mouseY < minY + 16) {
+            renderTooltipSelf(context, Component.translatable("gui.littlemaidneo.model_select.toggle_mode"), mouseX, mouseY);
+        } else if (minX <= mouseX && mouseX < minX + 16 && minY - 32 <= mouseY && mouseY < minY - 16) {
+            renderTooltipSelf(context, Component.translatable("gui.littlemaidneo.model_select.toggle_contract"), mouseX, mouseY);
+        }
+    }
+
+    private void renderTooltipSelf(GuiGraphicsExtractor context, Component text, int x, int y) {
+        var font = this.minecraft.font;
+        String str = text.getString();
+        int width = font.width(str);
+        int height = font.lineHeight;
+        int tx = x + 12;
+        int ty = y - 12;
+
+        if (tx + width + 6 > this.width) {
+            tx = this.width - width - 6;
+        }
+        if (ty - 4 < 0) {
+            ty = 4;
+        }
+
+        context.fill(tx - 4, ty - 4, tx + width + 4, ty + height + 4, 0xf0100010);
+        context.text(font, text, tx, ty, 0xffffffff, true);
     }
 
     @Override

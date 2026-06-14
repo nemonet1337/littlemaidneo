@@ -105,7 +105,7 @@ public class TameableUtil {
         return ref != null && entity.getUUID().equals(ref.getUUID());
     }
 
-    public static boolean tryTeleportToOwner(LittleMaidEntity tameable, LivingEntity owner, int widthRange, int heightRange) {
+    public static void tryTeleportToOwner(LittleMaidEntity tameable, LivingEntity owner, int widthRange, int heightRange) {
         BlockPos ownerPos = owner.blockPosition();
         var navigation = tameable.getNavigation();
         int maxTry = LMNConfig.get().movement.maxTryTeleportCount;
@@ -124,10 +124,9 @@ public class TameableUtil {
             if (canTeleportTo(tameable, targetPos)) {
                 tameable.snapTo(targetX + 0.5, targetY, targetZ + 0.5, tameable.getYRot(), tameable.getXRot());
                 navigation.stop();
-                return true;
+                return;
             }
         }
-        return false;
     }
 
     private static boolean isOwnerForwardRange(LivingEntity owner, int x, int y, int z) {

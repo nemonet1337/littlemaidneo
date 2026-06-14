@@ -32,7 +32,7 @@ jobs:
       - name: Bump mod version
         id: version
         run: |
-          current=$(grep '^mod_version' gradle.properties | cut -d'=' -f2 | tr -d ' ')
+          current=$(grep '^mod_version' gradle.properties | cut -d'=' -f2 | tr -d ' \r')
           IFS='.' read -r major minor patch <<< "$current"
           patch=$((patch + 1))
           if [ "$patch" -gt 9 ]; then
@@ -52,8 +52,12 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add gradle.properties
-          git commit -m "chore: bump mod_version to ${{ steps.version.outputs.version }} [skip ci]"
-          git push
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: bump mod_version to ${{ steps.version.outputs.version }} [skip ci]"
+            git push
+          else
+            echo "No changes to commit"
+          fi
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

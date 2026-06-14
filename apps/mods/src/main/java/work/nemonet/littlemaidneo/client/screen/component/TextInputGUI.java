@@ -56,15 +56,21 @@ public class TextInputGUI extends GUIElement {
             cursorBlinkTicks = 0;
         }
 
+        int focusedBorderColor = 0xFFFFFFFF;
+        int borderColor = 0xFFA0A0A0;
         int borderColorToUse = isFocused() ? focusedBorderColor : borderColor;
         context.fill(x - 1, y - 1, x + width + 1, y + height + 1, borderColorToUse);
+        int backgroundColor = 0xFF000000;
         context.fill(x, y, x + width, y + height, backgroundColor);
 
         int textY = y + (height - font.lineHeight) / 2;
         String displayText = text;
+        int disabledTextColor = 0x707070;
+        int textColor = 0xE0E0E0;
         int textColorToUse = editable ? textColor : disabledTextColor;
 
         if (displayText.isEmpty() && !placeholderText.isEmpty() && !isFocused()) {
+            int placeholderColor = 0x808080;
             context.text(font, placeholderText, x + 4, textY, placeholderColor, false);
         } else if (!displayText.isEmpty()) {
             int textWidth = width - 8;

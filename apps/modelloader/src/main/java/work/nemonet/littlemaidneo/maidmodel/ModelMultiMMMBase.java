@@ -27,23 +27,24 @@ public abstract class ModelMultiMMMBase extends ModelMultiBase {
         return true;
     }
 
-    public void renderExtention(float par2, float par3, float par4, float par5, float par6, float par7) {}
-
-    protected void renderStabilizer(IModelCaps pEntityCaps, float par2, float par3,
-                                    float ticksExisted, float pheadYaw, float pheadPitch, float par7) {
-        // stabilizer rendering disabled pending texture manager port
-    }
-
-    public void changeModel(IModelCaps pEntityCaps) {}
-
-    public void buildTexture() {}
-
-    public void setDefaultPause() {}
-
     public void setDefaultPause(float par1, float par2, float pTicksExisted,
                                 float pHeadYaw, float pHeadPitch, float par6, IModelCaps pEntityCaps) {
         setDefaultPause();
     }
+
+    public void setDefaultPause() {}
+
+    protected void renderStabilizer(IModelCaps pEntityCaps, float par2, float par3,
+                                    float ticksExisted, float pheadYaw, float pheadPitch, float par7) {
+    }
+
+    public void changeModel(IModelCaps pEntityCaps) {}
+
+    public void renderFace(IModelCaps pEntityCaps, float par2, float par3, float ticksExisted,
+                           float pheadYaw, float pheadPitch, float par7, boolean pIsRender) {}
+
+    public void renderBody(IModelCaps pEntityCaps, float par2, float par3, float ticksExisted,
+                           float pheadYaw, float pheadPitch, float par7, boolean pIsRender) {}
 
     @Override
     public boolean setCapsValue(int pIndex, Object... pArg) {
@@ -78,12 +79,6 @@ public abstract class ModelMultiMMMBase extends ModelMultiBase {
         }
         return super.getCapsValue(pIndex, pArg);
     }
-
-    public void renderFace(IModelCaps pEntityCaps, float par2, float par3, float ticksExisted,
-                           float pheadYaw, float pheadPitch, float par7, boolean pIsRender) {}
-
-    public void renderBody(IModelCaps pEntityCaps, float par2, float par3, float ticksExisted,
-                           float pheadYaw, float pheadPitch, float par7, boolean pIsRender) {}
 
     public int setFaceTexture(int pIndex) {
         // texture UV shift — deferred to GL compat layer

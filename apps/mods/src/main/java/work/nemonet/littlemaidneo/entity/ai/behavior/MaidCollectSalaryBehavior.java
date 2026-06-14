@@ -9,7 +9,6 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.ai.behavior.Behavior;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.HopperBlockEntity;
@@ -92,12 +91,12 @@ public class MaidCollectSalaryBehavior extends AbstractMaidBehavior {
             return;
         }
 
-        if (!isContainerAvailable(entity) || !canCollectState(entity)) {
+        if (isContainerAvailable(entity) || !canCollectState(entity)) {
             targetContainerPos = null;
             return;
         }
 
-        if (!isInCollectRange(entity, targetContainerPos, entity.blockPosition())) {
+        if (isInCollectRange(entity, targetContainerPos, entity.blockPosition())) {
             if (moveToContainerTime++ > getConfigMaxMoveToContainerTime()) {
                 this.targetContainerPos = null;
                 return;
@@ -114,7 +113,7 @@ public class MaidCollectSalaryBehavior extends AbstractMaidBehavior {
 
     protected void moveToContainer(LittleMaidEntity entity) {
         if (targetContainerPos == null) return;
-        if (!isContainerAvailable(entity)) {
+        if (isContainerAvailable(entity)) {
             targetContainerPos = null;
             return;
         }
@@ -125,7 +124,7 @@ public class MaidCollectSalaryBehavior extends AbstractMaidBehavior {
             this.toContainerPath = navigation.createPath(targetContainerPos, 1);
             if (toContainerPath == null
                     || toContainerPath.getEndNode() == null
-                    || !isInCollectRange(entity, targetContainerPos, toContainerPath.getEndNode().asBlockPos())) {
+                    || isInCollectRange(entity, targetContainerPos, toContainerPath.getEndNode().asBlockPos())) {
                 targetContainerPos = null;
                 return;
             }
@@ -134,10 +133,10 @@ public class MaidCollectSalaryBehavior extends AbstractMaidBehavior {
     }
 
     protected boolean isInCollectRange(LittleMaidEntity entity, BlockPos containerPos, BlockPos mobPos) {
-        return Math.abs(containerPos.getX() - mobPos.getX()) <= 1
-                && Math.abs(containerPos.getZ() - mobPos.getZ()) <= 1
-                && containerPos.getY() >= mobPos.getY() - 1
-                && containerPos.getY() <= mobPos.getY() + Mth.ceil(entity.getBbHeight() - 1) + 2;
+        return Math.abs(containerPos.getX() - mobPos.getX()) > 1
+                || Math.abs(containerPos.getZ() - mobPos.getZ()) > 1
+                || containerPos.getY() < mobPos.getY() - 1
+                || containerPos.getY() > mobPos.getY() + Mth.ceil(entity.getBbHeight() - 1) + 2;
     }
 
     protected boolean collect(LittleMaidEntity entity) {
@@ -164,7 +163,7 @@ public class MaidCollectSalaryBehavior extends AbstractMaidBehavior {
     }
 
     protected boolean isContainerAvailable(LittleMaidEntity entity) {
-        return getAvailableContainer(entity).isPresent();
+        return getAvailableContainer(entity).isEmpty();
     }
 
     protected Optional<Container> getAvailableContainer(LittleMaidEntity entity) {
@@ -228,7 +227,7 @@ public class MaidCollectSalaryBehavior extends AbstractMaidBehavior {
             var nav = entity.getNavigation();
             var path = nav.createPath(pos, 1);
             if (path == null || path.getEndNode() == null
-                    || !this.isInCollectRange(entity, pos, BlockPos.containing(path.getEndNode().asVec3()))) continue;
+                    || this.isInCollectRange(entity, pos, BlockPos.containing(path.getEndNode().asVec3()))) continue;
 
             newSalaryBoxList.add(pos);
             if (distance < minDistance) {

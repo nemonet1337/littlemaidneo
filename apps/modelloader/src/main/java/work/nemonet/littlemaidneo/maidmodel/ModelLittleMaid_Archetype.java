@@ -143,8 +143,7 @@ public class ModelLittleMaid_Archetype extends ModelLittleMaidBase {
     @Override
     public void setLivingAnimations(IModelCaps pEntityCaps, float par2, float par3, float pRenderPartialTicks) {
         super.setLivingAnimations(pEntityCaps, par2, par3, pRenderPartialTicks);
-        float f3 = ModelCapsHelper.getCapsValueFloat(pEntityCaps, caps_interestedAngle, pRenderPartialTicks);
-        bipedHead.rotateAngleZ = f3;
+        bipedHead.rotateAngleZ = ModelCapsHelper.getCapsValueFloat(pEntityCaps, caps_interestedAngle, pRenderPartialTicks);
     }
 
     @Override
@@ -163,8 +162,8 @@ public class ModelLittleMaid_Archetype extends ModelLittleMaidBase {
         bipedLeftLeg.rotateAngleY = 0.0F;
 
         if (isRiding) {
-            bipedRightArm.rotateAngleX += -0.6283185F;
-            bipedLeftArm.rotateAngleX += -0.6283185F;
+            bipedRightArm.rotateAngleX -= 0.6283185F;
+            bipedLeftArm.rotateAngleX -= 0.6283185F;
             bipedRightLeg.rotateAngleX = -1.256637F;
             bipedLeftLeg.rotateAngleX = -1.256637F;
             bipedRightLeg.rotateAngleY = 0.3141593F;
@@ -197,7 +196,7 @@ public class ModelLittleMaid_Archetype extends ModelLittleMaidBase {
             f6 = 1.0F - f6;
             float f7 = mh_sin(f6 * 3.141593F);
             float f8 = mh_sin(lonGround * 3.141593F) * -(bipedHead.rotateAngleX - 0.7F) * 0.75F;
-            bipedRightArm.rotateAngleX -= (double) f7 * 1.2D + (double) f8;
+            bipedRightArm.rotateAngleX -= (float) ((double) f7 * 1.2D + (double) f8);
             bipedRightArm.rotateAngleY += bipedBody.rotateAngleY * 2.0F;
             bipedRightArm.rotateAngleZ = mh_sin(lonGround * 3.141593F) * -0.4F;
         }

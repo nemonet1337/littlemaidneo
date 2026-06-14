@@ -17,6 +17,9 @@ public class MaidLookAroundBehavior extends AbstractMaidBehavior {
 
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, LittleMaidEntity mob) {
+        if (mob.getTarget() != null) {
+            return false;
+        }
         if (mob.getRandom().nextFloat() >= 0.02F) {
             return false;
         }
@@ -39,6 +42,9 @@ public class MaidLookAroundBehavior extends AbstractMaidBehavior {
 
     @Override
     protected boolean canStillUse(ServerLevel level, LittleMaidEntity mob, long gameTime) {
+        if (mob.getTarget() != null) {
+            return false;
+        }
         return this.lookTime > 0;
     }
 

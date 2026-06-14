@@ -133,8 +133,8 @@ public class MaidCookingBehavior extends AbstractMaidBehavior implements Persist
             mob.setShiftKeyDown(false);
         }
         var navResult = ModeHelpers.approach(mob, furnacePos, 1.0, timeToRecalcPath, 10, 1.75, 2);
-        timeToRecalcPath = navResult.nextTimer;
-        if (navResult.unreachable) {
+        timeToRecalcPath = navResult.nextTimer();
+        if (navResult.unreachable()) {
             furnacePos = null;
             return;
         }
@@ -346,8 +346,6 @@ public class MaidCookingBehavior extends AbstractMaidBehavior implements Persist
 
     @Override
     public void readBehaviorData(ValueInput input) {
-        input.getLong("FurnacePos").ifPresent(posLong -> {
-            furnacePos = BlockPos.of(posLong);
-        });
+        input.getLong("FurnacePos").ifPresent(posLong -> furnacePos = BlockPos.of(posLong));
     }
 }

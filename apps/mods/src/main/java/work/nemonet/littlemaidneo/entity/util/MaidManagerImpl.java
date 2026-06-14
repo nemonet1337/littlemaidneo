@@ -1,6 +1,5 @@
 package work.nemonet.littlemaidneo.entity.util;
 
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
@@ -66,7 +65,7 @@ public class MaidManagerImpl implements MaidManager {
         
         this.maidMap.values().stream()
                 .filter(lmInfo -> lmInfo.status() == Status.ALIVE || lmInfo.status() == Status.SOUL_ENTITY)
-                .map(info -> info.getEntity())
+                .map(LMInfo::getEntity)
                 .filter(Optional::isPresent)
                 .forEach(o -> {
                     var entity = o.get();

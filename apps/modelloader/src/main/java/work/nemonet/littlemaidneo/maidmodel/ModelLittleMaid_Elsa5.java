@@ -16,7 +16,7 @@ public class ModelLittleMaid_Elsa5 extends ModelLittleMaidBase {
     protected byte headPosY;
     protected byte bodyPosY;
     protected byte legPosY;
-    protected Random rand = new Random();
+    protected final Random rand = new Random();
 
     public ModelLittleMaid_Elsa5() { this(0F); }
     public ModelLittleMaid_Elsa5(float psize) { this(psize, 0F, 64, 64); }
@@ -175,7 +175,7 @@ public class ModelLittleMaid_Elsa5 extends ModelLittleMaidBase {
         bipedBody.rotateAngleX = -0.05F; bipedBody.rotateAngleY = 0F; bipedBody.rotateAngleZ = 0F;
         mainFrame.rotateAngleX = 0F; mainFrame.rotateAngleY = 0F; mainFrame.rotateAngleZ = 0F;
 
-        bipedHead.rotateAngleZ = ModelCapsHelper.getCapsValueFloat(pEntityCaps, caps_interestedAngle, (Float)pRenderPartialTicks);
+        bipedHead.rotateAngleZ = ModelCapsHelper.getCapsValueFloat(pEntityCaps, caps_interestedAngle, pRenderPartialTicks);
         if (ModelCapsHelper.getCapsValueBoolean(pEntityCaps, caps_isLookSuger)) {
             float fe1 = rand.nextFloat() - 0.5F;
             float fe2 = rand.nextFloat() - 0.5F;
@@ -188,7 +188,7 @@ public class ModelLittleMaid_Elsa5 extends ModelLittleMaidBase {
 
         float blinkFreq = 0.16F;
         blinkFreq += 1F - (float)ModelCapsHelper.getCapsValueInt(pEntityCaps, caps_health) / 20F;
-        float f3 = (float)(entityTicksExisted + pRenderPartialTicks + entityIdFactor) * 0.01F;
+        float f3 = (entityTicksExisted + pRenderPartialTicks + entityIdFactor) * 0.01F;
         float f4 = (float)(Math.sin(f3 * 3F) + Math.sin(f3 * 17F) + Math.sin(f3 * 37F) + blinkFreq - 2.23309F);
         if (f4 < 0) {
             eyeR.setVisible(true);
@@ -277,7 +277,7 @@ public class ModelLittleMaid_Elsa5 extends ModelLittleMaidBase {
                 f6 = 1.0F - onGroundR; f6 = 1.0F - f6 * f6 * f6 * f6;
                 f7 = mh_sin(f6 * (float)Math.PI);
                 f8 = mh_sin(onGroundR * (float)Math.PI) * -(bipedHead.rotateAngleX - 0.7F) * 0.75F;
-                bipedRightArm.rotateAngleX -= (double)f7 * 1.2D + (double)f8;
+                bipedRightArm.rotateAngleX -= (float) ((double)f7 * 1.2D + (double)f8);
                 bipedRightArm.rotateAngleY += bipedBody.rotateAngleY * 2.0F;
                 bipedRightArm.rotateAngleZ = mh_sin(onGroundR * 3.141593F) * -0.4F;
             } else {
@@ -287,7 +287,7 @@ public class ModelLittleMaid_Elsa5 extends ModelLittleMaidBase {
                 f6 = 1.0F - onGroundL; f6 = 1.0F - f6 * f6 * f6 * f6;
                 f7 = mh_sin(f6 * (float)Math.PI);
                 f8 = mh_sin(onGroundL * (float)Math.PI) * -(bipedHead.rotateAngleX - 0.7F) * 0.75F;
-                bipedLeftArm.rotateAngleX -= (double)f7 * 1.2D + (double)f8;
+                bipedLeftArm.rotateAngleX -= (float) ((double)f7 * 1.2D + (double)f8);
                 bipedLeftArm.rotateAngleY += bipedBody.rotateAngleY * 2.0F;
                 bipedLeftArm.rotateAngleZ = mh_sin(onGroundL * 3.141593F) * 0.4F;
             } else {

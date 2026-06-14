@@ -12,16 +12,14 @@ import java.util.Optional;
 
 public class ClientScreenHelper {
     public static void openModelSelectScreen(Level level, MultiModelEntity entity) {
-        Minecraft.getInstance().setScreen(new ModelSelectScreen(
+        Minecraft.getInstance().setScreen(new ModelSelectScreen<>(
                 Component.translatable("screen.littlemaidneo.model_select"), level, entity));
     }
 
     public static boolean shouldShowOwnerName(LittleMaidEntity maid) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null && TameableUtil.hasTameOwner(maid) && !TameableUtil.isTameOwner(maid, mc.player)) {
-            if (mc.hitResult instanceof net.minecraft.world.phys.EntityHitResult hit && hit.getEntity() == maid) {
-                return true;
-            }
+            return mc.hitResult instanceof net.minecraft.world.phys.EntityHitResult hit && hit.getEntity() == maid;
         }
         return false;
     }

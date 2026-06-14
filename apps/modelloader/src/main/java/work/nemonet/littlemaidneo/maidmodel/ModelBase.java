@@ -15,11 +15,11 @@ public abstract class ModelBase extends AbstractModelBase {
 
     public int textureWidth = 64;
     public int textureHeight = 32;
-    public float[] onGrounds = new float[]{0.0F, 0.0F};
+    public final float[] onGrounds = new float[]{0.0F, 0.0F};
     public int dominantArm = 0;
     public boolean isRiding = false;
     public boolean isChild = true;
-    public List<ModelRenderer> boxList = new ArrayList<>();
+    public final List<ModelRenderer> boxList = new ArrayList<>();
 
     public boolean motionSitting = false;
 
@@ -46,10 +46,6 @@ public abstract class ModelBase extends AbstractModelBase {
     }
 
     @Deprecated
-    protected void setTextureOffset(String par1Str, int par2, int par3) {
-    }
-
-    @Deprecated
     public Object getTextureOffset(String par1Str) {
         return null;
     }
@@ -66,7 +62,7 @@ public abstract class ModelBase extends AbstractModelBase {
     public static int mh_bucketInt(int i, int j) { return Mth.floorDiv(i, j); }
 
     public static boolean mh_stringNullOrLengthZero(String s) {
-        return s == null || s.equals("");
+        return s == null || s.isEmpty();
     }
 
     public static int mh_getRandomIntegerInRange(Random random, int minimum, int maximum) {

@@ -144,8 +144,8 @@ public class MaidTorcherBehavior extends AbstractMaidBehavior {
             return;
         }
         var navResult = ModeHelpers.approach(mob, placePos, 1.0, recalcPathTimer, 20, 3.0, 2);
-        recalcPathTimer = navResult.nextTimer;
-        if (navResult.unreachable) {
+        recalcPathTimer = navResult.nextTimer();
+        if (navResult.unreachable()) {
             placePos = null;
             return;
         }

@@ -132,16 +132,16 @@ public class MultiModelClassTransformer {
 
         tryReplace(changed, cNode.superName, superName -> cNode.superName = superName);
 
-        cNode.fields.stream().forEach(fNode -> {
+        cNode.fields.forEach(fNode -> {
             tryReplace(changed, fNode.desc, desc -> fNode.desc = desc);
             tryReplace(changed, fNode.signature, signature -> fNode.signature = signature);
         });
 
-        cNode.methods.stream().forEach(mNode -> {
+        cNode.methods.forEach(mNode -> {
             tryReplace(changed, mNode.desc, desc -> mNode.desc = desc);
 
             if (mNode.localVariables != null) {
-                mNode.localVariables.stream().forEach(lNode -> {
+                mNode.localVariables.forEach(lNode -> {
                     if (lNode.desc != null) tryReplace(changed, lNode.desc, desc -> lNode.desc = desc);
                     if (lNode.name != null) tryReplace(changed, lNode.name, name -> lNode.name = name);
                     if (lNode.signature != null) tryReplace(changed, lNode.signature, sig -> lNode.signature = sig);
@@ -150,58 +150,62 @@ public class MultiModelClassTransformer {
 
             AbstractInsnNode aNode = mNode.instructions.getFirst();
             while (aNode != null) {
-                if (aNode instanceof FieldInsnNode fANode) {
-                    tryReplace(changed, fANode.desc, desc -> fANode.desc = desc);
-                    tryReplace(changed, fANode.name, name -> fANode.name = name);
-                    tryReplace(changed, fANode.owner, owner -> fANode.owner = owner);
-                } else if (aNode instanceof InvokeDynamicInsnNode fANode) {
-                    tryReplace(changed, fANode.desc, desc -> fANode.desc = desc);
-                    tryReplace(changed, fANode.name, name -> fANode.name = name);
-                    for (int i = 0; i < fANode.bsmArgs.length; i++) {
-                        var bsmArg = fANode.bsmArgs[i];
-                        if (bsmArg instanceof Type type) {
-                            int finalI = i;
-                            if (type.getSort() == Type.METHOD) {
-                                tryReplace(changed, type.getDescriptor(),
-                                        desc -> fANode.bsmArgs[finalI] = Type.getMethodType(desc));
+                switch (aNode) {
+                    case FieldInsnNode fANode -> {
+                        tryReplace(changed, fANode.desc, desc -> fANode.desc = desc);
+                        tryReplace(changed, fANode.name, name -> fANode.name = name);
+                        tryReplace(changed, fANode.owner, owner -> fANode.owner = owner);
+                    }
+                    case InvokeDynamicInsnNode fANode -> {
+                        tryReplace(changed, fANode.desc, desc -> fANode.desc = desc);
+                        tryReplace(changed, fANode.name, name -> fANode.name = name);
+                        for (int i = 0; i < fANode.bsmArgs.length; i++) {
+                            var bsmArg = fANode.bsmArgs[i];
+                            if (bsmArg instanceof Type type) {
+                                int finalI = i;
+                                if (type.getSort() == Type.METHOD) {
+                                    tryReplace(changed, type.getDescriptor(),
+                                            desc -> fANode.bsmArgs[finalI] = Type.getMethodType(desc));
+                                }
+                            } else if (bsmArg instanceof Handle handle) {
+                                int finalI = i;
+                                tryReplace(changed, handle.getDesc(),
+                                        desc -> fANode.bsmArgs[finalI] = new Handle(
+                                                handle.getTag(), handle.getOwner(), handle.getName(),
+                                                desc, handle.isInterface()));
                             }
-                        } else if (bsmArg instanceof Handle handle) {
-                            int finalI = i;
-                            tryReplace(changed, handle.getDesc(),
-                                    desc -> fANode.bsmArgs[finalI] = new Handle(
-                                            handle.getTag(), handle.getOwner(), handle.getName(),
-                                            desc, handle.isInterface()));
                         }
                     }
-                } else if (aNode instanceof MethodInsnNode fANode) {
-                    if (shouldRemove(fANode.owner)) {
-                        changed.set(true);
-                        aNode = aNode.getNext();
-                        if (GL_REPLACE_MODEL_RENDERER_SET.contains(fANode.name + fANode.desc)) {
-                            mNode.instructions.set(fANode, new MethodInsnNode(fANode.getOpcode(),
-                                    "work/nemonet/littlemaidneo/maidmodel/compat/GLCompat",
-                                    fANode.name, fANode.desc));
-                        } else if (GL_REPLACE_DUMMY_SET.contains(fANode.desc)) {
-                            mNode.instructions.set(fANode, new MethodInsnNode(fANode.getOpcode(),
-                                    "work/nemonet/littlemaidneo/maidmodel/compat/GLCompat",
-                                    "dummy", fANode.desc));
-                        } else {
-                            mNode.instructions.set(fANode, new MethodInsnNode(fANode.getOpcode(),
-                                    "work/nemonet/littlemaidneo/maidmodel/compat/GLCompat",
-                                    "dummy", "()V"));
+                    case MethodInsnNode fANode -> {
+                        if (shouldRemove(fANode.owner)) {
+                            changed.set(true);
+                            aNode = aNode.getNext();
+                            if (GL_REPLACE_MODEL_RENDERER_SET.contains(fANode.name + fANode.desc)) {
+                                mNode.instructions.set(fANode, new MethodInsnNode(fANode.getOpcode(),
+                                        "work/nemonet/littlemaidneo/maidmodel/compat/GLCompat",
+                                        fANode.name, fANode.desc));
+                            } else if (GL_REPLACE_DUMMY_SET.contains(fANode.desc)) {
+                                mNode.instructions.set(fANode, new MethodInsnNode(fANode.getOpcode(),
+                                        "work/nemonet/littlemaidneo/maidmodel/compat/GLCompat",
+                                        "dummy", fANode.desc));
+                            } else {
+                                mNode.instructions.set(fANode, new MethodInsnNode(fANode.getOpcode(),
+                                        "work/nemonet/littlemaidneo/maidmodel/compat/GLCompat",
+                                        "dummy", "()V"));
+                            }
+                            continue;
                         }
-                        continue;
+                        tryReplace(changed, fANode.desc, desc -> fANode.desc = desc);
+                        tryReplace(changed, fANode.name, name -> fANode.name = name);
+                        tryReplace(changed, fANode.owner, owner -> fANode.owner = owner);
                     }
-                    tryReplace(changed, fANode.desc, desc -> fANode.desc = desc);
-                    tryReplace(changed, fANode.name, name -> fANode.name = name);
-                    tryReplace(changed, fANode.owner, owner -> fANode.owner = owner);
-                } else if (aNode instanceof MultiANewArrayInsnNode fANode) {
-                    tryReplace(changed, fANode.desc, desc -> fANode.desc = desc);
-                } else if (aNode instanceof TypeInsnNode fANode) {
-                    tryReplace(changed, fANode.desc, desc -> fANode.desc = desc);
-                } else if (aNode instanceof LdcInsnNode fANode && fANode.cst instanceof Type type) {
-                    tryReplace(changed, type.getInternalName(),
-                            desc -> fANode.cst = Type.getObjectType(desc));
+                    case MultiANewArrayInsnNode fANode -> tryReplace(changed, fANode.desc, desc -> fANode.desc = desc);
+                    case TypeInsnNode fANode -> tryReplace(changed, fANode.desc, desc -> fANode.desc = desc);
+                    case LdcInsnNode fANode when fANode.cst instanceof Type type ->
+                            tryReplace(changed, type.getInternalName(),
+                                    desc -> fANode.cst = Type.getObjectType(desc));
+                    default -> {
+                    }
                 }
                 aNode = aNode.getNext();
             }

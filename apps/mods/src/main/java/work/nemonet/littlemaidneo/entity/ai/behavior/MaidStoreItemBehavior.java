@@ -7,7 +7,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.ai.behavior.Behavior;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.BarrelBlock;
@@ -63,7 +62,7 @@ public class MaidStoreItemBehavior extends AbstractMaidBehavior {
 
     public void bootBF(LittleMaidEntity entity) {
         this.count = 0;
-        float range = (float) entity.getConfig().work.searchContainerRange;
+        float range = LittleMaidEntity.getConfig().work.searchContainerRange;
         float searchRangeSq = range * range;
         blockFinder = new BlockFinderPD(
                 ImmutableList.of(entity.blockPosition().above()),

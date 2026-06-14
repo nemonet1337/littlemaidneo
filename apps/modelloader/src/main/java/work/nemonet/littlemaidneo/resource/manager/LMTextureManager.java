@@ -28,7 +28,7 @@ public class LMTextureManager {
         } else {
             textureHolder.addTexture(index, texturePath);
         }
-        if (LMNModelConfig.isDebugMode()) LOGGER.debug("Loaded Texture : " + texturePath);
+        if (LMNModelConfig.isDebugMode()) LOGGER.debug("Loaded Texture : {}", texturePath);
     }
 
     public String getArmorName(String fileName) {

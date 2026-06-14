@@ -3,8 +3,6 @@ package work.nemonet.littlemaidneo.entity.ai.behavior;
 import com.google.common.collect.ImmutableMap;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Mob;
-import net.minecraft.world.entity.ai.behavior.Behavior;
-import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.targeting.TargetTagManager;
@@ -39,21 +37,20 @@ public class MaidTargetBehavior extends AbstractMaidBehavior {
             return false;
         }
         var aroundMaids = getAroundMaids(entity);
-        TargetTagManager targetTagManager = entity;
 
         var targetOpt = TargetingSystem.selectTarget(
             new TargetingSystem.Maid(entity),
-            aroundMobs.stream().map(mob -> new TargetingSystem.Mob(mob)).toList(),
+            aroundMobs.stream().map(TargetingSystem.Mob::new).toList(),
             TameableUtil.getTameOwner(entity).map(TargetingSystem.Master::new).orElse(null),
             aroundMaids.stream().map(TargetingSystem.Maid::new).toList(),
             entity.isBloodSuck(),
-            targetTagManager
+                entity
         );
 
-        var enemies = aroundMobs.stream().map(mob -> new TargetingSystem.Mob(mob)).toList();
+        var enemies = aroundMobs.stream().map(TargetingSystem.Mob::new).toList();
         var maidWrapper = new TargetingSystem.Maid(entity);
-        if (TargetingSystem.needsEvacuation(maidWrapper, enemies, targetTagManager)) {
-            TargetingSystem.getDangerousEnemies(maidWrapper, enemies, targetTagManager).forEach(mob ->
+        if (TargetingSystem.needsEvacuation(maidWrapper, enemies, entity)) {
+            TargetingSystem.getDangerousEnemies(maidWrapper, enemies, entity).forEach(mob ->
                 entity.addFleeEntity(
                     mob.getMob(),
                     e -> !e.isAlive() || entity.distanceToSqr(e) > (TargetingConfig.getDangerousAvoidDistance() + 4) * (TargetingConfig.getDangerousAvoidDistance() + 4)

@@ -1,6 +1,0 @@
-{
-  "parent": "minecraft:item/generated",
-  "textures": {
-    "layer0": "littlemaidneo:item/little_maid_spawn_egg"
-  }
-}

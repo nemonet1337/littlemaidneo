@@ -4,7 +4,6 @@ import com.google.common.collect.ImmutableMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.ai.behavior.Behavior;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.level.pathfinder.Path;
@@ -31,25 +30,23 @@ public class MaidMoveToDropItemBehavior extends AbstractMaidBehavior {
 
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, LittleMaidEntity entity) {
-        var config = entity.getConfig();
+        var config = LittleMaidEntity.getConfig();
         
         if (entity.isEmergency() && !config.health.enableWorkInEmergency) {
             return false;
         }
 
         boolean hasOwner = TameableUtil.hasTameOwner(entity);
-        if (hasOwner) {
-            return canUse(entity);
-        } else {
+        if (!hasOwner) {
             if (!config.misc.canPickupItemByNoOwner) {
                 return false;
             }
-            return canUse(entity);
         }
+        return canUse(entity);
     }
 
     private boolean canUse(LittleMaidEntity entity) {
-        var config = entity.getConfig();
+        var config = LittleMaidEntity.getConfig();
         int freq = config.movement.pickupItemFrequency;
         if (entity.getRandom().nextFloat() > 1.0f / freq || isInventoryFull(entity)) {
             return false;
@@ -61,7 +58,7 @@ public class MaidMoveToDropItemBehavior extends AbstractMaidBehavior {
                 .findAny().orElse(null);
         if (path == null) return false;
 
-        entity.getNavigation().moveTo(path, (float) config.movement.pickupItemSpeed);
+        entity.getNavigation().moveTo(path, config.movement.pickupItemSpeed);
         return true;
     }
 
@@ -73,7 +70,7 @@ public class MaidMoveToDropItemBehavior extends AbstractMaidBehavior {
     @Override
     protected void start(ServerLevel level, LittleMaidEntity entity, long gameTime) {
         if (entity instanceof SoundPlayable) {
-            ((SoundPlayable) entity).play(LMSounds.FIND_TARGET_I);
+            entity.play(LMSounds.FIND_TARGET_I);
         }
     }
 
@@ -86,18 +83,16 @@ public class MaidMoveToDropItemBehavior extends AbstractMaidBehavior {
     }
 
     public List<ItemEntity> findAroundDropItem(LittleMaidEntity entity) {
-        var config = entity.getConfig();
-        float r = (float) config.movement.pickupItemRange;
+        var config = LittleMaidEntity.getConfig();
+        float r = config.movement.pickupItemRange;
         List<ItemEntity> rawList = entity.level().getEntitiesOfClass(ItemEntity.class,
                 entity.getBoundingBox().inflate(r, r / 4f, r),
                 item -> !item.hasPickUpDelay() && item.distanceToSqr(entity) < r * r);
 
         return TameableUtil.getTameOwner(entity)
-                .map(owner -> {
-                    return rawList.stream()
-                            .filter(item -> !isOwnerRange(item, owner))
-                            .collect(Collectors.toList());
-                })
+                .map(owner -> rawList.stream()
+                        .filter(item -> !isOwnerRange(item, owner))
+                        .collect(Collectors.toList()))
                 .orElse(rawList);
     }
 

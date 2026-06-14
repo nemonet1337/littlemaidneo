@@ -46,7 +46,7 @@ public class TextureHolder {
         if (armors.isEmpty()) return Optional.empty();
         Optional<Identifier> optional = getArmorTextureInner(layer, armorName, damagePercent, isLight);
         if (optional.isPresent()) return optional;
-        if (armors.containsKey("default") && !armorName.toLowerCase().equals("default")) {
+        if (armors.containsKey("default") && !armorName.equalsIgnoreCase("default")) {
             return getArmorTextureInner(layer, "default", damagePercent, isLight);
         }
         return armors.keySet().stream()

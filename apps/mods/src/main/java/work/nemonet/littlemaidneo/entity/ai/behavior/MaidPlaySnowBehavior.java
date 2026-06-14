@@ -6,9 +6,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.ai.behavior.Behavior;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.Snowball;
 import net.minecraft.world.item.Items;
@@ -21,9 +19,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Comparator;
 
 public class MaidPlaySnowBehavior extends AbstractMaidBehavior {
-    private final int maxCraftSnowballTime = 60;
-    private final int maxLookTargetTime = 30;
-    private final int maxWaitNextTime = 30;
     private int state;
     private int timer;
     @Nullable
@@ -93,6 +88,7 @@ public class MaidPlaySnowBehavior extends AbstractMaidBehavior {
             entity.getLookControl().setLookAt(lookAt);
 
             timer++;
+            int maxCraftSnowballTime = 60;
             if (timer >= maxCraftSnowballTime) {
                 state = 1;
                 timer = 0;
@@ -124,6 +120,7 @@ public class MaidPlaySnowBehavior extends AbstractMaidBehavior {
                 }
             }
 
+            int maxLookTargetTime = 30;
             if (timer >= maxLookTargetTime) {
                 state = 2;
                 timer = 0;
@@ -147,6 +144,7 @@ public class MaidPlaySnowBehavior extends AbstractMaidBehavior {
             }
 
             timer++;
+            int maxWaitNextTime = 30;
             if (timer >= maxWaitNextTime) {
                 state = 0;
                 timer = 0;

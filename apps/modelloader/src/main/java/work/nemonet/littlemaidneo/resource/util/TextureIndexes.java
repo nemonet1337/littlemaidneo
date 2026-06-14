@@ -47,7 +47,7 @@ public enum TextureIndexes {
                 return textureIndex;
             }
         }
-        LOGGER.warn("インデックスが存在しません。 : " + index);
+        LOGGER.warn("インデックスが存在しません。 : {}", index);
         return NONE;
     }
 }

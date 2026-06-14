@@ -7,7 +7,7 @@ import net.minecraft.client.sounds.WeighedSoundEvents;
 import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
-import net.neoforged.api.distmarker.Dist;
+
 public class LMSoundInstance implements SoundInstance {
     private final WeighedSoundEvents soundSet;
     private final Sound sound;

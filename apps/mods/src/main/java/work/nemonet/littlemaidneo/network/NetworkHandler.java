@@ -1,6 +1,5 @@
 package work.nemonet.littlemaidneo.network;
 
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.level.storage.TagValueInput;
@@ -12,6 +11,7 @@ import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
+import work.nemonet.littlemaidneo.client.ClientNetworkHandler;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel.Layer;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel.Part;
@@ -21,7 +21,6 @@ import work.nemonet.littlemaidneo.entity.targeting.TargetIdentifier;
 import work.nemonet.littlemaidneo.entity.targeting.TargetTagManager;
 import work.nemonet.littlemaidneo.entity.targeting.TargetTagManagerImpl;
 import work.nemonet.littlemaidneo.entity.targeting.TargetingSystem;
-import work.nemonet.littlemaidneo.entity.util.MaidManager;
 import work.nemonet.littlemaidneo.entity.util.MaidManagerImpl;
 import work.nemonet.littlemaidneo.entity.util.MaidMode;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
@@ -52,7 +51,7 @@ public class NetworkHandler {
                 SyncMultiModelPayload.STREAM_CODEC,
                 NetworkHandler::handleSyncMultiModelServer,
                  isClient 
-                        ? (payload, context) -> work.nemonet.littlemaidneo.client.ClientNetworkHandler.handleSyncMultiModelClient(payload, context)
+                        ? ClientNetworkHandler::handleSyncMultiModelClient
                         : (payload, context) -> {});
 
         // SyncSoundPack (bidirectional)
@@ -61,7 +60,7 @@ public class NetworkHandler {
                 SyncSoundPackPayload.STREAM_CODEC,
                 NetworkHandler::handleSyncSoundPackServer,
                  isClient
-                        ? (payload, context) -> work.nemonet.littlemaidneo.client.ClientNetworkHandler.handleSyncSoundPackClient(payload, context)
+                        ? ClientNetworkHandler::handleSyncSoundPackClient
                         : (payload, context) -> {});
 
         // LMSound (S2C only)
@@ -69,7 +68,7 @@ public class NetworkHandler {
             registrar.playToClient(
                     LMSoundPayload.TYPE,
                     LMSoundPayload.STREAM_CODEC,
-                    (payload, context) -> work.nemonet.littlemaidneo.client.ClientNetworkHandler.handleLMSoundClient(payload, context));
+                    ClientNetworkHandler::handleLMSoundClient);
         } else {
             registrar.playToClient(
                     LMSoundPayload.TYPE,
@@ -108,7 +107,7 @@ public class NetworkHandler {
                 SyncSoundConfigPayload.STREAM_CODEC,
                 NetworkHandler::handleSyncSoundConfigServer,
                  isClient
-                        ? (payload, context) -> work.nemonet.littlemaidneo.client.ClientNetworkHandler.handleSyncSoundConfigClient(payload, context)
+                        ? ClientNetworkHandler::handleSyncSoundConfigClient
                         : (payload, context) -> {});
 
         // OpenTargetTagScreen (split C2S / S2C)
@@ -120,7 +119,7 @@ public class NetworkHandler {
             registrar.playToClient(
                     OpenTargetTagScreenS2CPayload.TYPE,
                     OpenTargetTagScreenS2CPayload.STREAM_CODEC,
-                    (payload, context) -> work.nemonet.littlemaidneo.client.ClientNetworkHandler.handleOpenTargetTagScreenClient(payload, context));
+                    ClientNetworkHandler::handleOpenTargetTagScreenClient);
         } else {
             registrar.playToClient(
                     OpenTargetTagScreenS2CPayload.TYPE,
@@ -136,7 +135,7 @@ public class NetworkHandler {
             registrar.playToClient(
                     OpenMaidManagerScreenS2CPayload.TYPE,
                     OpenMaidManagerScreenS2CPayload.STREAM_CODEC,
-                    (payload, context) -> work.nemonet.littlemaidneo.client.ClientNetworkHandler.handleOpenMaidManagerScreenClient(payload, context));
+                    ClientNetworkHandler::handleOpenMaidManagerScreenClient);
         } else {
             registrar.playToClient(
                     OpenMaidManagerScreenS2CPayload.TYPE,
@@ -245,9 +244,7 @@ public static void sendSetMovingStateC2S(Entity entity, MaidMode state) {
     }
 
     private static void handleSetBloodSuckServer(C2SSetBloodSuckPayload payload, IPayloadContext context) {
-        PayloadHandlers.onOwnedMaid(context, payload.entityId(), (player, maid) -> {
-            maid.setBloodSuck(payload.isBloodSuck());
-        });
+        PayloadHandlers.onOwnedMaid(context, payload.entityId(), (player, maid) -> maid.setBloodSuck(payload.isBloodSuck()));
     }
 
     // --- C2SSetWorkItemSlotSize ---
@@ -256,9 +253,7 @@ public static void sendSetMovingStateC2S(Entity entity, MaidMode state) {
     }
 
     private static void handleSetWorkItemSlotSizeServer(C2SSetWorkItemSlotSizePayload payload, IPayloadContext context) {
-        PayloadHandlers.onOwnedMaid(context, payload.entityId(), (player, maid) -> {
-            maid.setWorkItemSlotNum(payload.num());
-        });
+        PayloadHandlers.onOwnedMaid(context, payload.entityId(), (player, maid) -> maid.setWorkItemSlotNum(payload.num()));
     }
 
     // --- C2SSetTargetTags ---
@@ -274,7 +269,7 @@ public static void sendSetMovingStateC2S(Entity entity, MaidMode state) {
             if (!(entity instanceof TargetTagManager targetTagManager)) {
                 return;
             }
-            if (!PayloadHandlers.isOwnerOrUnowned(player, entity)) {
+            if (PayloadHandlers.isOwnerOrUnowned(player, entity)) {
                 return;
             }
             targetTagManager.readTargetTags(TagValueInput.create(ProblemReporter.DISCARDING, player.level().registryAccess(), payload.tag()));
@@ -287,9 +282,7 @@ public static void sendSetMovingStateC2S(Entity entity, MaidMode state) {
     }
 
     private static void handleOpenInventoryServer(C2SOpenInventoryPayload payload, IPayloadContext context) {
-        PayloadHandlers.onOwnedMaid(context, payload.entityId(), (player, maid) -> {
-            maid.openInventory(player);
-        });
+        PayloadHandlers.onOwnedMaid(context, payload.entityId(), (player, maid) -> maid.openInventory(player));
     }
 
     // --- C2SCallWait ---
@@ -327,7 +320,7 @@ public static void sendSetMovingStateC2S(Entity entity, MaidMode state) {
             if (!(entity instanceof SoundPlayable soundPlayable)) {
                 return;
             }
-            if (!PayloadHandlers.isOwnerOrUnowned(player, entity)) {
+            if (PayloadHandlers.isOwnerOrUnowned(player, entity)) {
                 return;
             }
             LMConfigManager.INSTANCE.getConfig(payload.configName())
@@ -355,7 +348,7 @@ public static void sendSetMovingStateC2S(Entity entity, MaidMode state) {
     private static void handleOpenTargetTagScreenServer(OpenTargetTagScreenC2SPayload payload, IPayloadContext context) {
         PayloadHandlers.resolveEntity(context, payload.entityId(), Entity.class, (player, entity) -> {
             if ((!(entity instanceof TargetTagManager) && !entity.hasData(ModRegistration.TARGET_TAG_ATTACHMENT.get()))
-                    || !PayloadHandlers.isOwnerOrUnowned(player, entity)) {
+                    || PayloadHandlers.isOwnerOrUnowned(player, entity)) {
                 return;
             }
             sendOpenTargetTagScreenS2C(entity, player);

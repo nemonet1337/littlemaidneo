@@ -3,10 +3,12 @@ package work.nemonet.littlemaidneo.client;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.level.Level;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.util.ProblemReporter;
-import net.neoforged.api.distmarker.Dist;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
 import work.nemonet.littlemaidneo.client.screen.MaidManagerScreen;
 import work.nemonet.littlemaidneo.client.screen.TargetTagScreen;
@@ -111,6 +113,14 @@ public class ClientNetworkHandler {
             }
             Map<TargetIdentifier, Set<TargetingSystem.TargetTag>> targetTagMap = new HashMap<>();
             TargetTagManagerImpl.read(targetTagMap, TagValueInput.create(ProblemReporter.DISCARDING, player.level().registryAccess(), payload.nbt()));
+            for (EntityType<?> entityType : BuiltInRegistries.ENTITY_TYPE) {
+                if (entityType.getCategory() != MobCategory.MISC) {
+                    TargetIdentifier id = new TargetIdentifier(entityType);
+                    if (!targetTagMap.containsKey(id)) {
+                        targetTagMap.put(id, targetTagManager.getTargetTag(id));
+                    }
+                }
+            }
             Minecraft.getInstance().setScreen(new TargetTagScreen(entity, targetTagMap));
         });
     }

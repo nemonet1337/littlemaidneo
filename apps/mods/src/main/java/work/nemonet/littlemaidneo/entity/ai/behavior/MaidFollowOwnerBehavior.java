@@ -2,7 +2,6 @@ package work.nemonet.littlemaidneo.entity.ai.behavior;
 
 import com.google.common.collect.ImmutableMap;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.ai.behavior.Behavior;
 import net.minecraft.world.entity.ai.behavior.EntityTracker;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
@@ -47,7 +46,7 @@ public class MaidFollowOwnerBehavior extends AbstractMaidBehavior {
         }
 
         double distanceSq = entity.distanceToSqr(owner);
-        LMNConfig config = entity.getConfig();
+        LMNConfig config = LittleMaidEntity.getConfig();
 
         double followStartDist = config.movement.followStartDistance;
         double followEndDist = config.movement.followEndDistance;

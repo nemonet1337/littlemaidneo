@@ -38,8 +38,7 @@ public class LMConfigLoader implements LMLoader {
         return () -> {
             configManager.addConfig(packName, parentName, fileName, settings);
             if (LMNModelConfig.isDebugMode())
-                LOGGER.debug("Loaded Config : " + packName + "." + parentName + "." + fileName
-                        + " : Total " + settings.size());
+                LOGGER.debug("Loaded Config : {}.{}.{} : Total {}", packName, parentName, fileName, settings.size());
         };
     }
 

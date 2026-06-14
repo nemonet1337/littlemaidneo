@@ -5,11 +5,11 @@ import work.nemonet.littlemaidneo.maidmodel.compat.GLCompat;
 
 public class ModelStabilizer_WitchHat extends ModelStabilizerBase {
 
-    public static Identifier ftex = Identifier.fromNamespaceAndPath("littlemaidneo", "mob/littleMaid/ALTERNATIVE/Stabilizer_MagicHat.png");
-    public ModelRenderer WitchHat;
-    public ModelRenderer WitchHat1;
-    public ModelRenderer WitchHat2;
-    public ModelRenderer WitchHat3;
+    public static final Identifier ftex = Identifier.fromNamespaceAndPath("littlemaidneo", "mob/littleMaid/ALTERNATIVE/Stabilizer_MagicHat.png");
+    public final ModelRenderer WitchHat;
+    public final ModelRenderer WitchHat1;
+    public final ModelRenderer WitchHat2;
+    public final ModelRenderer WitchHat3;
 
     public ModelStabilizer_WitchHat() {
         textureWidth = 64;

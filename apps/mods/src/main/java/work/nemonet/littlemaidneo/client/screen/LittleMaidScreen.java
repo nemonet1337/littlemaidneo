@@ -16,10 +16,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.neoforged.api.distmarker.Dist;
 import work.nemonet.littlemaidneo.LittleMaidNeo;
-import work.nemonet.littlemaidneo.client.screen.ModelSelectScreen;
-import work.nemonet.littlemaidneo.client.screen.SoundPackSelectScreen;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.LittleMaidScreenHandler;
 import net.minecraft.ChatFormatting;
@@ -449,42 +446,36 @@ public class LittleMaidScreen
                     false);
         } else {
             float health = (owner.getHealth() / owner.getMaxHealth()) * 20F;
-            drawHealth(context, 98, 7, Mth.clamp(health - 10, 0, 10), 5);
-            drawHealth(context, 98, 16, Mth.clamp(health, 0, 10), 5);
+            drawHealth(context, 7, Mth.clamp(health - 10, 0, 10));
+            drawHealth(context, 16, Mth.clamp(health, 0, 10));
         }
     }
 
     protected void drawArmor(GuiGraphicsExtractor context) {
         float armor = owner.getArmorValue();
-        drawArmor(context, 98, 7, Mth.clamp(armor - 10, 0, 10), 5);
-        drawArmor(context, 98, 16, Mth.clamp(armor, 0, 10), 5);
+        drawArmor(context, 7, Mth.clamp(armor - 10, 0, 10));
+        drawArmor(context, 16, Mth.clamp(armor, 0, 10));
     }
 
-    // バニラの textures/gui/icons.png は 1.21 以降のスプライト化で廃止された。
-    // 旧 icons.png への blit に依存していたハート/防具アイコンを、塗りつぶし矩形で再実装する。
-    private static final int HEALTH_BG = 0xFF400A0A;
-    private static final int HEALTH_FULL = 0xFFE03030;
-    private static final int HEALTH_HALF = 0xFF7A1818;
-    private static final int ARMOR_BG = 0xFF1A1A1A;
-    private static final int ARMOR_FULL = 0xFFE0E0E0;
-    private static final int ARMOR_HALF = 0xFF808080;
+    private static final Identifier HEART_CONTAINER = Identifier.fromNamespaceAndPath("minecraft", "hud/heart/container");
+    private static final Identifier HEART_HALF = Identifier.fromNamespaceAndPath("minecraft", "hud/heart/half");
+    private static final Identifier HEART_FULL = Identifier.fromNamespaceAndPath("minecraft", "hud/heart/full");
+    private static final Identifier ARMOR_EMPTY = Identifier.fromNamespaceAndPath("minecraft", "hud/armor/empty");
+    private static final Identifier ARMOR_HALF = Identifier.fromNamespaceAndPath("minecraft", "hud/armor/half");
+    private static final Identifier ARMOR_FULL = Identifier.fromNamespaceAndPath("minecraft", "hud/armor/full");
 
     protected void drawHealth(
             GuiGraphicsExtractor context,
-            int x,
             int y,
-            float health,
-            int rowHeart) {
-        drawPointBar(context, x, y, health, rowHeart, HEALTH_BG, HEALTH_FULL, HEALTH_HALF);
+            float health) {
+        drawPointBar(context, 98, y, health, 5, HEART_CONTAINER, HEART_FULL, HEART_HALF);
     }
 
     protected void drawArmor(
             GuiGraphicsExtractor context,
-            int x,
             int y,
-            float health,
-            int rowHeart) {
-        drawPointBar(context, x, y, health, rowHeart, ARMOR_BG, ARMOR_FULL, ARMOR_HALF);
+            float health) {
+        drawPointBar(context, 98, y, health, 5, ARMOR_EMPTY, ARMOR_FULL, ARMOR_HALF);
     }
 
     private void drawPointBar(
@@ -493,16 +484,16 @@ public class LittleMaidScreen
             int y,
             float num,
             int row,
-            int bgColor,
-            int fullColor,
-            int halfColor) {
+            Identifier emptySprite,
+            Identifier fullSprite,
+            Identifier halfSprite) {
         for (int i = 0; i < row; i++) {
             int ix = x + i * 9;
-            context.fill(ix, y, ix + 8, y + 8, bgColor);
+            context.blitSprite(RenderPipelines.GUI_TEXTURED, emptySprite, ix, y, 9, 9);
             if (1 < num) {
-                context.fill(ix, y, ix + 8, y + 8, fullColor);
+                context.blitSprite(RenderPipelines.GUI_TEXTURED, fullSprite, ix, y, 9, 9);
             } else if (0 < num) {
-                context.fill(ix, y, ix + 4, y + 8, halfColor);
+                context.blitSprite(RenderPipelines.GUI_TEXTURED, halfSprite, ix, y, 9, 9);
             }
             num -= 2;
         }

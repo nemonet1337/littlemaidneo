@@ -83,8 +83,8 @@ public class MaidRipperBehavior extends AbstractMaidBehavior {
             return;
         }
         var navResult = ModeHelpers.approach(mob, target, 1.0f, timeToRecalcPath, 10, 2.5, 1);
-        timeToRecalcPath = navResult.nextTimer;
-        if (navResult.unreachable) {
+        timeToRecalcPath = navResult.nextTimer();
+        if (navResult.unreachable()) {
             this.shearable.remove();
             this.timeToIgnore = 0;
             return;

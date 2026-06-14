@@ -33,9 +33,7 @@ public class ModelRenderer {
         ModelRenderer.buffer = buf.getVanillaVertexConsumer();
         ModelRenderer.light = light;
         ModelRenderer.overlay = overlay;
-        ModelRenderer.red = red;
-        ModelRenderer.green = green;
-        ModelRenderer.blue = blue;
+        GLCompat.glColor3f(red, green, blue);
         ModelRenderer.alpha = alpha;
     }
 
@@ -50,15 +48,15 @@ public class ModelRenderer {
     public float rotateAngleY;
     public float rotateAngleZ;
     protected boolean compiled;
-    protected int displayList;
+    protected final int displayList;
     public boolean mirror;
     public boolean showModel;
-    public boolean isHidden;
+    public final boolean isHidden;
     public boolean isRendering;
-    public List<ModelBoxBase> cubeList;
+    public final List<ModelBoxBase> cubeList;
     public List<ModelRenderer> childModels;
     public final String boxName;
-    protected ModelBase baseModel;
+    protected final ModelBase baseModel;
     public ModelRenderer pearent;
     public float offsetX;
     public float offsetY;
@@ -78,10 +76,10 @@ public class ModelRenderer {
     public static final int RotZXY = 4;
     public static final int RotZYX = 5;
 
-    protected ItemStack itemstack;
+    protected final ItemStack itemstack;
 
-    public boolean adjust;
-    public FloatBuffer matrix;
+    public final boolean adjust;
+    public final FloatBuffer matrix;
     public boolean isInvertX;
 
     // matrix の読み戻しは loadMatrix() を使う部品（Arms/HeadTop/HeadMount 等）でのみ必要。
@@ -271,11 +269,11 @@ public class ModelRenderer {
         if (childModels != null) childModels.clear();
     }
 
-    public boolean renderItems(ModelMultiBase pModelMulti, IModelCaps pEntityCaps, boolean pRealBlock, int pIndex) {
-        return true;
+    public void renderItems(ModelMultiBase pModelMulti, IModelCaps pEntityCaps, boolean pRealBlock, int pIndex) {
     }
 
-    public void renderItemsHead(ModelMultiBase pModelMulti, IModelCaps pEntityCaps) {}
+    public void renderItemsHead(ModelMultiBase pModelMulti, IModelCaps pEntityCaps) {
+    }
 
     public void setRotatePriority(int pValue) { rotatePriority = pValue; }
 
@@ -364,23 +362,45 @@ public class ModelRenderer {
     public float getRotateAngleX() { return rotateAngleX; }
     public float getRotateAngleDegX() { return rotateAngleX * radFactor; }
     public float setRotateAngleX(float value) { return rotateAngleX = value; }
-    public float setRotateAngleDegX(float value) { return rotateAngleX = value * degFactor; }
-    public float addRotateAngleX(float value) { return rotateAngleX += value; }
-    public float addRotateAngleDegX(float value) { return rotateAngleX += value * degFactor; }
+    public void setRotateAngleDegX(float value) {
+        rotateAngleX = value * degFactor;
+    }
+    public void addRotateAngleX(float value) {
+        rotateAngleX += value;
+    }
+    public void addRotateAngleDegX(float value) {
+        rotateAngleX += value * degFactor;
+    }
 
     public float getRotateAngleY() { return rotateAngleY; }
     public float getRotateAngleDegY() { return rotateAngleY * radFactor; }
-    public float setRotateAngleY(float value) { return rotateAngleY = value; }
-    public float setRotateAngleDegY(float value) { return rotateAngleY = value * degFactor; }
-    public float addRotateAngleY(float value) { return rotateAngleY += value; }
-    public float addRotateAngleDegY(float value) { return rotateAngleY += value * degFactor; }
+    public void setRotateAngleY(float value) {
+        rotateAngleY = value;
+    }
+    public void setRotateAngleDegY(float value) {
+        rotateAngleY = value * degFactor;
+    }
+    public void addRotateAngleY(float value) {
+        rotateAngleY += value;
+    }
+    public void addRotateAngleDegY(float value) {
+        rotateAngleY += value * degFactor;
+    }
 
     public float getRotateAngleZ() { return rotateAngleZ; }
     public float getRotateAngleDegZ() { return rotateAngleZ * radFactor; }
-    public float setRotateAngleZ(float value) { return rotateAngleZ = value; }
-    public float setRotateAngleDegZ(float value) { return rotateAngleZ = value * degFactor; }
-    public float addRotateAngleZ(float value) { return rotateAngleZ += value; }
-    public float addRotateAngleDegZ(float value) { return rotateAngleZ += value * degFactor; }
+    public void setRotateAngleZ(float value) {
+        rotateAngleZ = value;
+    }
+    public void setRotateAngleDegZ(float value) {
+        rotateAngleZ = value * degFactor;
+    }
+    public void addRotateAngleZ(float value) {
+        rotateAngleZ += value;
+    }
+    public void addRotateAngleDegZ(float value) {
+        rotateAngleZ += value * degFactor;
+    }
 
     public ModelRenderer setRotateAngle(float x, float y, float z) {
         rotateAngleX = x; rotateAngleY = y; rotateAngleZ = z; return this;
@@ -395,12 +415,18 @@ public class ModelRenderer {
     public float addRotationPointX(float value) { return rotationPointX += value; }
 
     public float getRotationPointY() { return rotationPointY; }
-    public float setRotationPointY(float value) { return rotationPointY = value; }
-    public float addRotationPointY(float value) { return rotationPointY += value; }
+    public void setRotationPointY(float value) {
+        rotationPointY = value;
+    }
+    public void addRotationPointY(float value) {
+        rotationPointY += value;
+    }
 
     public float getRotationPointZ() { return rotationPointZ; }
     public float setRotationPointZ(float value) { return rotationPointZ = value; }
-    public float addRotationPointZ(float value) { return rotationPointZ += value; }
+    public void addRotationPointZ(float value) {
+        rotationPointZ += value;
+    }
 
     public ModelRenderer setScale(float pX, float pY, float pZ) {
         scaleX = pX; scaleY = pY; scaleZ = pZ; return this;

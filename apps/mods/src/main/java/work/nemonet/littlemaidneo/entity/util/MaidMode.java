@@ -44,7 +44,7 @@ public enum MaidMode {
      * 既存ペイロード（{@code ByteBufCodecs.VAR_INT.map(...)}）と同一表現で互換。
      */
     public static final StreamCodec<ByteBuf, MaidMode> STREAM_CODEC =
-            ByteBufCodecs.VAR_INT.map(id -> fromId(id), MaidMode::getId);
+            ByteBufCodecs.VAR_INT.map(MaidMode::fromId, MaidMode::getId);
 
     public String getName() {
         return name;

@@ -2,7 +2,6 @@ package work.nemonet.littlemaidneo.entity.compound;
 
 import net.minecraft.world.entity.Entity;
 import net.minecraft.resources.Identifier;
-import net.neoforged.api.distmarker.Dist;
 import work.nemonet.littlemaidneo.maidmodel.IModelCaps;
 import work.nemonet.littlemaidneo.multimodel.IMultiModel;
 import work.nemonet.littlemaidneo.resource.holder.TextureHolder;
@@ -57,7 +56,7 @@ boolean isArmorGlint(Part part);
         }
 
         public boolean isArmor() {
-            return isArmor;
+            return !isArmor;
         }
     }
 

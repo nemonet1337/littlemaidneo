@@ -158,7 +158,7 @@ public final class PlayerEventHandler {
     }
 
     private static void migrateWorldMaidSoulState(ServerPlayer player) {
-        WorldMaidSoulState worldMaidSoulState = WorldMaidSoulState.getWorldMaidSoulState((ServerLevel) player.level());
+        WorldMaidSoulState worldMaidSoulState = WorldMaidSoulState.getWorldMaidSoulState(player.level());
         var attachment = player.getData(ModRegistration.MAID_MANAGER_ATTACHMENT.get());
         worldMaidSoulState.get(player.getUUID())
                 .forEach(attachment::registerMaid);

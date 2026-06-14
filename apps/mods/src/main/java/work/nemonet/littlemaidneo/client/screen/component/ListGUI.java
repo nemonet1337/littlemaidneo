@@ -123,10 +123,7 @@ public class ListGUI<T extends GUIElement> extends GUIElement {
             selectBox.click(mouseX, mouseY);
         }
         Optional<T> e = getElement(mouseX, mouseY);
-        if (e.isPresent()) {
-            return e.get().mouseClicked(event, handled);
-        }
-        return false;
+        return e.map(t -> t.mouseClicked(event, handled)).orElse(false);
     }
 
     @Override
@@ -161,10 +158,7 @@ public class ListGUI<T extends GUIElement> extends GUIElement {
     public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
         double mouseX = event.x(); double mouseY = event.y();
         Optional<T> e = getElement(mouseX, mouseY);
-        if (e.isPresent()) {
-            return e.get().mouseDragged(event, deltaX, deltaY);
-        }
-        return false;
+        return e.map(t -> t.mouseDragged(event, deltaX, deltaY)).orElse(false);
     }
 
     @Override
@@ -198,10 +192,7 @@ public class ListGUI<T extends GUIElement> extends GUIElement {
     @Override
     public boolean isMouseOver(double mouseX, double mouseY) {
         Optional<T> e = getElement(mouseX, mouseY);
-        if (e.isPresent()) {
-            return e.get().isMouseOver(mouseX, mouseY);
-        }
-        return false;
+        return e.map(t -> t.isMouseOver(mouseX, mouseY)).orElse(false);
     }
 
     public void setElements(Collection<T> newElements) {

@@ -38,6 +38,17 @@ public class MaidJobManager {
         RULES.add(new JobRule(JOB_COMBAT, stack -> stack.has(DataComponents.WEAPON), 0));
         RULES.add(new JobRule(JOB_COMBAT, stack -> stack.getItem() instanceof AxeItem, 0));
         RULES.add(new JobRule(JOB_COMBAT, stack -> stack.getItem() instanceof IRangedWeapon, 0));
+        RULES.add(new JobRule(JOB_COMBAT, stack -> {
+            var modifiers = stack.getAttributeModifiers();
+            if (modifiers != null) {
+                for (var entry : modifiers.modifiers()) {
+                    if (entry.attribute().is(net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }, 0));
 
         // Cooking
         RULES.add(new JobRule(JOB_COOKING, stack -> stack.is(LMTags.Items.COOKING_MODE), 400));

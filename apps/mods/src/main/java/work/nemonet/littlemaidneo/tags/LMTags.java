@@ -31,10 +31,10 @@ public class LMTags {
     }
 
     public static class Blocks {
-        public static final TagKey<Block> MAID_ALTER_COMPONENT_BLOCKS = register("maid_alter_component_blocks");
+        public static final TagKey<Block> MAID_ALTER_COMPONENT_BLOCKS = register();
 
-        private static TagKey<Block> register(String id) {
-            return TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, id));
+        private static TagKey<Block> register() {
+            return TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, "maid_alter_component_blocks"));
         }
     }
 

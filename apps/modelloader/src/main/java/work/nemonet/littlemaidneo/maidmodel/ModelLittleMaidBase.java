@@ -178,7 +178,7 @@ public abstract class ModelLittleMaidBase extends ModelMultiMMMBase {
                 f6 = 1.0F - onGrounds[1]; f6 *= f6; f6 *= f6; f6 = 1.0F - f6;
                 f7 = mh_sin(f6 * (float) Math.PI);
                 f8 = mh_sin(onGrounds[1] * (float) Math.PI) * -(bipedHead.rotateAngleX - 0.7F) * 0.75F;
-                bipedLeftArm.rotateAngleX -= (double) f7 * 1.2D + (double) f8;
+                bipedLeftArm.rotateAngleX -= (float) ((double) f7 * 1.2D + (double) f8);
                 bipedLeftArm.rotateAngleY += bipedTorso.rotateAngleY * 2.0F;
                 bipedLeftArm.setRotateAngleZ(mh_sin(onGrounds[1] * 3.141593F) * 0.4F);
             } else {
@@ -234,9 +234,6 @@ public abstract class ModelLittleMaidBase extends ModelMultiMMMBase {
             }
         }
     }
-
-    @Override
-    public void setDefaultPause() {}
 
     @Override
     public void setDefaultPause(float par1, float par2, float pTicksExisted,

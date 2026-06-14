@@ -1,14 +1,12 @@
 package work.nemonet.littlemaidneo.util;
 
 import com.google.common.collect.Queues;
-import com.google.common.collect.Sets;
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.world.level.Level;
 
 /**
  * ブロック探索ロジック

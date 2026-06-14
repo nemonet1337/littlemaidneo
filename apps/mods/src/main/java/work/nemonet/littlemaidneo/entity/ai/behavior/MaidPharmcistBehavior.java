@@ -76,8 +76,7 @@ public class MaidPharmcistBehavior extends AbstractMaidBehavior implements Persi
         if (mob.isStrike()) return false;
         if (this.brewingStandPos == null) return false;
         var tileOpt = getBrewingStand(mob, brewingStandPos);
-        if (tileOpt.isEmpty()) return false;
-        return hasBrewingWork(mob, tileOpt.get());
+        return tileOpt.filter(itemStacks -> hasBrewingWork(mob, itemStacks)).isPresent();
     }
 
     @Override
@@ -88,13 +87,12 @@ public class MaidPharmcistBehavior extends AbstractMaidBehavior implements Persi
         var tile = tileOpt.get();
 
         var navResult = ModeHelpers.approach(mob, brewingStandPos, 1.0, recalcPathTimer, 10, 3.0, 1);
-        recalcPathTimer = navResult.nextTimer;
-        if (navResult.unreachable) {
+        recalcPathTimer = navResult.nextTimer();
+        if (navResult.unreachable()) {
             brewingStandPos = null;
             return;
         }
         if (mob.distanceToSqr(brewingStandPos.getX() + 0.5, brewingStandPos.getY(), brewingStandPos.getZ() + 0.5) > 3 * 3) {
-            return;
         } else {
             mob.getNavigation().stop();
             mob.getLookControl().setLookAt(brewingStandPos.getX() + 0.5, brewingStandPos.getY() + 0.5, brewingStandPos.getZ() + 0.5, 30.0f, 30.0f);
@@ -326,8 +324,6 @@ public class MaidPharmcistBehavior extends AbstractMaidBehavior implements Persi
 
     @Override
     public void readBehaviorData(ValueInput input) {
-        input.getLong("BrewingStandPos").ifPresent(posLong -> {
-            brewingStandPos = BlockPos.of(posLong);
-        });
+        input.getLong("BrewingStandPos").ifPresent(posLong -> brewingStandPos = BlockPos.of(posLong));
     }
 }

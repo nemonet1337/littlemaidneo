@@ -14,7 +14,7 @@ import java.util.Map;
 
 public abstract class ModelMultiBase extends ModelBase implements IModelCaps, IMultiModel {
 
-    public float[] heldItem = new float[]{0.0F, 0.0F};
+    public final float[] heldItem = new float[]{0.0F, 0.0F};
     public boolean aimedBow;
     public boolean isSneak;
     public boolean isWait;
@@ -29,7 +29,7 @@ public abstract class ModelMultiBase extends ModelBase implements IModelCaps, IM
     public int entityTicksExisted;
     public float scaleFactor = 0.9375F;
 
-    private final Map<String, Integer> fcapsmap = new HashMap<String, Integer>() {{
+    private final Map<String, Integer> fcapsmap = new HashMap<>() {{
         put("onGround", caps_onGround);
         put("isRiding", caps_isRiding);
         put("isSneak", caps_isSneak);

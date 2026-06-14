@@ -5,7 +5,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.entity.ai.behavior.Behavior;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.item.ItemStack;
 import work.nemonet.littlemaidneo.config.LMNConfig;
@@ -49,7 +48,7 @@ public class MaidHealSelfBehavior extends AbstractMaidBehavior {
     @Override
     protected void tick(ServerLevel level, LittleMaidEntity entity, long gameTime) {
         if (0 < cool--) return;
-        cool = entity.getConfig().health.healInterval;
+        cool = LittleMaidEntity.getConfig().health.healInterval;
 
         var healItem = getHealItem(entity, healItemSlot);
         if (!isHealItem(healItem)) {
@@ -60,7 +59,7 @@ public class MaidHealSelfBehavior extends AbstractMaidBehavior {
     }
 
     private void heal(LittleMaidEntity entity, ItemStack healItem) {
-        entity.heal(entity.getConfig().health.healAmount);
+        entity.heal(LittleMaidEntity.getConfig().health.healAmount);
         consumeHealItem(entity, healItem);
         entity.playSound(SoundEvents.ITEM_PICKUP, 1.0F, entity.getRandom().nextFloat() * 0.1F + 1.0F);
         entity.swing(InteractionHand.MAIN_HAND);

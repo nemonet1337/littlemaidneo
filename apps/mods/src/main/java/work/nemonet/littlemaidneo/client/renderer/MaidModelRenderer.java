@@ -9,7 +9,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.item.Items;
-import net.neoforged.api.distmarker.Dist;
+import net.minecraft.world.item.ItemStack;
 import work.nemonet.littlemaidneo.LittleMaidNeo;
 import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
@@ -46,6 +46,8 @@ public class MaidModelRenderer extends MobRenderer<LittleMaidEntity, MaidRenderS
         state.mainArm = entity.getMainArm();
         state.mainHandItem = entity.getMainHandItem();
         state.offHandItem = entity.getOffhandItem();
+        state.walkAnimationPos = entity.walkAnimation.position(partialTick);
+        state.walkAnimationSpeed = entity.walkAnimation.speed(partialTick);
         entity.getModel(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD)
                 .filter(m -> m instanceof ModelMultiBase)
                 .ifPresent(m -> syncCaps(entity, (ModelMultiBase) m, partialTick));
@@ -110,8 +112,19 @@ public class MaidModelRenderer extends MobRenderer<LittleMaidEntity, MaidRenderS
         model.setCapsValue(caps_isRiding, entity.isPassenger());
         model.setCapsValue(caps_isSneak, entity.isShiftKeyDown());
         model.setCapsValue(caps_isChild, entity.isBaby());
-        model.setCapsValue(caps_heldItemLeft, 0F);
-        model.setCapsValue(caps_heldItemRight, 0F);
+        
+        ItemStack mainHand = entity.getMainHandItem();
+        ItemStack offHand = entity.getOffhandItem();
+        float mainHandVal = mainHand.isEmpty() ? 0F : 1.0F;
+        float offHandVal = offHand.isEmpty() ? 0F : 1.0F;
+        if (entity.getMainArm() == HumanoidArm.RIGHT) {
+            model.setCapsValue(caps_heldItemRight, mainHandVal);
+            model.setCapsValue(caps_heldItemLeft, offHandVal);
+        } else {
+            model.setCapsValue(caps_heldItemRight, offHandVal);
+            model.setCapsValue(caps_heldItemLeft, mainHandVal);
+        }
+        
         model.setCapsValue(caps_aimedBow, false);
         model.setCapsValue(caps_entityIdFactor, 0F);
         model.setCapsValue(caps_ticksExisted, entity.tickCount);

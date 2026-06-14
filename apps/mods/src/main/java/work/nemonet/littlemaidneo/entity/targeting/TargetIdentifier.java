@@ -27,7 +27,7 @@ public class TargetIdentifier {
      */
     public static Optional<TargetIdentifier> tryParse(String id) {
         return EntityType.byString(id)
-                .map(entityType -> new TargetIdentifier(entityType));
+                .map(TargetIdentifier::new);
     }
 
     public EntityType<?> getEntityType() {

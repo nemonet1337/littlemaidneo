@@ -63,7 +63,7 @@ public final class MaidCombat {
             mob.play(LMSounds.HURT_SNOW);
             return false;
         }
-        LMNConfig config = mob.getConfig();
+        LMNConfig config = LittleMaidEntity.getConfig();
         if (config.health.nonMobDamageImmunity && source.getEntity() == null) {
             return false;
         }
@@ -147,7 +147,7 @@ public final class MaidCombat {
                     xDiff,
                     yDiff + horizonLen * 0.025,
                     zDiff,
-                    pullProgress * 3.0f * mob.getConfig().work.archerShootVelocityFactor,
+                    pullProgress * 3.0f * LittleMaidEntity.getConfig().work.archerShootVelocityFactor,
                     14 - 2 * 4);
             mob.playSound(
                     SoundEvents.ARROW_SHOOT,

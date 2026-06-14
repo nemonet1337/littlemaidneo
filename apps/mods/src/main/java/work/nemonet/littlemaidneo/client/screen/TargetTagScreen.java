@@ -1,18 +1,11 @@
 package work.nemonet.littlemaidneo.client.screen;
 
-import net.neoforged.api.distmarker.Dist;
 
-
-
-import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Tooltip;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.input.CharacterEvent;
-import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
@@ -186,18 +179,18 @@ public class TargetTagScreen extends AbstractFilterableListScreen<TargetTagScree
 
             // 攻撃ボタン
             this.buttons.add(new LittleMaidScreen.IconButtonWidget(0, 0, this.attackState.icon,
-                    Component.translatable("gui.littlemaidrebirth.target_tag.tags." + this.attackState.translationKey),
+                    Component.translatable("gui.littlemaidneo.target_tag.tags." + this.attackState.translationKey),
                     (b) -> this.attackState = this.attackState.next()));
 
             // 武器ボタン
             this.buttons.add(new LittleMaidScreen.IconButtonWidget(0, 0, this.weaponState.icon,
-                    Component.translatable("gui.littlemaidrebirth.target_tag.tags." + this.weaponState.translationKey),
+                    Component.translatable("gui.littlemaidneo.target_tag.tags." + this.weaponState.translationKey),
                     (b) -> this.weaponState = this.weaponState.next()));
 
             // 接近ボタン
             this.buttons.add(new LittleMaidScreen.IconButtonWidget(0, 0, this.approachState.icon,
                     Component
-                            .translatable("gui.littlemaidrebirth.target_tag.tags." + this.approachState.translationKey),
+                            .translatable("gui.littlemaidneo.target_tag.tags." + this.approachState.translationKey),
                     (b) -> this.approachState = this.approachState.next()));
         }
 
@@ -243,10 +236,10 @@ public class TargetTagScreen extends AbstractFilterableListScreen<TargetTagScree
             int buttonX = this.x;
 
             // 攻撃ボタンの状態を更新
-            LittleMaidScreen.IconButtonWidget attackButton = (LittleMaidScreen.IconButtonWidget) buttons.get(0);
+            LittleMaidScreen.IconButtonWidget attackButton = (LittleMaidScreen.IconButtonWidget) buttons.getFirst();
             attackButton.setIconItem(attackState.icon);
             attackButton.setTooltip(Tooltip.create(
-                    Component.translatable("gui.littlemaidrebirth.target_tag.tags." + attackState.translationKey)));
+                    Component.translatable("gui.littlemaidneo.target_tag.tags." + attackState.translationKey)));
             attackButton.setPosition(buttonX, buttonY);
             attackButton.extractRenderState(context, mouseX, mouseY, delta);
             buttonX += attackButton.getWidth();
@@ -255,7 +248,7 @@ public class TargetTagScreen extends AbstractFilterableListScreen<TargetTagScree
             LittleMaidScreen.IconButtonWidget weaponButton = (LittleMaidScreen.IconButtonWidget) buttons.get(1);
             weaponButton.setIconItem(weaponState.icon);
             weaponButton.setTooltip(Tooltip.create(
-                    Component.translatable("gui.littlemaidrebirth.target_tag.tags." + weaponState.translationKey)));
+                    Component.translatable("gui.littlemaidneo.target_tag.tags." + weaponState.translationKey)));
             weaponButton.setPosition(buttonX, buttonY);
             weaponButton.extractRenderState(context, mouseX, mouseY, delta);
             buttonX += weaponButton.getWidth();
@@ -264,7 +257,7 @@ public class TargetTagScreen extends AbstractFilterableListScreen<TargetTagScree
             LittleMaidScreen.IconButtonWidget approachButton = (LittleMaidScreen.IconButtonWidget) buttons.get(2);
             approachButton.setIconItem(approachState.icon);
             approachButton.setTooltip(Tooltip.create(
-                    Component.translatable("gui.littlemaidrebirth.target_tag.tags." + approachState.translationKey)));
+                    Component.translatable("gui.littlemaidneo.target_tag.tags." + approachState.translationKey)));
             approachButton.setPosition(buttonX, buttonY);
             approachButton.extractRenderState(context, mouseX, mouseY, delta);
         }

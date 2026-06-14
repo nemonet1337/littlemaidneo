@@ -64,14 +64,16 @@ public class LMLanguageProvider extends LanguageProvider {
             add("gui.littlemaidneo.littlemaid.tooltip.setting_work_item_slot", "Work item slot setting - the maid does not store \"items in this slot\" in the chest.");
             add("gui.littlemaidneo.littlemaid.tooltip.strike_warning", "On strike! Give sugar (salary) to resume work.");
 
-            add("gui.littlemaidneo.target_tag.tags.attack_prohibited", "Attack Prohibited");
-            add("gui.littlemaidneo.target_tag.tags.preemptive_attack_prohibited", "Preemptive Attack Prohibited");
-            add("gui.littlemaidneo.target_tag.tags.preemptive_attack_allowed", "Preemptive Attack Allowed");
-            add("gui.littlemaidneo.target_tag.tags.no_weapon_restriction", "No Weapon Restriction");
-            add("gui.littlemaidneo.target_tag.tags.melee_weapon_prohibited", "Melee Weapon Prohibited");
-            add("gui.littlemaidneo.target_tag.tags.ranged_weapon_prohibited", "Ranged Weapon Prohibited");
-            add("gui.littlemaidneo.target_tag.tags.approach_allowed", "Approach Allowed");
-            add("gui.littlemaidneo.target_tag.tags.approach_prohibited", "Approach Prohibited");
+            add("gui.littlemaidneo.target_tag.tags.attack_prohibited", "Do Not Attack (Peaceful)");
+            add("gui.littlemaidneo.target_tag.tags.preemptive_attack_prohibited", "Counterattack Only (Passive)");
+            add("gui.littlemaidneo.target_tag.tags.preemptive_attack_allowed", "Attack Preemptively (Active)");
+            add("gui.littlemaidneo.target_tag.tags.no_weapon_restriction", "Use All Weapons");
+            add("gui.littlemaidneo.target_tag.tags.melee_weapon_prohibited", "Do Not Use Melee Weapons");
+            add("gui.littlemaidneo.target_tag.tags.ranged_weapon_prohibited", "Do Not Use Ranged Weapons");
+            add("gui.littlemaidneo.target_tag.tags.approach_allowed", "Approach");
+            add("gui.littlemaidneo.target_tag.tags.approach_prohibited", "Do Not Approach");
+            add("gui.littlemaidneo.model_select.toggle_mode", "Toggle Select Mode (Maid / Armor)");
+            add("gui.littlemaidneo.model_select.toggle_contract", "Toggle Contract Status (Contract / Wild)");
 
             add("gui.littlemaidneo.maidmanager.open_inventory", "Inventory");
 
@@ -146,14 +148,16 @@ public class LMLanguageProvider extends LanguageProvider {
             add("gui.littlemaidneo.littlemaid.tooltip.setting_work_item_slot", "お仕事アイテムスロット設定―メイドさんは\"このスロットのアイテム\"をチェストに仕舞わない");
             add("gui.littlemaidneo.littlemaid.tooltip.strike_warning", "ストライキ中！砂糖（お給料）をあげてください。");
 
-            add("gui.littlemaidneo.target_tag.tags.attack_prohibited", "攻撃禁止");
-            add("gui.littlemaidneo.target_tag.tags.preemptive_attack_prohibited", "先制攻撃禁止");
-            add("gui.littlemaidneo.target_tag.tags.preemptive_attack_allowed", "先制攻撃許可");
-            add("gui.littlemaidneo.target_tag.tags.no_weapon_restriction", "武器制限なし");
-            add("gui.littlemaidneo.target_tag.tags.melee_weapon_prohibited", "近距離武器禁止");
-            add("gui.littlemaidneo.target_tag.tags.ranged_weapon_prohibited", "遠距離武器禁止");
-            add("gui.littlemaidneo.target_tag.tags.approach_allowed", "接近許可");
-            add("gui.littlemaidneo.target_tag.tags.approach_prohibited", "接近禁止");
+            add("gui.littlemaidneo.target_tag.tags.attack_prohibited", "攻撃しない (平和的)");
+            add("gui.littlemaidneo.target_tag.tags.preemptive_attack_prohibited", "反撃のみ (パッシブ)");
+            add("gui.littlemaidneo.target_tag.tags.preemptive_attack_allowed", "先制攻撃する (アクティブ)");
+            add("gui.littlemaidneo.target_tag.tags.no_weapon_restriction", "すべての武器を使用");
+            add("gui.littlemaidneo.target_tag.tags.melee_weapon_prohibited", "近接武器を使用しない");
+            add("gui.littlemaidneo.target_tag.tags.ranged_weapon_prohibited", "遠距離武器を使用しない");
+            add("gui.littlemaidneo.target_tag.tags.approach_allowed", "近づく");
+            add("gui.littlemaidneo.target_tag.tags.approach_prohibited", "近づかない");
+            add("gui.littlemaidneo.model_select.toggle_mode", "テクスチャ選択モード切り替え (メイド/アーマー)");
+            add("gui.littlemaidneo.model_select.toggle_contract", "契約状態切り替え (契約/野生)");
 
             add("gui.littlemaidneo.maidmanager.open_inventory", "インベントリ");
 

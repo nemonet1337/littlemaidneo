@@ -36,7 +36,7 @@ public class LMModelManager {
             ModelMultiBase outer = constructor.newInstance(size[1]);
             return Optional.of(new ModelHolder(skin, inner, outer));
         } catch (Exception e) {
-            LOGGER.debug("インスタンス化に失敗しました。抽象クラスまたは非対応のモデルである可能性があります。 : " + modelClass);
+            LOGGER.debug("インスタンス化に失敗しました。抽象クラスまたは非対応のモデルである可能性があります。 : {}", modelClass);
             e.printStackTrace();
             return Optional.empty();
         }
@@ -48,7 +48,7 @@ public class LMModelManager {
      */
     public void putModel(String modelName, ModelHolder holder) {
         models.put(modelName.toLowerCase(), holder);
-        if (LMNLib.LOGGER.isDebugEnabled()) LOGGER.debug("Loaded Model : " + holder.skin().getClass());
+        if (LMNLib.LOGGER.isDebugEnabled()) LOGGER.debug("Loaded Model : {}", holder.skin().getClass());
     }
 
     public void addModel(String modelName, IMultiModel skin, IMultiModel inner, IMultiModel outer) {

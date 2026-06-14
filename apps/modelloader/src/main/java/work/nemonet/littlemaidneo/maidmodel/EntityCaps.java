@@ -104,11 +104,13 @@ public class EntityCaps implements IModelCaps {
 
         register("getRidingType", caps_getRidingType, (entity, arg) -> {
             Entity vehicle = entity.getVehicle();
-            if (vehicle == null) return "null";
-            else if (vehicle instanceof Player) return "player";
-            else if (vehicle instanceof Animal) return "animal";
-            else if (vehicle instanceof Mob) return "mob";
-            else return "entity";
+            return switch (vehicle) {
+                case null -> "null";
+                case Player player -> "player";
+                case Animal animal -> "animal";
+                case Mob mob -> "mob";
+                default -> "entity";
+            };
         });
 
         register("entityName", caps_entityName, (entity, arg) -> entity.getName().getString());
@@ -202,16 +204,14 @@ public class EntityCaps implements IModelCaps {
         register("isPoseCrouching", caps_isPoseCrouching, (entity, arg) -> entity.getPose() == Pose.CROUCHING);
         register("isPoseDying", caps_isPoseDying, (entity, arg) -> entity.isDeadOrDying());
         register("sleepingDirection", caps_sleepingDirection, (entity, arg) -> entity.getBedOrientation());
+        register("isBlocking", caps_isBlocking, (entity, arg) -> entity.isBlocking());
     }
+
 
     private static void register(String name, int index, Getter getter) {
-        register(name, index, getter, EMPTY_SETTER);
-    }
-
-    private static void register(String name, int index, Getter getter, Setter setter) {
         caps.putIfAbsent(name, index);
         capGetter.put(index, getter);
-        capSetter.put(index, setter);
+        capSetter.put(index, EntityCaps.EMPTY_SETTER);
     }
 
     public EntityCaps(LivingEntity pOwner) {

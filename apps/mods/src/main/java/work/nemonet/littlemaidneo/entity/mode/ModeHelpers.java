@@ -24,14 +24,7 @@ public final class ModeHelpers {
     private ModeHelpers() {
     }
 
-    public static class NavigationResult {
-        public final int nextTimer;
-        public final boolean unreachable;
-
-        public NavigationResult(int nextTimer, boolean unreachable) {
-            this.nextTimer = nextTimer;
-            this.unreachable = unreachable;
-        }
+    public record NavigationResult(int nextTimer, boolean unreachable) {
     }
 
     /**

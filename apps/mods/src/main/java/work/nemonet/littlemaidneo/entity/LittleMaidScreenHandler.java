@@ -2,6 +2,7 @@ package work.nemonet.littlemaidneo.entity;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Inventory;
@@ -229,18 +230,17 @@ public class LittleMaidScreenHandler extends AbstractContainerMenu implements Gu
         return index;
     }
 
-    private int addSlotBox(Container inventory, int index, int x, int y, int horAmount, int dx, int verAmount, int dy) {
+    private void addSlotBox(Container inventory, int index, int x, int y, int verAmount) {
         for (int j = 0; j < verAmount; j++) {
-            index = addSlotRange(inventory, index, x, y, horAmount, dx);
-            y += dy;
+            index = addSlotRange(inventory, index, x, y, 9, 18);
+            y += 18;
         }
-        return index;
     }
 
     private void layoutPlayerInventorySlots(int leftCol, int topRow) {
         // 24~50
         // Player inventory
-        addSlotBox(playerInventory, 9, leftCol, topRow, 9, 18, 3, 18);
+        addSlotBox(playerInventory, 9, leftCol, topRow, 3);
 
         // 51~59
         // Hotbar
@@ -250,14 +250,14 @@ public class LittleMaidScreenHandler extends AbstractContainerMenu implements Gu
 
     private void layoutMaidInventorySlots() {
         // index 0~17
-        addSlotBox(maidInventory, 0, 8, 76, 9, 18, 2, 18);
+        addSlotBox(maidInventory, 0, 8, 76, 2);
 
         // 18~19
         addSlot(new Slot(handInventory, 0, 116, 44));
         addSlot(new Slot(handInventory, 1, 152, 44) {
             @Override
             public Identifier getNoItemIcon() {
-                return Identifier.parse("item/empty_armor_slot_shield");
+                return InventoryMenu.EMPTY_ARMOR_SLOT_SHIELD;
             }
         });
 
@@ -276,7 +276,7 @@ public class LittleMaidScreenHandler extends AbstractContainerMenu implements Gu
 
             @Override
             public Identifier getNoItemIcon() {
-                return Identifier.parse("item/empty_armor_slot_helmet");
+                return InventoryMenu.EMPTY_ARMOR_SLOT_HELMET;
             }
         });
         addSlot(new Slot(armorInventory, EquipmentSlot.CHEST.getIndex(), 8, 44) {
@@ -292,7 +292,7 @@ public class LittleMaidScreenHandler extends AbstractContainerMenu implements Gu
 
             @Override
             public Identifier getNoItemIcon() {
-                return Identifier.parse("item/empty_armor_slot_chestplate");
+                return InventoryMenu.EMPTY_ARMOR_SLOT_CHESTPLATE;
             }
         });
         addSlot(new Slot(armorInventory, EquipmentSlot.LEGS.getIndex(), 80, 8) {
@@ -308,7 +308,7 @@ public class LittleMaidScreenHandler extends AbstractContainerMenu implements Gu
 
             @Override
             public Identifier getNoItemIcon() {
-                return Identifier.parse("item/empty_armor_slot_leggings");
+                return InventoryMenu.EMPTY_ARMOR_SLOT_LEGGINGS;
             }
         });
         addSlot(new Slot(armorInventory, EquipmentSlot.FEET.getIndex(), 80, 44) {
@@ -324,7 +324,7 @@ public class LittleMaidScreenHandler extends AbstractContainerMenu implements Gu
 
             @Override
             public Identifier getNoItemIcon() {
-                return Identifier.parse("item/empty_armor_slot_boots");
+                return InventoryMenu.EMPTY_ARMOR_SLOT_BOOTS;
             }
         });
     }
