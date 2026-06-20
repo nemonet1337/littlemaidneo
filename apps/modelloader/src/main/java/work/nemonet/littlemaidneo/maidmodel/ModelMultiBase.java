@@ -132,6 +132,7 @@ public abstract class ModelMultiBase extends ModelBase implements IModelCaps, IM
 
     @Override
     public void animateModel(IModelCaps caps, float limbAngle, float limbDistance, float tickDelta) {
+        hasLastAngles = false;
         setLivingAnimations(caps, limbAngle, limbDistance, tickDelta);
     }
 

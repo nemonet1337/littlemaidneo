@@ -48,10 +48,43 @@ public class MaidModelRenderer extends MobRenderer<LittleMaidEntity, MaidRenderS
         state.offHandItem = entity.getOffhandItem();
         state.walkAnimationPos = entity.walkAnimation.position(partialTick);
         state.walkAnimationSpeed = entity.walkAnimation.speed(partialTick);
-        entity.getModel(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD)
-                .filter(m -> m instanceof ModelMultiBase)
-                .ifPresent(m -> syncCaps(entity, (ModelMultiBase) m, partialTick));
+
+        state.caps = entity.getCaps();
+        state.skinModel = entity.getModel(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD).orElse(null);
+        state.skinTexture = entity.getTexture(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD, false).orElse(null);
+        state.skinTextureLight = entity.getTexture(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD, true).orElse(null);
+
+        state.armorsVisible.clear();
+        state.armorsGlint.clear();
+        state.innerModels.clear();
+        state.outerModels.clear();
+        state.innerTextures.clear();
+        state.innerTexturesLight.clear();
+        state.outerTextures.clear();
+        state.outerTexturesLight.clear();
+
         for (IHasMultiModel.Part part : IHasMultiModel.Part.values()) {
+            state.armorsVisible.setArmor(entity.isArmorVisible(part), part);
+            state.armorsGlint.setArmor(entity.isArmorGlint(part), part);
+
+            state.innerModels.setArmor(entity.getModel(IHasMultiModel.Layer.INNER, part).orElse(null), part);
+            state.outerModels.setArmor(entity.getModel(IHasMultiModel.Layer.OUTER, part).orElse(null), part);
+
+            state.innerTextures.setArmor(entity.getTexture(IHasMultiModel.Layer.INNER, part, false).orElse(null), part);
+            state.innerTexturesLight.setArmor(entity.getTexture(IHasMultiModel.Layer.INNER, part, true).orElse(null), part);
+
+            state.outerTextures.setArmor(entity.getTexture(IHasMultiModel.Layer.OUTER, part, false).orElse(null), part);
+            state.outerTexturesLight.setArmor(entity.getTexture(IHasMultiModel.Layer.OUTER, part, true).orElse(null), part);
+
+            if (entity.tickCount % 20 == 0) {
+                LittleMaidNeo.LOGGER.info("[ArmorDebug] part={} visible={} innerTex={} outerTex={} innerModel={} outerModel={}",
+                        part, entity.isArmorVisible(part),
+                        state.innerTextures.getArmor(part).orElse(null),
+                        state.outerTextures.getArmor(part).orElse(null),
+                        state.innerModels.getArmor(part).isPresent(),
+                        state.outerModels.getArmor(part).isPresent());
+            }
+
             entity.getModel(IHasMultiModel.Layer.INNER, part)
                     .filter(m -> m instanceof ModelMultiBase)
                     .ifPresent(m -> syncCaps(entity, (ModelMultiBase) m, partialTick));
@@ -59,6 +92,10 @@ public class MaidModelRenderer extends MobRenderer<LittleMaidEntity, MaidRenderS
                     .filter(m -> m instanceof ModelMultiBase)
                     .ifPresent(m -> syncCaps(entity, (ModelMultiBase) m, partialTick));
         }
+
+        entity.getModel(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD)
+                .filter(m -> m instanceof ModelMultiBase)
+                .ifPresent(m -> syncCaps(entity, (ModelMultiBase) m, partialTick));
     }
 
     @Override

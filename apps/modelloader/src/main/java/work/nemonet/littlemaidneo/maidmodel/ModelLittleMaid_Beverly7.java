@@ -500,4 +500,56 @@ public class ModelLittleMaid_Beverly7 extends ModelLittleMaidBase {
         hemSkirtR2.rotateAngleX += jsR2 * 0.75F + hemSkirtR1.rotateAngleX * 0.15F;
         hemSkirtL2.rotateAngleX += jsL2 * 0.75F + hemSkirtL1.rotateAngleX * 0.15F;
     }
+
+    @Override
+    public int showArmorParts(int parts, int index) {
+        bipedHead.setVisible(parts == 3);
+
+        boolean torso = parts == 2;
+        bipedBody.setVisible(torso);
+        upperRightArm.setVisible(torso);
+        upperLeftArm.setVisible(torso);
+        bipedRightArm.setVisible(torso);
+        bipedLeftArm.setVisible(torso);
+        if (breastR != null) breastR.setVisible(torso);
+        if (breastL != null) breastL.setVisible(torso);
+        if (hipBody != null) hipBody.setVisible(torso);
+
+        boolean legs = parts == 1;
+        Skirt.setVisible(legs);
+        if (hemSkirtR1 != null) hemSkirtR1.setVisible(legs);
+        if (hemSkirtL1 != null) hemSkirtL1.setVisible(legs);
+        if (hemSkirtR2 != null) hemSkirtR2.setVisible(legs);
+        if (hemSkirtL2 != null) hemSkirtL2.setVisible(legs);
+
+        boolean legParts = parts == 1 || parts == 0;
+        upperRightLeg.setVisible(legParts);
+        upperLeftLeg.setVisible(legParts);
+        bipedRightLeg.setVisible(parts == 0);
+        bipedLeftLeg.setVisible(parts == 0);
+
+        return -1;
+    }
+
+    @Override
+    public void showAllParts() {
+        bipedHead.setVisible(true);
+        bipedBody.setVisible(true);
+        upperRightArm.setVisible(true);
+        upperLeftArm.setVisible(true);
+        bipedRightArm.setVisible(true);
+        bipedLeftArm.setVisible(true);
+        if (breastR != null) breastR.setVisible(true);
+        if (breastL != null) breastL.setVisible(true);
+        if (hipBody != null) hipBody.setVisible(true);
+        Skirt.setVisible(true);
+        if (hemSkirtR1 != null) hemSkirtR1.setVisible(true);
+        if (hemSkirtL1 != null) hemSkirtL1.setVisible(true);
+        if (hemSkirtR2 != null) hemSkirtR2.setVisible(true);
+        if (hemSkirtL2 != null) hemSkirtL2.setVisible(true);
+        upperRightLeg.setVisible(true);
+        upperLeftLeg.setVisible(true);
+        bipedRightLeg.setVisible(true);
+        bipedLeftLeg.setVisible(true);
+    }
 }

@@ -188,6 +188,9 @@ private float prevInterestedAngle;
         this.moveControl = new FixedMoveControl(this);
         this.lookControl = new work.nemonet.littlemaidneo.entity.ai.MaidLookControl(this);
         getNavigation().setCanOpenDoors(true);
+        if (this.getNavigation() instanceof GroundPathNavigation nav) {
+            nav.setCanFloat(true);
+        }
         this.setPathfindingMalus(net.minecraft.world.level.pathfinder.PathType.WATER, 0.0F);
         multiModel = new MultiModelCompound(
                 this,
@@ -976,6 +979,15 @@ private float prevInterestedAngle;
         if (slot.isArmor()) {
             multiModel.updateArmor();
         }
+    }
+
+    @Override
+    public boolean isBlocking() {
+        if (this.isUsingItem()) {
+            ItemStack activeItem = this.getUseItem();
+            return !activeItem.isEmpty() && activeItem.getItem() instanceof net.minecraft.world.item.ShieldItem;
+        }
+        return false;
     }
 
     @Override

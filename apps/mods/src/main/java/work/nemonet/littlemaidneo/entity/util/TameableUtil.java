@@ -142,7 +142,7 @@ public class TameableUtil {
     private static boolean canTeleportTo(LittleMaidEntity tameable, BlockPos pos) {
         PathType pathNodeType = WalkNodeEvaluator.getPathTypeStatic(
                 new net.minecraft.world.level.pathfinder.PathfindingContext(tameable.level(), tameable), pos.mutable());
-        if (pathNodeType != PathType.WALKABLE) return false;
+        if (pathNodeType != PathType.WALKABLE && pathNodeType != PathType.WATER) return false;
         BlockPos blockPos = pos.subtract(tameable.blockPosition());
         return tameable.level().noCollision(tameable, tameable.getBoundingBox().move(blockPos));
     }

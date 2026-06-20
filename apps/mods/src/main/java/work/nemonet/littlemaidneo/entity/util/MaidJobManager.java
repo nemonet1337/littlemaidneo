@@ -86,6 +86,17 @@ public class MaidJobManager {
      */
     private static final int INVENTORY_SCAN_INTERVAL = 10;
 
+    private static int getCurrentJobItemPriority(String job, ItemStack stack) {
+        if (stack.isEmpty()) return -1;
+        int maxPriority = -1;
+        for (JobRule rule : RULES_BY_JOB.getOrDefault(job, List.of())) {
+            if (rule.predicate().test(stack)) {
+                maxPriority = Math.max(maxPriority, rule.priority());
+            }
+        }
+        return maxPriority;
+    }
+
     public static void tick(LittleMaidEntity maid) {
         String currentJob = maid.getBrain().getMemory(work.nemonet.littlemaidneo.setup.ModRegistration.ACTIVE_JOB_NAME.get()).orElse(JOB_NONE);
         // インベントリ全走査は重い（多数のメイドさんがいるサーバーで毎 tick 行うと顕著）ため間引く
@@ -95,6 +106,22 @@ public class MaidJobManager {
         if (!currentJob.equals(JOB_NONE)) {
             ItemStack mainHand = maid.getMainHandItem();
             if (isModeItemForJob(currentJob, mainHand)) {
+                if (scanInventory) {
+                    int currentPriority = getCurrentJobItemPriority(currentJob, mainHand);
+                    // より高い優先度のアイテムをインベントリから探索
+                    for (JobRule rule : RULES) {
+                        if (rule.priority() > currentPriority) {
+                            int index = findItemInInventory(maid, rule.predicate());
+                            if (index != -1) {
+                                switchMainHandItem(maid, index);
+                                startJob(maid, rule.jobName());
+                                return;
+                            }
+                        } else {
+                            break;
+                        }
+                    }
+                }
                 // 継続可能。戦闘の場合は戦闘モードも更新する
                 updateBattleMode(maid);
                 return;

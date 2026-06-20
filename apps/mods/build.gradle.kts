@@ -88,12 +88,12 @@ neoForge {
 
         create("clientData") {
             clientData()
-            programArguments.addAll("--mod", mod_id, "--all", "--output", file("build/generated/client/").absolutePath, "--existing", file("src/main/resources/").absolutePath)
+            programArguments.addAll("--mod", mod_id, "--all", "--output", file("src/generated/resources/").absolutePath, "--existing", file("src/main/resources/").absolutePath)
         }
 
         create("serverData") {
             serverData()
-            programArguments.addAll("--mod", mod_id, "--all", "--output", file("build/generated/server/").absolutePath, "--existing", file("src/main/resources/").absolutePath)
+            programArguments.addAll("--mod", mod_id, "--all", "--output", file("src/generated/resources/").absolutePath, "--existing", file("src/main/resources/").absolutePath)
         }
     }
 

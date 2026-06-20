@@ -10,6 +10,8 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import work.nemonet.littlemaidneo.client.screen.component.*;
@@ -42,10 +44,10 @@ public class TargetTagScreen extends AbstractFilterableListScreen<TargetTagScree
         assert this.minecraft != null;
 
         int searchInputHeight = 20;
-        int elementWidth = font.lineHeight * 15;
-        int elementHeight = font.lineHeight + 40;
-        int widthStack = Mth.floor(this.width * 0.8f / elementWidth);
-        int totalWidth = elementWidth * widthStack;
+        int widthStack = 1;
+        int totalWidth = (int) (this.width * 0.8f);
+        int elementWidth = totalWidth;
+        int elementHeight = font.lineHeight + 48;
 
         // TargetTag用のFilterPredicate（エンティティタイプのキーと翻訳名で検索）
         FilterPredicate<TargetTagGUIElement> targetTagFilter = (targetTagGUIElement, filterText) -> {
@@ -57,7 +59,7 @@ public class TargetTagScreen extends AbstractFilterableListScreen<TargetTagScree
 
         // すべてのターゲットタグをリストアップ
         List<TargetTagGUIElement> elements = targetTags.entrySet().stream()
-                .map(entry -> new TargetTagGUIElement(this.minecraft.font, entry.getKey(), entry.getValue()))
+                .map(entry -> new TargetTagGUIElement(this.minecraft.font, entry.getKey(), entry.getValue(), elementWidth, elementHeight))
                 .sorted(Comparator.comparing(e -> e.targetIdentifier.toString()))
                 .collect(Collectors.toList());
 
@@ -164,11 +166,13 @@ public class TargetTagScreen extends AbstractFilterableListScreen<TargetTagScree
         private AttackState attackState;
         private WeaponState weaponState;
         private ApproachState approachState;
+        private final Entity dummyEntity;
 
         public TargetTagGUIElement(Font textRenderer,
-                TargetIdentifier targetIdentifier, Set<TargetingSystem.TargetTag> tags) {
-            super(textRenderer.lineHeight * 15, textRenderer.lineHeight + 40);
+                TargetIdentifier targetIdentifier, Set<TargetingSystem.TargetTag> tags, int elementWidth, int elementHeight) {
+            super(elementWidth, elementHeight);
             this.targetIdentifier = targetIdentifier;
+            this.dummyEntity = targetIdentifier.getEntityType().create(Minecraft.getInstance().level, EntitySpawnReason.TRIGGERED);
 
             // 現在のタグセットから状態を決定
             this.attackState = determineAttackState(tags);
@@ -229,11 +233,11 @@ public class TargetTagScreen extends AbstractFilterableListScreen<TargetTagScree
 
             // エンティティタイプ名を表示
             var entityTypeName = Component.translatable(this.targetIdentifier.getEntityType().getDescriptionId());
-            ClientScreenHelper.drawScrollingText(context, textRenderer, entityTypeName, this.x, this.y, this.width, 0xFFFFFFFF, true);
+            ClientScreenHelper.drawScrollingText(context, textRenderer, entityTypeName, this.x + 10, this.y + 4, this.width - 80, 0xFFFFFFFF, true);
 
             // ボタンの位置を設定してレンダリング（エンティティタイプ名の下）
-            int buttonY = this.y + textRenderer.lineHeight;
-            int buttonX = this.x;
+            int buttonY = this.y + textRenderer.lineHeight + 8;
+            int buttonX = this.x + 10;
 
             // 攻撃ボタンの状態を更新
             LittleMaidScreen.IconButtonWidget attackButton = (LittleMaidScreen.IconButtonWidget) buttons.getFirst();
@@ -242,7 +246,7 @@ public class TargetTagScreen extends AbstractFilterableListScreen<TargetTagScree
                     Component.translatable("gui.littlemaidneo.target_tag.tags." + attackState.translationKey)));
             attackButton.setPosition(buttonX, buttonY);
             attackButton.extractRenderState(context, mouseX, mouseY, delta);
-            buttonX += attackButton.getWidth();
+            buttonX += attackButton.getWidth() + 4;
 
             // 武器ボタンの状態を更新
             LittleMaidScreen.IconButtonWidget weaponButton = (LittleMaidScreen.IconButtonWidget) buttons.get(1);
@@ -251,7 +255,7 @@ public class TargetTagScreen extends AbstractFilterableListScreen<TargetTagScree
                     Component.translatable("gui.littlemaidneo.target_tag.tags." + weaponState.translationKey)));
             weaponButton.setPosition(buttonX, buttonY);
             weaponButton.extractRenderState(context, mouseX, mouseY, delta);
-            buttonX += weaponButton.getWidth();
+            buttonX += weaponButton.getWidth() + 4;
 
             // 接近ボタンの状態を更新
             LittleMaidScreen.IconButtonWidget approachButton = (LittleMaidScreen.IconButtonWidget) buttons.get(2);
@@ -260,6 +264,24 @@ public class TargetTagScreen extends AbstractFilterableListScreen<TargetTagScree
                     Component.translatable("gui.littlemaidneo.target_tag.tags." + approachState.translationKey)));
             approachButton.setPosition(buttonX, buttonY);
             approachButton.extractRenderState(context, mouseX, mouseY, delta);
+
+            // 右側にMobのプレビューを表示
+            if (this.dummyEntity instanceof LivingEntity living) {
+                int previewX = this.x + this.width - 35;
+                int previewY = this.y + this.height - 8;
+                int scale = 18;
+                try {
+                    net.minecraft.client.gui.screens.inventory.InventoryScreen.extractEntityInInventoryFollowsMouse(
+                            context,
+                            previewX - 20, this.y + 4, previewX + 20, previewY,
+                            scale, 0.0625f,
+                            mouseX, mouseY,
+                            living
+                    );
+                } catch (Exception e) {
+                    // Ignore render exceptions for dummy entities
+                }
+            }
         }
 
         @Override

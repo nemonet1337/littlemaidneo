@@ -53,15 +53,17 @@ public class MultiModelArmorLayer<S extends MultiModelRenderState, M extends Mul
         }
 
         if (texId != null && model != null) {
-            model.showArmorParts(part.getIndex(), layer.getPartIndex());
             final int light0 = isLight ? 0xF00000 : light;
             final work.nemonet.littlemaidneo.multimodel.IMultiModel finalModel = model;
             model.animateModel(caps, state.walkAnimationPos, state.walkAnimationSpeed, state.partialTick);
             model.setAngles(caps, state.walkAnimationPos, state.walkAnimationSpeed,
                     state.ageInTicks, headYaw, headPitch);
-            submitNodeCollector.submitCustomGeometry(poseStack, MultiModelRenderLayer.getDefault(texId), (snapPose, consumer) -> {
+            final int partIndex = part.getIndex();
+            final int layerPartIndex = layer.getPartIndex();
+            submitNodeCollector.submitCustomGeometry(poseStack, MultiModelRenderLayer.getArmor(texId), (snapPose, consumer) -> {
                 PoseStack localStack = new PoseStack();
                 localStack.last().set(snapPose);
+                finalModel.showArmorParts(partIndex, layerPartIndex);
                 finalModel.render(new MMRenderContext(localStack, consumer, light0, OverlayTexture.NO_OVERLAY, 1F, 1F, 1F, 1F));
             });
         }

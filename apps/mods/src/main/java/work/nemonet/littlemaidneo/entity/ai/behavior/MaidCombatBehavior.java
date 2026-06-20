@@ -15,6 +15,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
+import work.nemonet.littlemaidneo.LittleMaidNeo;
 import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.util.MaidJobManager;
@@ -155,6 +156,11 @@ public class MaidCombatBehavior extends AbstractMaidBehavior {
                 shieldHand = InteractionHand.MAIN_HAND;
             }
 
+            if (mob.tickCount % 20 == 0) {
+                LittleMaidNeo.LOGGER.info("[ShieldDebug] tick target={} shieldHand={} offhand={} mainhand={} isUsingItem={} isBlocking={}",
+                        this.target, shieldHand, offhand.getItem(), mainhand.getItem(), mob.isUsingItem(), mob.isBlocking());
+            }
+
             double boundingDistSq = getBoundingDistanceSq(mob, this.target);
             if (!isClose(mob, boundingDistSq)) {
                 if (recalcPathCool <= 0) {
@@ -163,6 +169,7 @@ public class MaidCombatBehavior extends AbstractMaidBehavior {
                     mob.getNavigation().moveTo(this.target, speedFunc.apply(1.0f));
                 }
                 if (shieldHand != null && !mob.isUsingItem() && mob.getSensing().hasLineOfSight(this.target)) {
+                    LittleMaidNeo.LOGGER.info("[ShieldDebug] startUsingItem (far) hand={}", shieldHand);
                     mob.startUsingItem(shieldHand);
                 }
             } else {
@@ -174,6 +181,7 @@ public class MaidCombatBehavior extends AbstractMaidBehavior {
                     attack(mob);
                 } else {
                     if (shieldHand != null && !mob.isUsingItem()) {
+                        LittleMaidNeo.LOGGER.info("[ShieldDebug] startUsingItem (close) hand={}", shieldHand);
                         mob.startUsingItem(shieldHand);
                     }
                 }

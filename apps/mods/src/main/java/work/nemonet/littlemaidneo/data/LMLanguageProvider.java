@@ -29,6 +29,8 @@ public class LMLanguageProvider extends LanguageProvider {
             add("state.littlemaidneo.Tracer", "Tracer");
             add("state.littlemaidneo.Strike", "Strike");
             add("mode.littlemaidneo.Combat", "Combat");
+            add("mode.littlemaidneo.Fencer", "Fencer");
+            add("mode.littlemaidneo.Archer", "Archer");
             add("mode.littlemaidneo.Cooking", "Cooking");
             add("mode.littlemaidneo.Pharmcist", "Pharmacist");
             add("mode.littlemaidneo.Ripper", "Ripper");
@@ -113,6 +115,8 @@ public class LMLanguageProvider extends LanguageProvider {
             add("state.littlemaidneo.Tracer", "赤石探知");
             add("state.littlemaidneo.Strike", "ストライキ");
             add("mode.littlemaidneo.Combat", "戦闘係");
+            add("mode.littlemaidneo.Fencer", "剣士");
+            add("mode.littlemaidneo.Archer", "弓兵");
             add("mode.littlemaidneo.Cooking", "お料理係");
             add("mode.littlemaidneo.Pharmcist", "調合係");
             add("mode.littlemaidneo.Ripper", "毛狩り隊");

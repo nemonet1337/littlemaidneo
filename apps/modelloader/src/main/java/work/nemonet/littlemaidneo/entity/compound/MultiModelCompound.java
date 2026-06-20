@@ -10,6 +10,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
+import work.nemonet.littlemaidneo.common.LMNLib;
 import work.nemonet.littlemaidneo.maidmodel.EntityCaps;
 import work.nemonet.littlemaidneo.maidmodel.IModelCaps;
 import work.nemonet.littlemaidneo.multimodel.IMultiModel;
@@ -75,16 +76,29 @@ public class MultiModelCompound implements IHasMultiModel {
     }
 
     private String getName(ItemStack stack) {
+        String itemName;
         if (entity.level().isClientSide()) {
             var equippable = stack.get(DataComponents.EQUIPPABLE);
             if (equippable != null) {
-                return equippable.assetId()
+                itemName = equippable.assetId()
                         .map(key -> key.identifier().getPath())
                         .orElse("unknown").toLowerCase();
+            } else {
+                Identifier location = BuiltInRegistries.ITEM.getKey(stack.getItem());
+                itemName = location.getPath();
             }
+        } else {
+            Identifier location = BuiltInRegistries.ITEM.getKey(stack.getItem());
+            itemName = location.getPath();
         }
-        Identifier location = BuiltInRegistries.ITEM.getKey(stack.getItem());
-        return location.toString();
+        // Extract armor type name (e.g., "diamond" from "diamond_helmet")
+        int underscoreIndex = itemName.indexOf('_');
+        if (underscoreIndex > 0) {
+            String armorType = itemName.substring(0, underscoreIndex);
+            if (armorType.contains("chainmail")) return armorType;
+            return armorType.replace("chain", "chainmail");
+        }
+        return itemName;
     }
 
     private float getDamagePercent(ItemStack stack) {
@@ -106,6 +120,10 @@ public class MultiModelCompound implements IHasMultiModel {
         dataBuilder.outerTex(textureHolder.getArmorTexture(Layer.OUTER, armorName, damagePercent, false).orElse(null));
         dataBuilder.outerTexLight(textureHolder.getArmorTexture(Layer.OUTER, armorName, damagePercent, true).orElse(null));
         armorsData.setArmor(dataBuilder.build(), part);
+        LMNLib.LOGGER.info("[ArmorDebug] updateArmorPart part={} armorName='{}' holder={} innerTex={} outerTex={}",
+                part, armorName, textureHolder.getTextureName(),
+                dataBuilder.build().getTexture(Layer.INNER, false),
+                dataBuilder.build().getTexture(Layer.OUTER, false));
     }
 
     @Override

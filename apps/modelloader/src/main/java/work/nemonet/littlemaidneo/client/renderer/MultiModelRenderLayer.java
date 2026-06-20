@@ -13,4 +13,8 @@ public class MultiModelRenderLayer {
         }
         return RenderTypes.entityCutout(Identifier);
     }
+
+    public static RenderType getArmor(Identifier Identifier) {
+        return RenderTypes.armorCutoutNoCull(Identifier);
+    }
 }

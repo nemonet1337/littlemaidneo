@@ -25,8 +25,7 @@ import work.nemonet.littlemaidneo.network.*;
 import work.nemonet.littlemaidneo.util.Tuple;
 public class LittleMaidScreen
         extends AbstractContainerScreen<LittleMaidScreenHandler> {
-    private StatusIconWidget movingModeButton;
-    private StatusIconWidget modeButton;
+    private IconButtonWidget changeMovingModeButton;
 
     private static final Identifier GUI = Identifier.fromNamespaceAndPath(
             LittleMaidNeo.MODID,
@@ -96,7 +95,7 @@ public class LittleMaidScreen
                                 "gui.littlemaidneo.littlemaid.tooltip.open_model_select"),
                         button -> minecraft.setScreen(
                                 new ModelSelectScreen<>(title, owner.level(), owner))));
-        this.addRenderableWidget(
+        this.changeMovingModeButton = this.addRenderableWidget(
                 new IconButtonWidget(
                         left - size,
                         top + size * ++layer,
@@ -177,42 +176,6 @@ public class LittleMaidScreen
                                 "gui.littlemaidneo.littlemaid.tooltip.setting_work_item_slot"),
                         button -> isSettingWISS = true));
 
-        int relX = (this.width - imageWidth) / 2;
-        int relY = (this.height - imageHeight) / 2;
-        movingModeButton = new StatusIconWidget(
-                relX + 8,
-                relY + 57,
-                16,
-                16,
-                ItemStack.EMPTY,
-                Component.empty(),
-                button -> {
-                    if (this.owner.isStrike()) {
-                        return;
-                    }
-                    switch (movingMode) {
-                        case ESCORT -> movingMode = MaidMode.FREEDOM;
-                        case FREEDOM -> movingMode = MaidMode.TRACER;
-                        case TRACER -> movingMode = MaidMode.ESCORT;
-                    }
-                    stateText = getStateText();
-                    updateStatusIcons();
-                },
-                true);
-        this.addRenderableWidget(movingModeButton);
-
-        modeButton = new StatusIconWidget(
-                relX + 26,
-                relY + 57,
-                16,
-                16,
-                ItemStack.EMPTY,
-                Component.empty(),
-                button -> {
-                },
-                true);
-        this.addRenderableWidget(modeButton);
-
         stateText = getStateText();
         updateStatusIcons();
     }
@@ -244,7 +207,7 @@ public class LittleMaidScreen
     }
 
     private void updateStatusIcons() {
-        if (owner == null || movingModeButton == null || modeButton == null)
+        if (owner == null)
             return;
 
         boolean isStrike = owner.isStrike();
@@ -282,28 +245,9 @@ public class LittleMaidScreen
             }
         }
 
-        movingModeButton.setIconItem(movingIcon);
-        movingModeButton.setTooltip(Tooltip.create(movingTooltip));
-
-        Optional<String> modeNameOpt = owner.getModeName();
-        if (modeNameOpt.isPresent() && !isStrike) {
-            String modeName = modeNameOpt.get();
-            ItemStack modeIcon;
-            Component modeTooltip = Component.translatable("mode." + LittleMaidNeo.MODID + "." + modeName);
-            switch (modeName) {
-                case "Combat" -> modeIcon = Items.IRON_SWORD.getDefaultInstance();
-                case "Cooking" -> modeIcon = Items.BREAD.getDefaultInstance();
-                case "Ripper" -> modeIcon = Items.SHEARS.getDefaultInstance();
-                case "Torcher" -> modeIcon = Items.TORCH.getDefaultInstance();
-                case "Healer" -> modeIcon = Items.GOLDEN_APPLE.getDefaultInstance();
-                default -> modeIcon = Items.BOOK.getDefaultInstance();
-            }
-            modeButton.setIconItem(modeIcon);
-            modeButton.setTooltip(Tooltip.create(modeTooltip));
-            modeButton.visible = true;
-            modeButton.setPosition(movingModeButton.getX() + 18, movingModeButton.getY());
-        } else {
-            modeButton.visible = false;
+        if (changeMovingModeButton != null) {
+            changeMovingModeButton.setIconItem(movingIcon);
+            changeMovingModeButton.setTooltip(Tooltip.create(movingTooltip));
         }
     }
 
@@ -395,14 +339,9 @@ public class LittleMaidScreen
             GuiGraphicsExtractor context,
             int mouseX,
             int mouseY) {
+        System.out.println("[ScreenDebug] extractLabels called: stateText=" + (this.stateText != null ? this.stateText.getString() : "null"));
         int textX = 8;
-        if (movingModeButton != null && movingModeButton.visible) {
-            textX = 26;
-        }
-        if (modeButton != null && modeButton.visible) {
-            textX = 44;
-        }
-        context.text(font, this.stateText, textX, 61, 0x404040, false);
+        context.text(font, this.stateText, textX, 61, 0xFF404040, false);
         String insideSkirt = Component.translatable(
                 "entity.littlemaidneo.little_maid_mob.InsideSkirt").getString();
         context.text(
@@ -410,7 +349,7 @@ public class LittleMaidScreen
                 insideSkirt,
                 168 - font.width(insideSkirt),
                 65,
-                0x404040,
+                0xFF404040,
                 false);
         float left = (width - imageWidth) / 2F;
         float top = (height - imageHeight) / 2F;
@@ -460,9 +399,9 @@ public class LittleMaidScreen
     private static final Identifier HEART_CONTAINER = Identifier.fromNamespaceAndPath("minecraft", "hud/heart/container");
     private static final Identifier HEART_HALF = Identifier.fromNamespaceAndPath("minecraft", "hud/heart/half");
     private static final Identifier HEART_FULL = Identifier.fromNamespaceAndPath("minecraft", "hud/heart/full");
-    private static final Identifier ARMOR_EMPTY = Identifier.fromNamespaceAndPath("minecraft", "hud/armor/empty");
-    private static final Identifier ARMOR_HALF = Identifier.fromNamespaceAndPath("minecraft", "hud/armor/half");
-    private static final Identifier ARMOR_FULL = Identifier.fromNamespaceAndPath("minecraft", "hud/armor/full");
+    private static final Identifier ARMOR_EMPTY = Identifier.fromNamespaceAndPath("minecraft", "hud/armor_empty");
+    private static final Identifier ARMOR_HALF = Identifier.fromNamespaceAndPath("minecraft", "hud/armor_half");
+    private static final Identifier ARMOR_FULL = Identifier.fromNamespaceAndPath("minecraft", "hud/armor_full");
 
     protected void drawHealth(
             GuiGraphicsExtractor context,
