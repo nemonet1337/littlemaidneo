@@ -29,10 +29,8 @@ import work.nemonet.littlemaidneo.entity.MultiModelEntity;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
 import work.nemonet.littlemaidneo.maidmodel.*;
 import work.nemonet.littlemaidneo.network.NetworkHandler;
-import work.nemonet.littlemaidneo.resource.classloader.MultiModelClassLoader;
 import work.nemonet.littlemaidneo.resource.loader.LMConfigLoader;
 import work.nemonet.littlemaidneo.resource.loader.LMFileLoader;
-import work.nemonet.littlemaidneo.resource.loader.LMMultiModelLoader;
 import work.nemonet.littlemaidneo.resource.loader.LMTextureLoader;
 import work.nemonet.littlemaidneo.resource.manager.LMConfigManager;
 import work.nemonet.littlemaidneo.resource.manager.LMModelManager;
@@ -118,26 +116,25 @@ public class LittleMaidNeo {
     public static void initFileLoader() {
         LMFileLoader fileLoader = LMFileLoader.INSTANCE;
         fileLoader.addLoadFolderPath(Paths.get(FMLPaths.GAMEDIR.get().toString(), "LMMLResources"));
-        fileLoader.addLoader(new LMMultiModelLoader(LMModelManager.INSTANCE,
-                new MultiModelClassLoader(fileLoader.getFolderPaths())));
         fileLoader.addLoader(new LMConfigLoader(LMConfigManager.INSTANCE));
     }
 
     public static void initModelLoader() {
         LMModelManager modelManager = LMModelManager.INSTANCE;
-        modelManager.addModel("Default", ModelLittleMaid_Orign.class);
-        modelManager.addModel("SR2", ModelLittleMaid_SR2.class);
-        modelManager.addModel("Aug", ModelLittleMaid_Aug.class);
-        modelManager.addModel("Archetype", ModelLittleMaid_Archetype.class);
-        modelManager.addModel("Steve", ModelMulti_Steve.class);
-        modelManager.addModel("Stef", ModelMulti_Stef.class);
-        modelManager.addModel("Classic64", ModelMulti_Classic64.class);
-        modelManager.addModel("Slim64", ModelMulti_Slim64.class);
-        modelManager.addModel("Beverly7", ModelLittleMaid_Beverly7.class);
-        modelManager.addModel("Chloe2", ModelLittleMaid_Chloe2.class);
-        modelManager.addModel("Elsa5", ModelLittleMaid_Elsa5.class);
-        modelManager.addModel("AC", ModelLittleMaid_AC.class);
-        modelManager.addModel("RX0", ModelLittleMaid_RX0.class);
+        modelManager.addLMModel("Default", ModelLittleMaid_Orign::new, ModelLittleMaid_Orign::new, ModelLittleMaid_Orign::new);
+        modelManager.setDefaultLMModel(modelManager.getOrDefaultLMModel("Default", IHasMultiModel.Layer.SKIN));
+        modelManager.addLMModel("SR2", ModelLittleMaid_SR2::new, ModelLittleMaid_SR2::new, ModelLittleMaid_SR2::new);
+        modelManager.addLMModel("Aug", ModelLittleMaid_Aug::new, ModelLittleMaid_Aug::new, ModelLittleMaid_Aug::new);
+        modelManager.addLMModel("Archetype", ModelLittleMaid_Archetype::new, ModelLittleMaid_Archetype::new, ModelLittleMaid_Archetype::new);
+        modelManager.addLMModel("Steve", ModelMulti_Steve::new, ModelMulti_Steve::new, ModelMulti_Steve::new);
+        modelManager.addLMModel("Stef", ModelMulti_Stef::new, ModelMulti_Stef::new, ModelMulti_Stef::new);
+        modelManager.addLMModel("Classic64", ModelMulti_Classic64::new, ModelMulti_Classic64::new, ModelMulti_Classic64::new);
+        modelManager.addLMModel("Slim64", ModelMulti_Slim64::new, ModelMulti_Slim64::new, ModelMulti_Slim64::new);
+        modelManager.addLMModel("Elsa5", ModelLittleMaid_Elsa5::new, ModelLittleMaid_Elsa5::new, ModelLittleMaid_Elsa5::new);
+        modelManager.addLMModel("AC", ModelLittleMaid_AC::new, ModelLittleMaid_AC::new, ModelLittleMaid_AC::new);
+        modelManager.addLMModel("RX0", ModelLittleMaid_RX0::new, ModelLittleMaid_RX0::new, ModelLittleMaid_RX0::new);
+        modelManager.addLMModel("Beverly7", ModelLittleMaid_Beverly7::new, ModelLittleMaid_Beverly7::new, ModelLittleMaid_Beverly7::new);
+        modelManager.addLMModel("Chloe2", ModelLittleMaid_Chloe2::new, ModelLittleMaid_Chloe2::new, ModelLittleMaid_Chloe2::new);
         modelManager.setDefaultModel(modelManager.getModel("Default", IHasMultiModel.Layer.SKIN)
                 .orElseThrow(RuntimeException::new));
     }
