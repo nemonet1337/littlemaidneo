@@ -1,353 +1,87 @@
 package work.nemonet.littlemaidneo.maidmodel;
 
-import net.minecraft.util.Mth;
+import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.client.model.geom.builders.CubeDeformation;
+import net.minecraft.client.model.geom.builders.CubeListBuilder;
+import net.minecraft.client.model.geom.builders.MeshDefinition;
+import net.minecraft.client.model.geom.PartPose;
+import work.nemonet.littlemaidneo.client.renderer.MultiModelRenderState;
 
-import java.util.Random;
+public class ModelLittleMaid_Elsa5 extends LMModel<MultiModelRenderState> {
 
-public class ModelLittleMaid_Elsa5 extends ModelLittleMaidBase {
+    public ModelLittleMaid_Elsa5() { this(0.0F); }
+    public ModelLittleMaid_Elsa5(float psize) { this(psize, 0.0F); }
+    public ModelLittleMaid_Elsa5(float psize, float pyoffset) { this(psize, pyoffset, 64, 64); }
 
-    public ModelRenderer eyeR;
-    public ModelRenderer eyeL;
-    public ModelRenderer Ponytail;
-    public ModelRenderer BunchR;
-    public ModelRenderer BunchL;
-    public ModelRenderer hemSkirt;
-    protected byte offsetY;
-    protected byte headPosY;
-    protected byte bodyPosY;
-    protected byte legPosY;
-    protected final Random rand = new Random();
+    public ModelLittleMaid_Elsa5(float psize, float pyoffset, int texW, int texH) {
+        super(
+            buildAndBake(pyoffset, texW, texH, CubeDeformation.NONE.extend(psize)),
+            buildAndBake(pyoffset, texW, texH, CubeDeformation.NONE.extend(0.1F + psize)),
+            buildAndBake(pyoffset, texW, texH, CubeDeformation.NONE.extend(0.5F + psize))
+        );
+    }
 
-    public ModelLittleMaid_Elsa5() { this(0F); }
-    public ModelLittleMaid_Elsa5(float psize) { this(psize, 0F, 64, 64); }
-    public ModelLittleMaid_Elsa5(float psize, float pyoffset, int pTextureWidth, int pTextureHeight) {
-        super(psize, pyoffset, pTextureWidth, pTextureHeight);
+    private static ModelPart buildAndBake(float pyoffset, int texW, int texH, CubeDeformation deform) {
+        MeshDefinition mesh = new MeshDefinition();
+        buildMesh(mesh, deform, pyoffset);
+        return LMModel.bake(mesh, texW, texH);
     }
 
     @Override
-    public void initModel(float psize, float pyoffset) {
-        offsetY = (byte)(pyoffset + 10);
-
-        bodyPosY = 0;
-        headPosY = -6;
-        legPosY = 3;
-
-        eyeR = new ModelRenderer(this, 0, 0);
-        eyeR.addPlate(-4F, -8F, -4.01F, 4, 8, 0, psize);
-
-        eyeL = new ModelRenderer(this, 4, 0);
-        eyeL.addPlate(0F, -8F, -4.01F, 4, 8, 0, psize);
-
-        Ponytail = new ModelRenderer(this, 52, 26);
-        Ponytail.addBox(-1.5F, -1.5F, -1F, 3, 9, 3, psize);
-
-        BunchR = new ModelRenderer(this, 40, 26);
-        BunchR.addBox(-1F, -1.3F, -0.8F, 1, 9, 2, psize);
-
-        BunchL = new ModelRenderer(this, 46, 26);
-        BunchL.mirror = true;
-        BunchL.addBox(0F, -1.3F, -0.8F, 1, 9, 2, psize);
-
-        bipedHead = new ModelRenderer(this, 0, 0);
-        bipedHead.setTextureOffset(0, 0).addBox(-4F, -8F, -4F, 8, 8, 8, psize);
-        bipedHead.setTextureOffset(32, 0).addBox(-4F, -8F, -4F, 8, 12, 8, psize + 0.3F);
-        bipedHead.setTextureOffset(52, 20).addBox(-2F, -7.2F, 4F, 4, 4, 2, psize);
-        bipedHead.setTextureOffset(36, 20).addBox(-5F, -7F, 0.2F, 1, 3, 3, psize);
-        bipedHead.setMirror(true);
-        bipedHead.setTextureOffset(44, 20).addBox(4F, -7F, 0.2F, 1, 3, 3, psize);
-        bipedHead.addChild(HeadMount);
-        bipedHead.addChild(eyeR);
-        bipedHead.addChild(eyeL);
-        bipedHead.addChild(Ponytail);
-        bipedHead.addChild(BunchR);
-        bipedHead.addChild(BunchL);
-
-        Arms = new ModelRenderer[18];
-        Arms[0] = new ModelRenderer(this, 0, 0);
-        Arms[1] = new ModelRenderer(this, 0, 0);
-        Arms[1].isInvertX = true;
-        Arms[2] = new ModelRenderer(this, 0, 0);
-        Arms[2].setRotationPoint(-3.5F, 11F, 6F);
-        Arms[2].setRotateAngle(0.78539816339744830961566084581988F, 0F, 0F);
-        Arms[3] = new ModelRenderer(this, 0, 0);
-        Arms[3].setRotationPoint(3.5F, 11F, 6F);
-        Arms[3].setRotateAngle(0.78539816339744830961566084581988F, 0F, 0F);
-        Arms[3].isInvertX = true;
-        Arms[4] = new ModelRenderer(this, 0, 0);
-        Arms[4].setRotationPoint(-2F, 0F, 0F);
-        Arms[4].setRotateAngle(3.1415926535897932384626433832795F, 0F, 0F);
-        Arms[5] = new ModelRenderer(this, 0, 0);
-        Arms[5].setRotationPoint(2F, 0F, 0F);
-        Arms[5].setRotateAngle(3.1415926535897932384626433832795F, 0F, 0F);
-
-        bipedRightArm = new ModelRenderer(this, 20, 24);
-        bipedRightArm.addBox(-1.5F, -0.5F, -0.5F, 2, 10, 2, psize);
-        bipedRightArm.addChild(Arms[0]);
-        bipedRightArm.addChild(Arms[2]);
-
-        bipedLeftArm = new ModelRenderer(this, 28, 24);
-        bipedLeftArm.mirror = true;
-        bipedLeftArm.addBox(-0.5F, -0.5F, -0.5F, 2, 10, 2, psize);
-        bipedLeftArm.addChild(Arms[1]);
-        bipedLeftArm.addChild(Arms[3]);
-
-        bipedRightLeg = new ModelRenderer(this, 0, 29);
-        bipedRightLeg.addBox(-1.8F, 0F, -2F, 3, 11, 4, psize);
-
-        bipedLeftLeg = new ModelRenderer(this, 0, 29);
-        bipedLeftLeg.mirror = true;
-        bipedLeftLeg.addBox(-1.2F, 0F, -2F, 3, 11, 4, psize);
-
-        hemSkirt = new ModelRenderer(this, 34, 50);
-        hemSkirt.addBox(-4F, -1F, -3.5F, 8, 7, 7, psize + 0.3F);
-
-        Skirt = new ModelRenderer(this, 36, 40);
-        Skirt.addBox(-4F, -2F, -3F, 8, 4, 6, psize);
-        Skirt.addChild(hemSkirt);
-
-        bipedBody = new ModelRenderer(this, 0, 0);
-        bipedBody.setTextureOffset(0, 16).addBox(-3F, -6F, -2F, 6, 9, 4, psize);
-        bipedBody.setTextureOffset(20, 20).addBox(-3F, -4.5F, -2.21F, 6, 2, 2, psize + 0.2F);
-        bipedBody.addChild(bipedRightArm);
-        bipedBody.addChild(bipedLeftArm);
-        bipedBody.addChild(Arms[4]);
-        bipedBody.addChild(Arms[5]);
-
-        mainFrame = new ModelRenderer(this, 0, 0);
-        mainFrame.setRotationPoint(0F, offsetY, 0F);
-        mainFrame.addChild(bipedHead);
-        mainFrame.addChild(bipedBody);
-        mainFrame.addChild(bipedRightLeg);
-        mainFrame.addChild(bipedLeftLeg);
-        mainFrame.addChild(Skirt);
+    protected void buildMesh(MeshDefinition mesh, CubeDeformation deform) {
+        buildMesh(mesh, deform, 0.0F);
     }
 
-    @Override
-    public float getHeight() { return 1.75F; }
+    private static void buildMesh(MeshDefinition mesh, CubeDeformation deform, float pyoffset) {
+        var root = mesh.getRoot();
+        var mainFrame = root.addOrReplaceChild("main_frame", CubeListBuilder.create(), PartPose.offset(0, pyoffset + 10, 0));
+        var bipedTorso = mainFrame.addOrReplaceChild("biped_torso", CubeListBuilder.create(), PartPose.offset(0, 0, 0));
+        var bipedNeck = bipedTorso.addOrReplaceChild("biped_neck", CubeListBuilder.create(), PartPose.offset(0, 0, 0));
+        var bipedBody = bipedTorso.addOrReplaceChild("biped_body", CubeListBuilder.create(), PartPose.offset(0, 0, 0));
+        bipedBody.addOrReplaceChild("body_main", CubeListBuilder.create()
+                .texOffs(0, 16).addBox(-3, -6, -2, 6, 9, 4, deform), PartPose.offset(0, 0, 0));
+        bipedBody.addOrReplaceChild("body_extra", CubeListBuilder.create()
+                .texOffs(20, 20).addBox(-3, -4.5F, -2.21F, 6, 2, 2, CubeDeformation.NONE.extend(0.2F)), PartPose.offset(0, 0, 0));
 
-    @Override
-    public float getWidth() { return 0.5F; }
+        var bipedPelvic = bipedTorso.addOrReplaceChild("biped_pelvic", CubeListBuilder.create(), PartPose.offset(0, 3, 0));
 
-    @Override
-    public void setLivingAnimations(IModelCaps pEntityCaps, float f, float f1, float pRenderPartialTicks) {
-        bipedHead.setRotationPoint(0F, headPosY, 0F);
-        HeadMount.setRotationPoint(0F, -4F, 0F);
-        eyeR.setRotationPoint(0F, 0F, 0F);
-        eyeL.setRotationPoint(0F, 0F, 0F);
-        Ponytail.setRotationPoint(0F, -5.2F, 5F);
-        BunchR.setRotationPoint(-4.5F, -5.5F, 1.7F);
-        BunchL.setRotationPoint( 4.5F, -5.5F, 1.7F);
+        var bipedHead = bipedNeck.addOrReplaceChild("biped_head", CubeListBuilder.create(), PartPose.offset(0, -6, 0));
+        bipedHead.addOrReplaceChild("head_main", CubeListBuilder.create()
+                .texOffs(0, 0).addBox(-4, -8, -4, 8, 8, 8, deform), PartPose.offset(0, 0, 0));
+        bipedHead.addOrReplaceChild("head_front", CubeListBuilder.create()
+                .texOffs(32, 0).addBox(-4, -8, -4, 8, 12, 8, CubeDeformation.NONE.extend(0.3F)), PartPose.offset(0, 0, 0));
+        bipedHead.addOrReplaceChild("head_hair_back", CubeListBuilder.create()
+                .texOffs(52, 20).addBox(-2, -7.2F, 4, 4, 4, 2, deform), PartPose.offset(0, 0, 0));
+        bipedHead.addOrReplaceChild("head_hair_side_left", CubeListBuilder.create()
+                .texOffs(36, 20).addBox(-5, -7, 0.2F, 1, 3, 3, deform), PartPose.offset(0, 0, 0));
+        bipedHead.addOrReplaceChild("head_hair_side_right", CubeListBuilder.create()
+                .texOffs(44, 20).mirror().addBox(4, -7, 0.2F, 1, 3, 3, deform), PartPose.offset(0, 0, 0));
+        bipedHead.addOrReplaceChild("eye_right", CubeListBuilder.create()
+                .texOffs(0, 0).addBox(-4, -8, -4.001F, 4, 8, 0, deform), PartPose.offset(0, 0, 0));
+        bipedHead.addOrReplaceChild("eye_left", CubeListBuilder.create()
+                .texOffs(4, 0).addBox(0, -8, -4.001F, 4, 8, 0, deform), PartPose.offset(0, 0, 0));
+        bipedHead.addOrReplaceChild("head_mount", CubeListBuilder.create(), PartPose.offset(0, -4, 0));
 
-        bipedRightArm.setRotationPoint(-3.5F, bodyPosY - 5F, 0F);
-        Arms[0].setRotationPoint(-0.5F, 7F, 0F);
-        bipedLeftArm.setRotationPoint( 3.5F, bodyPosY - 5F, 0F);
-        Arms[1].setRotationPoint(0.5F, 7F, 0F);
+        var bipedRightArm = bipedNeck.addOrReplaceChild("biped_right_arm", CubeListBuilder.create(), PartPose.offset(-3.5F, -5F, 0));
+        bipedRightArm.addOrReplaceChild("arm_main", CubeListBuilder.create()
+                .texOffs(20, 24).addBox(-1.5F, -0.5F, -0.5F, 2, 10, 2, deform), PartPose.offset(0, 0, 0));
 
-        bipedRightLeg.setRotationPoint(-1.5F, legPosY, 0F);
-        bipedLeftLeg.setRotationPoint( 1.5F, legPosY, 0F);
+        var bipedLeftArm = bipedNeck.addOrReplaceChild("biped_left_arm", CubeListBuilder.create(), PartPose.offset(3.5F, -5F, 0));
+        bipedLeftArm.addOrReplaceChild("arm_main", CubeListBuilder.create()
+                .texOffs(28, 24).mirror().addBox(-0.5F, -0.5F, -0.5F, 2, 10, 2, deform), PartPose.offset(0, 0, 0));
 
-        Skirt.setRotationPoint(0F, legPosY - 1F, 0F);
-        hemSkirt.setRotationPoint(0F, 2F, 0F);
+        var bipedRightLeg = bipedPelvic.addOrReplaceChild("biped_right_leg", CubeListBuilder.create(), PartPose.offset(-1.5F, 3, 0));
+        bipedRightLeg.addOrReplaceChild("leg_main", CubeListBuilder.create()
+                .texOffs(0, 29).addBox(-1.8F, 0, -2, 3, 11, 4, deform), PartPose.offset(0, 0, 0));
 
-        bipedBody.setRotationPoint(0F, bodyPosY, 0F);
-        mainFrame.setRotationPoint(0F, offsetY, 0F);
+        var bipedLeftLeg = bipedPelvic.addOrReplaceChild("biped_left_leg", CubeListBuilder.create(), PartPose.offset(1.5F, 3, 0));
+        bipedLeftLeg.addOrReplaceChild("leg_main", CubeListBuilder.create()
+                .texOffs(0, 29).mirror().addBox(-1.2F, 0, -2, 3, 11, 4, deform), PartPose.offset(0, 0, 0));
 
-        bipedHead.rotateAngleX = 0F;
-        bipedHead.rotateAngleY = 0F;
-        bipedHead.rotateAngleZ = 0F;
-        Ponytail.rotateAngleX = 0.05F;
-        Ponytail.rotateAngleY = 0F;
-        Ponytail.rotateAngleZ = 0F;
-        BunchR.rotateAngleX = 0F; BunchR.rotateAngleY = 0F; BunchR.rotateAngleZ = 0.05F;
-        BunchL.rotateAngleX = 0F; BunchL.rotateAngleY = 0F; BunchL.rotateAngleZ = -0.05F;
-
-        bipedRightArm.rotateAngleX = 0F; bipedRightArm.rotateAngleY = 0F; bipedRightArm.rotateAngleZ = 0F;
-        Arms[0].rotateAngleX = 0F; Arms[0].rotateAngleY = 0F; Arms[0].rotateAngleZ = 0F;
-        bipedLeftArm.rotateAngleX  = 0F; bipedLeftArm.rotateAngleY  = 0F; bipedLeftArm.rotateAngleZ  = 0F;
-        Arms[1].rotateAngleX = 0F; Arms[1].rotateAngleY = 0F; Arms[1].rotateAngleZ = 0F;
-
-        bipedRightLeg.rotateAngleX = 0.05F; bipedRightLeg.rotateAngleY = 0.1F; bipedRightLeg.rotateAngleZ = -0.05F;
-        bipedLeftLeg.rotateAngleX  = 0.05F; bipedLeftLeg.rotateAngleY  =-0.1F; bipedLeftLeg.rotateAngleZ  = 0.05F;
-
-        Skirt.rotateAngleX = 0F; Skirt.rotateAngleY = 0F; Skirt.rotateAngleZ = 0F;
-        hemSkirt.rotateAngleX = 0.03F; hemSkirt.rotateAngleY = 0F; hemSkirt.rotateAngleZ = 0F;
-
-        bipedBody.rotateAngleX = -0.05F; bipedBody.rotateAngleY = 0F; bipedBody.rotateAngleZ = 0F;
-        mainFrame.rotateAngleX = 0F; mainFrame.rotateAngleY = 0F; mainFrame.rotateAngleZ = 0F;
-
-        bipedHead.rotateAngleZ = ModelCapsHelper.getCapsValueFloat(pEntityCaps, caps_interestedAngle, pRenderPartialTicks);
-        if (ModelCapsHelper.getCapsValueBoolean(pEntityCaps, caps_isLookSuger)) {
-            float fe1 = rand.nextFloat() - 0.5F;
-            float fe2 = rand.nextFloat() - 0.5F;
-            float fe3 = rand.nextFloat() - 0.5F;
-            eyeR.rotationPointX += fe1 * 0.07F;
-            eyeR.rotationPointY += fe2 * 0.04F + fe3 * 0.02F;
-            eyeL.rotationPointX += fe1 * 0.06F + fe3 * 0.02F;
-            eyeL.rotationPointY += fe2 * 0.05F;
-        }
-
-        float blinkFreq = 0.16F;
-        blinkFreq += 1F - (float)ModelCapsHelper.getCapsValueInt(pEntityCaps, caps_health) / 20F;
-        float f3 = (entityTicksExisted + pRenderPartialTicks + entityIdFactor) * 0.01F;
-        float f4 = (float)(Math.sin(f3 * 3F) + Math.sin(f3 * 17F) + Math.sin(f3 * 37F) + blinkFreq - 2.23309F);
-        if (f4 < 0) {
-            eyeR.setVisible(true);
-            eyeL.setVisible(true);
-        } else {
-            eyeR.setVisible(false);
-            eyeL.setVisible(false);
-        }
-
-        float velY = (float)ModelCapsHelper.getCapsValueDouble(pEntityCaps, caps_motionY) + 0.1F;
-        float fwBuf0 = Mth.clamp(velY * 1.1F, -0.5F, 0.5F);
-        Skirt.rotationPointY += fwBuf0;
-        float fwBuf1 = Mth.clamp(velY * 3.2F, -2F, 1F);
-        hemSkirt.rotationPointY += fwBuf1;
-        hemSkirt.rotationPointY += fwBuf1;
-        if (!ModelCapsHelper.getCapsValueBoolean(pEntityCaps, caps_isWet)) {
-            float fwBuf5 = Mth.clamp(velY * 2.1F, -0.7F, 0.1F);
-            Ponytail.rotateAngleX -= fwBuf5;
-            BunchR.rotateAngleZ -= fwBuf5;
-            BunchL.rotateAngleZ += fwBuf5;
-        }
-
-        float roll = ModelCapsHelper.getCapsValueInt(pEntityCaps, IModelCaps.caps_roll) + pRenderPartialTicks;
-        this.roll = Mth.clamp(roll * roll / 100.0F, 0.0F, 1.0F);
-        this.leaningPitch = lerp(pRenderPartialTicks,
-                ModelCapsHelper.getCapsValueFloat(pEntityCaps, caps_lastLeaningPitch),
-                ModelCapsHelper.getCapsValueFloat(pEntityCaps, caps_leaningPitch));
-    }
-
-    @Override
-    public void setRotationAngles(float f, float f1, float ticksExisted, float pheadYaw, float pheadPitch, float f5, IModelCaps pEntityCaps) {
-        if (ModelCapsHelper.getCapsValueBoolean(pEntityCaps, caps_isFallFlying)) {
-            f1 *= (1 - roll);
-            pheadPitch = -15f * roll + pheadPitch * (1 - roll);
-        } else if (0 < leaningPitch) {
-            pheadPitch = -15f * leaningPitch + pheadPitch * (1 - leaningPitch);
-        }
-
-        bipedHead.rotateAngleY += pheadYaw / 57.29578F;
-        bipedHead.rotateAngleX += pheadPitch / 57.29578F;
-        Ponytail.rotateAngleX += BunchR.rotateAngleX = BunchL.rotateAngleX = -bipedHead.rotateAngleX;
-        Ponytail.rotateAngleZ -= bipedHead.rotateAngleZ;
-        if (bipedHead.rotateAngleZ > 0) {
-            BunchR.rotateAngleZ -= bipedHead.rotateAngleZ * 0.2F;
-        } else {
-            BunchL.rotateAngleZ -= bipedHead.rotateAngleZ * 0.2F;
-        }
-
-        bipedRightArm.rotateAngleX -= mh_cos(f * 0.5656F) * 0.8F * f1;
-        bipedLeftArm.rotateAngleX += mh_cos(f * 0.5656F) * 0.8F * f1;
-        bipedRightLeg.rotateAngleX += mh_cos(f * 0.5656F) * 1.2F * f1;
-        bipedLeftLeg.rotateAngleX -= mh_cos(f * 0.5656F) * 1.2F * f1;
-        Skirt.rotateAngleY += mh_cos(f * 0.5656F) * 0.15F * f1;
-        hemSkirt.rotateAngleY += mh_cos(f * 0.5656F) * 0.25F * f1;
-
-        if (isRiding) {
-            bipedRightArm.rotateAngleX -= 0.3F;
-            bipedLeftArm.rotateAngleX -= 0.3F;
-            bipedRightLeg.rotateAngleX -= 1.2F;
-            bipedLeftLeg.rotateAngleX -= 1.2F;
-            bipedRightLeg.rotateAngleY += 0.2F;
-            bipedLeftLeg.rotateAngleY -= 0.2F;
-            Skirt.rotateAngleX -= 0.3F;
-            hemSkirt.rotateAngleX -= 0.9F;
-            mainFrame.rotationPointZ += 1.5F;
-        }
-
-        if (heldItemLeft != 0) {
-            bipedLeftArm.rotateAngleX = bipedLeftArm.rotateAngleX * 0.5F - (float)Math.PI * 0.1F * heldItemLeft;
-        }
-        if (heldItemRight != 0) {
-            bipedRightArm.rotateAngleX = bipedRightArm.rotateAngleX * 0.5F - (float)Math.PI * 0.1F * heldItemRight;
-        }
-
-        float onGroundR = onGrounds[0];
-        float onGroundL = onGrounds[1];
-        if ((onGroundR > -9990F || onGroundL > -9990F) && !aimedBow) {
-            float f6, f7, f8;
-            f6 = mh_sin(mh_sqrt_float(onGroundR) * (float)Math.PI * 2.0F);
-            f7 = mh_sin(mh_sqrt_float(onGroundL) * (float)Math.PI * 2.0F);
-            bipedBody.rotateAngleY = (f6 - f7) * 0.2F;
-            Skirt.rotateAngleY = bipedBody.rotateAngleY;
-            bipedRightArm.rotateAngleY += bipedBody.rotateAngleY;
-            bipedLeftArm.rotateAngleY += bipedBody.rotateAngleY;
-            if (onGroundR > 0F) {
-                f6 = 1.0F - onGroundR; f6 = 1.0F - f6 * f6 * f6 * f6;
-                f7 = mh_sin(f6 * (float)Math.PI);
-                f8 = mh_sin(onGroundR * (float)Math.PI) * -(bipedHead.rotateAngleX - 0.7F) * 0.75F;
-                bipedRightArm.rotateAngleX -= (float) ((double)f7 * 1.2D + (double)f8);
-                bipedRightArm.rotateAngleY += bipedBody.rotateAngleY * 2.0F;
-                bipedRightArm.rotateAngleZ = mh_sin(onGroundR * 3.141593F) * -0.4F;
-            } else {
-                bipedRightArm.rotateAngleX += bipedBody.rotateAngleY;
-            }
-            if (onGroundL > 0F) {
-                f6 = 1.0F - onGroundL; f6 = 1.0F - f6 * f6 * f6 * f6;
-                f7 = mh_sin(f6 * (float)Math.PI);
-                f8 = mh_sin(onGroundL * (float)Math.PI) * -(bipedHead.rotateAngleX - 0.7F) * 0.75F;
-                bipedLeftArm.rotateAngleX -= (float) ((double)f7 * 1.2D + (double)f8);
-                bipedLeftArm.rotateAngleY += bipedBody.rotateAngleY * 2.0F;
-                bipedLeftArm.rotateAngleZ = mh_sin(onGroundL * 3.141593F) * 0.4F;
-            } else {
-                bipedLeftArm.rotateAngleX += bipedBody.rotateAngleY;
-            }
-        }
-
-        if (isSneak) {
-            bipedBody.rotateAngleX += 0.55F;
-            bipedRightArm.rotateAngleX += 0.2F;
-            bipedLeftArm.rotateAngleX += 0.2F;
-            Skirt.rotateAngleX += 0.1F;
-            hemSkirt.rotateAngleX += 0.3F;
-            float upperBodyLength = bodyPosY - headPosY;
-            float lowerBodyLength = legPosY - bodyPosY;
-            bipedHead.rotationPointZ -= upperBodyLength * mh_sin(bipedBody.rotateAngleX);
-            bipedHead.rotationPointY += upperBodyLength * (1 - mh_cos(bipedBody.rotateAngleX));
-            bipedRightLeg.rotationPointZ += lowerBodyLength * mh_sin(bipedBody.rotateAngleX);
-            bipedLeftLeg.rotationPointZ += lowerBodyLength * mh_sin(bipedBody.rotateAngleX);
-            bipedRightLeg.rotationPointY -= lowerBodyLength * (1 - mh_cos(bipedBody.rotateAngleX));
-            bipedLeftLeg.rotationPointY -= lowerBodyLength * (1 - mh_cos(bipedBody.rotateAngleX));
-            Skirt.rotationPointZ += lowerBodyLength * mh_sin(bipedBody.rotateAngleX);
-            Skirt.rotationPointY -= lowerBodyLength * (1 - mh_cos(bipedBody.rotateAngleX));
-            mainFrame.rotationPointY += lowerBodyLength * (1 - mh_cos(bipedBody.rotateAngleX));
-        }
-        if (isWait) {
-            bipedRightArm.rotateAngleX += mh_sin(ticksExisted * 0.062F) * 0.05F - 0.6F;
-            bipedRightArm.rotateAngleZ -= 0.4F;
-            Arms[0].rotateAngleZ -= 1.5F; Arms[0].rotateAngleX -= 0.5F; Arms[0].rotateAngleY += 1.5F;
-            bipedLeftArm.rotateAngleX += mh_sin(ticksExisted * 0.062F) * 0.05F - 0.6F;
-            bipedLeftArm.rotateAngleZ += 0.4F;
-            Arms[1].rotateAngleZ += 1.5F; Arms[1].rotateAngleX -= 0.5F; Arms[1].rotateAngleY -= 1.5F;
-        } else {
-            if (aimedBow) {
-                float f6 = mh_sin(onGround * 3.141593F);
-                float f7 = mh_sin((1.0F - (1.0F - onGround) * (1.0F - onGround)) * 3.141593F);
-                bipedRightArm.rotateAngleZ = 0.0F; bipedLeftArm.rotateAngleZ = 0.0F;
-                bipedRightArm.rotateAngleY = -(0.1F - f6 * 0.6F);
-                bipedLeftArm.rotateAngleY = 0.1F - f6 * 0.6F;
-                bipedRightArm.rotateAngleX = -1.470796F; bipedLeftArm.rotateAngleX = -1.470796F;
-                bipedRightArm.rotateAngleX -= f6 * 1.2F - f7 * 0.4F;
-                bipedLeftArm.rotateAngleX -= f6 * 1.2F - f7 * 0.4F;
-                bipedRightArm.rotateAngleZ += mh_cos(ticksExisted * 0.09F) * 0.05F + 0.05F;
-                bipedLeftArm.rotateAngleZ -= mh_cos(ticksExisted * 0.09F) * 0.05F + 0.05F;
-                bipedRightArm.rotateAngleX += mh_sin(ticksExisted * 0.062F) * 0.05F;
-                bipedLeftArm.rotateAngleX -= mh_sin(ticksExisted * 0.062F) * 0.05F;
-                bipedRightArm.rotateAngleX += bipedHead.rotateAngleX;
-                bipedLeftArm.rotateAngleX += bipedHead.rotateAngleX;
-                bipedRightArm.rotateAngleY += bipedHead.rotateAngleY;
-                bipedLeftArm.rotateAngleY += bipedHead.rotateAngleY;
-            } else {
-                bipedRightArm.rotateAngleZ += 0.3F; bipedLeftArm.rotateAngleZ -= 0.3F;
-                bipedRightArm.rotateAngleZ += mh_cos(ticksExisted * 0.09F) * 0.05F + 0.05F;
-                bipedLeftArm.rotateAngleZ -= mh_cos(ticksExisted * 0.09F) * 0.05F + 0.05F;
-                bipedRightArm.rotateAngleX += mh_sin(ticksExisted * 0.062F) * 0.05F;
-                bipedLeftArm.rotateAngleX -= mh_sin(ticksExisted * 0.062F) * 0.05F;
-            }
-        }
-
-        Arms[2].setRotateAngle(-0.78539816339744830961566084581988F - bipedRightArm.getRotateAngleX(), 0F, 0F);
-        Arms[3].setRotateAngle(-0.78539816339744830961566084581988F - bipedLeftArm.getRotateAngleX(), 0F, 0F);
+        var skirt = bipedPelvic.addOrReplaceChild("skirt", CubeListBuilder.create(), PartPose.offset(0, -1, 0));
+        skirt.addOrReplaceChild("skirt_main", CubeListBuilder.create()
+                .texOffs(36, 40).addBox(-4, -2, -3, 8, 4, 6, deform), PartPose.offset(0, 0, 0));
+        skirt.addOrReplaceChild("hem_skirt", CubeListBuilder.create()
+                .texOffs(34, 50).addBox(-4, -1, -3.5F, 8, 7, 7, CubeDeformation.NONE.extend(0.3F)), PartPose.offset(0, 2, 0));
     }
 }
