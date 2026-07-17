@@ -6,17 +6,29 @@ import net.minecraft.client.model.HeadedModel;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
+import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
+import work.nemonet.littlemaidneo.maidmodel.LMModel;
 import work.nemonet.littlemaidneo.maidmodel.ModelLittleMaidBase;
 import work.nemonet.littlemaidneo.maidmodel.ModelRenderer;
-import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
+import net.minecraft.client.model.geom.builders.MeshDefinition;
+import net.minecraft.client.model.geom.builders.CubeDeformation;
 
-/**
- * LM専用に拡張
- */
-public class LMMultiModel<S extends MaidRenderState> extends MultiModel<S> implements HeadedModel {
+public class LMMultiModel<S extends MaidRenderState> extends LMModel<S> implements HeadedModel {
     private LittleMaidEntity entity;
     private final ModelPart modelPart = new ModelPart(ImmutableList.of(), ImmutableMap.of());
+
+    public LMMultiModel() {
+        super(
+            new ModelPart(ImmutableList.of(), ImmutableMap.of()),
+            new ModelPart(ImmutableList.of(), ImmutableMap.of()),
+            new ModelPart(ImmutableList.of(), ImmutableMap.of())
+        );
+    }
+
+    @Override
+    protected void buildMesh(MeshDefinition mesh, CubeDeformation deform) {
+    }
 
     @Override
     public void setupAnim(S state) {
