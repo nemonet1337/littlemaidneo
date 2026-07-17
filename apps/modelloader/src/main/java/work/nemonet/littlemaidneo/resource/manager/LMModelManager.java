@@ -4,6 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import work.nemonet.littlemaidneo.common.LMNLib;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
+import work.nemonet.littlemaidneo.maidmodel.LMModel;
 import work.nemonet.littlemaidneo.maidmodel.ModelMultiBase;
 import work.nemonet.littlemaidneo.multimodel.IMultiModel;
 
@@ -11,22 +12,20 @@ import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 public class LMModelManager {
     public static final LMModelManager INSTANCE = new LMModelManager();
     private static final Logger LOGGER = LogManager.getLogger();
     private IMultiModel defaultModel;
+    private LMModel<?> defaultLMModel;
     private final Map<String, ModelHolder> models = new HashMap<>();
+    private final Map<String, ModelFactory> lmModels = new HashMap<>();
 
     public void addModel(String modelName, Class<? extends ModelMultiBase> modelClass) {
         buildHolder(modelClass).ifPresent(holder -> putModel(modelName, holder));
     }
 
-    /**
-     * skin/inner/outer の 3 インスタンスを構築して {@link ModelHolder} を返す（重い処理）。
-     * 共有状態に触れず各インスタンスは独立に構築されるため、ワーカースレッドから呼んで良い。
-     * 抽象クラスや非対応シグネチャの場合は空を返す。
-     */
     public Optional<ModelHolder> buildHolder(Class<? extends ModelMultiBase> modelClass) {
         try {
             Constructor<? extends ModelMultiBase> constructor = modelClass.getConstructor(float.class);
@@ -42,10 +41,6 @@ public class LMModelManager {
         }
     }
 
-    /**
-     * 構築済みの {@link ModelHolder} を登録する（軽い処理）。HashMap を保護するため
-     * 単一スレッドの登録フェーズからのみ呼ぶこと。
-     */
     public void putModel(String modelName, ModelHolder holder) {
         models.put(modelName.toLowerCase(), holder);
         if (LMNLib.LOGGER.isDebugEnabled()) LOGGER.debug("Loaded Model : {}", holder.skin().getClass());
@@ -56,7 +51,7 @@ public class LMModelManager {
     }
 
     public boolean hasModel(String modelName) {
-        return models.get(modelName.toLowerCase()) != null;
+        return models.get(modelName.toLowerCase()) != null || lmModels.get(modelName.toLowerCase()) != null;
     }
 
     public Optional<IMultiModel> getModel(String modelName, IHasMultiModel.Layer layer) {
@@ -77,6 +72,44 @@ public class LMModelManager {
 
     public IMultiModel getDefaultModel() {
         return defaultModel;
+    }
+
+    public record ModelFactory(
+        Supplier<LMModel<?>> skinFactory,
+        Supplier<LMModel<?>> innerFactory,
+        Supplier<LMModel<?>> outerFactory
+    ) {
+        public LMModel<?> getModel(IHasMultiModel.Layer layer) {
+            return switch (layer) {
+                case SKIN -> skinFactory.get();
+                case INNER -> innerFactory.get();
+                case OUTER -> outerFactory.get();
+            };
+        }
+    }
+
+    public void addLMModel(String name, Supplier<LMModel<?>> skin, Supplier<LMModel<?>> inner, Supplier<LMModel<?>> outer) {
+        lmModels.put(name.toLowerCase(), new ModelFactory(skin, inner, outer));
+    }
+
+    public Optional<LMModel<?>> getLMModel(String name, IHasMultiModel.Layer layer) {
+        ModelFactory f = lmModels.get(name.toLowerCase());
+        if (f == null) return Optional.empty();
+        return Optional.of(f.getModel(layer));
+    }
+
+    public LMModel<?> getOrDefaultLMModel(String name, IHasMultiModel.Layer layer) {
+        ModelFactory f = lmModels.get(name.toLowerCase());
+        if (f == null) return defaultLMModel;
+        return f.getModel(layer);
+    }
+
+    public void setDefaultLMModel(LMModel<?> model) {
+        this.defaultLMModel = model;
+    }
+
+    public LMModel<?> getDefaultLMModel() {
+        return defaultLMModel;
     }
 
     public record ModelHolder(IMultiModel skin, IMultiModel inner, IMultiModel outer) {

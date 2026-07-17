@@ -26,7 +26,7 @@ public interface IHasMultiModel {
     boolean isContractMM();
 
     Optional<IMultiModel> getModel(Layer layer, Part part);
-Optional<Identifier> getTexture(Layer layer, Part part, boolean isLight);
+    Optional<Identifier> getTexture(Layer layer, Part part, boolean isLight);
 
     IModelCaps getCaps();
 boolean isArmorVisible(Part part);

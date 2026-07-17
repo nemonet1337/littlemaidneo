@@ -1,12 +1,15 @@
 package work.nemonet.littlemaidneo.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
+import work.nemonet.littlemaidneo.maidmodel.LMModel;
 import work.nemonet.littlemaidneo.multimodel.layer.MMRenderContext;
+
 public class MultiModelSkinLayer<S extends MultiModelRenderState, M extends MultiModel<S>> extends RenderLayer<S, M> {
 
     public MultiModelSkinLayer(RenderLayerParent<S, M> context) {
@@ -19,7 +22,11 @@ public class MultiModelSkinLayer<S extends MultiModelRenderState, M extends Mult
         submitNodeCollector.submitCustomGeometry(poseStack, MultiModelRenderLayer.getDefault(state.skinTexture), (snapPose, consumer) -> {
             PoseStack localStack = new PoseStack();
             localStack.last().set(snapPose);
-            state.skinModel.render(new MMRenderContext(localStack, consumer, light, OverlayTexture.NO_OVERLAY, 1f, 1f, 1f, 1f));
+            if (state.skinModel instanceof LMModel<?> lmModel) {
+                lmModel.getSkinRoot().render(localStack, consumer, light, OverlayTexture.NO_OVERLAY);
+            } else {
+                state.skinModel.render(new MMRenderContext(localStack, consumer, light, OverlayTexture.NO_OVERLAY, 1f, 1f, 1f, 1f));
+            }
         });
     }
 }
