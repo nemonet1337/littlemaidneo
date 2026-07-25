@@ -11,9 +11,7 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import work.nemonet.littlemaidneo.common.LMNLib;
-import work.nemonet.littlemaidneo.maidmodel.EntityCaps;
-import work.nemonet.littlemaidneo.maidmodel.IModelCaps;
-import work.nemonet.littlemaidneo.multimodel.IMultiModel;
+import work.nemonet.littlemaidneo.maidmodel.LMModel;
 import work.nemonet.littlemaidneo.resource.holder.TextureHolder;
 import work.nemonet.littlemaidneo.resource.manager.LMModelManager;
 import work.nemonet.littlemaidneo.resource.manager.LMTextureManager;
@@ -27,13 +25,12 @@ import java.util.Optional;
 public class MultiModelCompound implements IHasMultiModel {
 
     private final LivingEntity entity;
-    private final IModelCaps caps;
 
     private final TextureHolder defaultMainPackage;
     private final TextureHolder defaultArmorPackage;
 
     private TextureHolder skinTexHolder;
-    private IMultiModel skinModel;
+    private LMModel<?> skinModel;
     private TexturePair skinTexture;
 
     private final ArmorSets<TextureHolder> armorsTexHolder = new ArmorSets<>();
@@ -44,7 +41,6 @@ public class MultiModelCompound implements IHasMultiModel {
 
     public MultiModelCompound(LivingEntity entity, TextureHolder defaultMainPackage, TextureHolder defaultArmorPackage) {
         this.entity = entity;
-        this.caps = new EntityCaps(entity);
         this.defaultMainPackage = defaultMainPackage;
         this.defaultArmorPackage = defaultArmorPackage;
         this.color = TextureColors.BROWN;
@@ -61,7 +57,7 @@ public class MultiModelCompound implements IHasMultiModel {
             skinTexHolder = defaultMainPackage;
         }
         LMModelManager modelManager = LMModelManager.INSTANCE;
-        skinModel = modelManager.getOrDefaultModel(skinTexHolder.getModelName(), Layer.SKIN);
+        skinModel = modelManager.getOrDefaultLMModel(skinTexHolder.getModelName(), Layer.SKIN);
         skinTexture = new TexturePair(skinTexHolder.getTexture(color, isContract, false).orElse(null),
                 skinTexHolder.getTexture(color, isContract, true).orElse(null));
     }
@@ -113,8 +109,8 @@ public class MultiModelCompound implements IHasMultiModel {
         armorsTexHolder.setArmor(textureHolder, part);
         LMModelManager manager = LMModelManager.INSTANCE;
         ArmorPart.Builder dataBuilder = ArmorPart.Builder.newInstance();
-        dataBuilder.innerModel(manager.getOrDefaultModel(textureHolder.getModelName(), Layer.INNER));
-        dataBuilder.outerModel(manager.getOrDefaultModel(textureHolder.getModelName(), Layer.OUTER));
+        dataBuilder.innerModel(manager.getOrDefaultLMModel(textureHolder.getModelName(), Layer.INNER));
+        dataBuilder.outerModel(manager.getOrDefaultLMModel(textureHolder.getModelName(), Layer.OUTER));
         dataBuilder.innerTex(textureHolder.getArmorTexture(Layer.INNER, armorName, damagePercent, false).orElse(null));
         dataBuilder.innerTexLight(textureHolder.getArmorTexture(Layer.INNER, armorName, damagePercent, true).orElse(null));
         dataBuilder.outerTex(textureHolder.getArmorTexture(Layer.OUTER, armorName, damagePercent, false).orElse(null));
@@ -149,11 +145,11 @@ public class MultiModelCompound implements IHasMultiModel {
     }
 
     @Override
-    public Optional<IMultiModel> getModel(Layer layer, Part part) {
+    public Optional<LMModel<?>> getModel(Layer layer, Part part) {
         if (layer == Layer.SKIN) {
             return Optional.ofNullable(skinModel);
         } else {
-            IMultiModel model = armorsData.getArmor(part)
+            LMModel<?> model = armorsData.getArmor(part)
                     .orElseThrow(() -> new IllegalStateException("防具データが存在しません"))
                     .getModel(layer);
             return Optional.ofNullable(model);
@@ -170,11 +166,6 @@ public class MultiModelCompound implements IHasMultiModel {
                     .getTexture(layer, isLight);
             return Optional.ofNullable(Identifier);
         }
-    }
-
-    @Override
-    public IModelCaps getCaps() {
-        return this.caps;
     }
 
     @Override

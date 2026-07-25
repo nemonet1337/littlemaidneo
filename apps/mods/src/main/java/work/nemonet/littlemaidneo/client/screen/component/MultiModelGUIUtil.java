@@ -5,8 +5,7 @@ import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.resources.Identifier;
 import work.nemonet.littlemaidneo.client.screen.ModelSelectScreen;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
-import work.nemonet.littlemaidneo.multimodel.IMultiModel;
-import work.nemonet.littlemaidneo.multimodel.layer.MMPose;
+import work.nemonet.littlemaidneo.maidmodel.LMModel;
 import work.nemonet.littlemaidneo.resource.holder.TextureHolder;
 import work.nemonet.littlemaidneo.resource.manager.LMModelManager;
 import work.nemonet.littlemaidneo.resource.util.ArmorPart;
@@ -18,8 +17,8 @@ import java.util.Optional;
 
 public class MultiModelGUIUtil {
 
-    public static Optional<IMultiModel> getModel(LMModelManager modelManager, TextureHolder texture) {
-        return modelManager.getModel(texture.getModelName(), IHasMultiModel.Layer.SKIN);
+    public static Optional<LMModel<?>> getModel(LMModelManager modelManager, TextureHolder texture) {
+        return modelManager.getLMModel(texture.getModelName(), IHasMultiModel.Layer.SKIN);
     }
 
     public static Optional<TexturePair> getTexturePair(TextureHolder holder, TextureColors color, boolean isContract) {
@@ -30,7 +29,7 @@ public class MultiModelGUIUtil {
     }
 
     public static void renderModel(GuiGraphicsExtractor context, int posX, int posY, float mouseX, float mouseY, int scale,
-                                   IMultiModel model, TexturePair texturePair, DummyModelEntity dummy) {
+                                    LMModel<?> model, TexturePair texturePair, DummyModelEntity dummy) {
         dummy.setSkinModel(model);
         dummy.setSkinTexture(texturePair);
         for (IHasMultiModel.Part part : IHasMultiModel.Part.values()) {
@@ -42,9 +41,9 @@ public class MultiModelGUIUtil {
     }
 
     public static ArmorPart getArmorDate(LMModelManager modelManager, TextureHolder texture, String armorName) {
-        IMultiModel innerModel = modelManager.getModel(texture.getModelName(), IHasMultiModel.Layer.INNER)
+        LMModel<?> innerModel = modelManager.getLMModel(texture.getModelName(), IHasMultiModel.Layer.INNER)
                 .orElseThrow(() -> new IllegalStateException("モデルが存在しません"));
-        IMultiModel outerModel = modelManager.getModel(texture.getModelName(), IHasMultiModel.Layer.OUTER)
+        LMModel<?> outerModel = modelManager.getLMModel(texture.getModelName(), IHasMultiModel.Layer.OUTER)
                 .orElseThrow(() -> new IllegalStateException("モデルが存在しません"));
         Identifier innerTex = texture.getArmorTexture(IHasMultiModel.Layer.INNER, armorName, 0, false).orElse(null);
         Identifier innerLightTex = texture.getArmorTexture(IHasMultiModel.Layer.INNER, armorName, 0, true).orElse(null);
@@ -54,7 +53,7 @@ public class MultiModelGUIUtil {
     }
 
     public static void renderArmor(GuiGraphicsExtractor context, int posX, int posY, float mouseX, float mouseY, int scale,
-                                   IMultiModel model, ArmorPart data, DummyModelEntity dummy) {
+                                    LMModel<?> model, ArmorPart data, DummyModelEntity dummy) {
         dummy.setSkinModel(model);
         dummy.setSkinTexture(ModelSelectScreen.EMPTY_TEXTURE_PAIR);
         for (IHasMultiModel.Part part : IHasMultiModel.Part.values()) {
@@ -65,7 +64,7 @@ public class MultiModelGUIUtil {
     }
 
     public static void renderArmorPart(GuiGraphicsExtractor context, int posX, int posY, float mouseX, float mouseY, int scale,
-                                       IMultiModel model, ArmorPart data, IHasMultiModel.Part armorPart, DummyModelEntity dummy) {
+                                        LMModel<?> model, ArmorPart data, IHasMultiModel.Part armorPart, DummyModelEntity dummy) {
         dummy.setSkinModel(model);
         dummy.setSkinTexture(ModelSelectScreen.EMPTY_TEXTURE_PAIR);
         for (IHasMultiModel.Part part : IHasMultiModel.Part.values()) {
@@ -78,8 +77,8 @@ public class MultiModelGUIUtil {
     }
 
     public static void renderEntity(GuiGraphicsExtractor context, int posX, int posY, float mouseX, float mouseY, int scale,
-                                    IMultiModel model, DummyModelEntity dummy) {
-        float eyeHeight = model.getEyeHeight(dummy.getCaps(), MMPose.STANDING);
+                                     LMModel<?> model, DummyModelEntity dummy) {
+        float eyeHeight = 1.35F * 0.85F;
         InventoryScreen.extractEntityInInventoryFollowsMouse(context,
                 posX - scale, posY - (int) (eyeHeight * scale * 2),
                 posX + scale, posY,

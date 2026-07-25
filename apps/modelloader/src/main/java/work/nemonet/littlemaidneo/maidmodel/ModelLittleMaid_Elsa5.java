@@ -19,6 +19,9 @@ public class ModelLittleMaid_Elsa5 extends LMModel<MultiModelRenderState> {
             buildAndBake(pyoffset, texW, texH, CubeDeformation.NONE.extend(0.1F + psize)),
             buildAndBake(pyoffset, texW, texH, CubeDeformation.NONE.extend(0.5F + psize))
         );
+        // まばたきオーバーレイは旧実装では通常非表示（まばたきの瞬間のみ表示）
+        setHeadPartVisible("eye_right", false);
+        setHeadPartVisible("eye_left", false);
     }
 
     private static ModelPart buildAndBake(float pyoffset, int texW, int texH, CubeDeformation deform) {
@@ -83,5 +86,11 @@ public class ModelLittleMaid_Elsa5 extends LMModel<MultiModelRenderState> {
                 .texOffs(36, 40).addBox(-4, -2, -3, 8, 4, 6, deform), PartPose.offset(0, 0, 0));
         skirt.addOrReplaceChild("hem_skirt", CubeListBuilder.create()
                 .texOffs(34, 50).addBox(-4, -1, -3.5F, 8, 7, 7, CubeDeformation.NONE.extend(0.3F)), PartPose.offset(0, 2, 0));
+    }
+
+    @Override
+    protected void applyExtraPose(MultiModelRenderState state, ModelPart mainFrame, BipedParts parts) {
+        // 旧 Elsa5 は基準頻度 0.16F（体力連動）
+        applyBlink(state, parts, 0.16F);
     }
 }

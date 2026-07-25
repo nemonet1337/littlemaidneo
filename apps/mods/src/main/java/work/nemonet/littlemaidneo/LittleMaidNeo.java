@@ -135,8 +135,7 @@ public class LittleMaidNeo {
         modelManager.addLMModel("RX0", ModelLittleMaid_RX0::new, ModelLittleMaid_RX0::new, ModelLittleMaid_RX0::new);
         modelManager.addLMModel("Beverly7", ModelLittleMaid_Beverly7::new, ModelLittleMaid_Beverly7::new, ModelLittleMaid_Beverly7::new);
         modelManager.addLMModel("Chloe2", ModelLittleMaid_Chloe2::new, ModelLittleMaid_Chloe2::new, ModelLittleMaid_Chloe2::new);
-        modelManager.setDefaultModel(modelManager.getModel("Default", IHasMultiModel.Layer.SKIN)
-                .orElseThrow(RuntimeException::new));
+        modelManager.setDefaultLMModel(modelManager.getOrDefaultLMModel("Default", IHasMultiModel.Layer.SKIN));
     }
 
     public static void initTextureLoader() {

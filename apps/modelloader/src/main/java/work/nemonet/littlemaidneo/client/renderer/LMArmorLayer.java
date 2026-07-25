@@ -21,43 +21,58 @@ public class LMArmorLayer<S extends MultiModelRenderState, M extends LMModel<S>>
     public void submit(PoseStack poseStack, SubmitNodeCollector submitNodeCollector, int light, S state, float headYaw, float headPitch) {
         if (state.armorStates == null) return;
 
-        for (int i = 0; i < 4; i++) {
-            MultiModelRenderState.ArmorRenderState ars = state.armorStates[i];
+        // 装備スロットごとに、そのスロットに対応するボディパーツのみを描画する（旧 showArmorParts 相当）
+        for (IHasMultiModel.Part part : IHasMultiModel.Part.values()) {
+            MultiModelRenderState.ArmorRenderState ars = state.armorStates[part.getIndex()];
             if (ars == null || !ars.visible()) continue;
 
-            renderArmorPart(poseStack, submitNodeCollector, light, ars, IHasMultiModel.Part.HEAD, i);
-            renderArmorPart(poseStack, submitNodeCollector, light, ars, IHasMultiModel.Part.BODY, i);
-            renderArmorPart(poseStack, submitNodeCollector, light, ars, IHasMultiModel.Part.LEGS, i);
-            renderArmorPart(poseStack, submitNodeCollector, light, ars, IHasMultiModel.Part.FEET, i);
+            renderSingle(poseStack, submitNodeCollector, light, ars.innerModel(), ars.innerTexture(), false, IHasMultiModel.Layer.INNER, part);
+            renderSingle(poseStack, submitNodeCollector, light, ars.innerModel(), ars.innerLightTexture(), true, IHasMultiModel.Layer.INNER, part);
+            renderSingle(poseStack, submitNodeCollector, light, ars.outerModel(), ars.outerTexture(), false, IHasMultiModel.Layer.OUTER, part);
+            renderSingle(poseStack, submitNodeCollector, light, ars.outerModel(), ars.outerLightTexture(), true, IHasMultiModel.Layer.OUTER, part);
         }
     }
 
-    private void renderArmorPart(PoseStack poseStack, SubmitNodeCollector submitNodeCollector, int light,
-                                 MultiModelRenderState.ArmorRenderState ars, IHasMultiModel.Part part, int layerPartIndex) {
-        renderSingle(poseStack, submitNodeCollector, light, ars.innerModel(), ars.innerTexture(), false, part);
-        renderSingle(poseStack, submitNodeCollector, light, ars.innerModel(), ars.innerLightTexture(), true, part);
-        renderSingle(poseStack, submitNodeCollector, light, ars.outerModel(), ars.outerTexture(), false, part);
-        renderSingle(poseStack, submitNodeCollector, light, ars.outerModel(), ars.outerLightTexture(), true, part);
-    }
-
     private void renderSingle(PoseStack poseStack, SubmitNodeCollector submitNodeCollector, int light,
-                              LMModel<?> model, Identifier tex, boolean isLight, IHasMultiModel.Part part) {
+                               LMModel<?> model, Identifier tex, boolean isLight, IHasMultiModel.Layer layer,
+                               IHasMultiModel.Part part) {
         if (model == null || tex == null) return;
         int lightVal = isLight ? 0xF00000 : light;
+        // ルート解決とポーズ保存は submit 時点で行う（ラムダ実行時は別メイドさんの状態に書き換わっている）
+        ModelPart root = layer == IHasMultiModel.Layer.OUTER ? model.getOuterRoot() : model.getInnerRoot();
+        if (root == null) root = model.getSkinRoot();
+        ModelPart mainFrame = LMModel.getChildSafe(root, "main_frame");
+        ModelPart renderRoot = mainFrame != null ? mainFrame : root;
+        LMModel.PoseSnapshot pose = LMModel.capturePose(renderRoot);
         submitNodeCollector.submitCustomGeometry(poseStack, model.renderType(tex), (snapPose, consumer) -> {
             PoseStack local = new PoseStack();
             local.last().set(snapPose);
-            ModelPart partRoot = switch (part) {
-                case HEAD -> model.getSkinRoot().getChild("head");
-                case BODY -> model.getSkinRoot().getChild("body");
-                case LEGS -> model.getSkinRoot().getChild("legs");
-                case FEET -> model.getSkinRoot().getChild("feet");
-            };
-            if (partRoot == null) return;
-            boolean prev = partRoot.visible;
-            partRoot.visible = true;
-            partRoot.render(local, consumer, lightVal, OverlayTexture.NO_OVERLAY);
-            partRoot.visible = prev;
+            pose.apply();
+            setPartVisibility(renderRoot, part);
+            renderRoot.render(local, consumer, lightVal, OverlayTexture.NO_OVERLAY);
+            setPartVisibility(renderRoot, null);
         });
+    }
+
+    /** part に対応するパーツのみ可視にする。null なら全パーツ可視に戻す。 */
+    private static void setPartVisibility(ModelPart mainFrame, IHasMultiModel.Part part) {
+        ModelPart torso = LMModel.getChildSafe(mainFrame, "biped_torso");
+        ModelPart neck = LMModel.getChildSafe(torso, "biped_neck");
+        ModelPart pelvic = LMModel.getChildSafe(torso, "biped_pelvic");
+        if (pelvic == null) pelvic = LMModel.getChildSafe(LMModel.getChildSafe(torso, "biped_trunk"), "biped_pelvic");
+        boolean all = part == null;
+        setVisible(LMModel.getChildSafe(neck, "biped_head"), all || part == IHasMultiModel.Part.HEAD);
+        boolean body = all || part == IHasMultiModel.Part.BODY;
+        setVisible(LMModel.getChildSafe(torso, "biped_body"), body);
+        setVisible(LMModel.getChildSafe(neck, "biped_right_arm"), body);
+        setVisible(LMModel.getChildSafe(neck, "biped_left_arm"), body);
+        setVisible(LMModel.getChildSafe(pelvic, "skirt"), all || part == IHasMultiModel.Part.LEGS);
+        boolean feet = all || part == IHasMultiModel.Part.FEET;
+        setVisible(LMModel.getChildSafe(pelvic, "biped_right_leg"), feet);
+        setVisible(LMModel.getChildSafe(pelvic, "biped_left_leg"), feet);
+    }
+
+    private static void setVisible(ModelPart p, boolean visible) {
+        if (p != null) p.visible = visible;
     }
 }

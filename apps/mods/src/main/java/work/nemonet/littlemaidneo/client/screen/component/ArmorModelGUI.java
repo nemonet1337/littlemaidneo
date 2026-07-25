@@ -11,7 +11,7 @@ import net.minecraft.world.item.Items;
 import org.lwjgl.glfw.GLFW;
 import work.nemonet.littlemaidneo.client.screen.ModelSelectScreen;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
-import work.nemonet.littlemaidneo.multimodel.IMultiModel;
+import work.nemonet.littlemaidneo.maidmodel.LMModel;
 import work.nemonet.littlemaidneo.resource.holder.TextureHolder;
 import work.nemonet.littlemaidneo.resource.manager.LMModelManager;
 import work.nemonet.littlemaidneo.resource.util.ArmorPart;
@@ -52,7 +52,7 @@ public class ArmorModelGUI extends GUIElement implements ListGUIElement {
     }
 
     public void renderAllArmorModel(GuiGraphicsExtractor context, int scale, float mouseX, float mouseY,
-                                    IMultiModel model, TextureHolder texture, DummyModelEntity dummy) {
+                                     work.nemonet.littlemaidneo.maidmodel.LMModel<?> model, TextureHolder texture, DummyModelEntity dummy) {
         Font fontRenderer = Minecraft.getInstance().font;
         ModelSelectScreen.renderColor(context,
                 this.x, this.y,

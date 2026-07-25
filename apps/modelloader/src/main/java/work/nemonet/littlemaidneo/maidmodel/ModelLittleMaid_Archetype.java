@@ -86,4 +86,5 @@ public class ModelLittleMaid_Archetype extends LMModel<MultiModelRenderState> {
         bipedHead.addOrReplaceChild("side_tail_left", CubeListBuilder.create()
                 .texOffs(58, 21).mirror().addBox(4.5F, -6.8F, 0.9F, 1, 8, 2, deform), PartPose.offset(0, 0, 0));
     }
+
 }

@@ -79,4 +79,5 @@ public class ModelMulti_Stef extends LMModel<MultiModelRenderState> {
         bipedLeftLeg.addOrReplaceChild("leg_main", CubeListBuilder.create()
                 .texOffs(0, 16).mirror().addBox(-2, 0, -2, 4, 12, 4, deform), PartPose.offset(0, 0, 0));
     }
+
 }

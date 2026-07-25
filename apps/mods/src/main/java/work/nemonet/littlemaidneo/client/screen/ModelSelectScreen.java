@@ -101,7 +101,7 @@ public class ModelSelectScreen<T extends Entity & IHasMultiModel> extends Screen
                 .elementSize(listWidth, scale * heightRatio)
                 .items(sortedSelectable(textureHolders,
                         th -> th.hasSkinTexture(this.isContract) &&
-                                modelManager.getModel(th.getModelName(), IHasMultiModel.Layer.SKIN).isPresent())
+                                modelManager.getLMModel(th.getModelName(), IHasMultiModel.Layer.SKIN).isPresent())
                         .stream()
                         .map(t -> new MultiModelGUI(t, this.isContract, scale, this.dummy))
                         .collect(Collectors.toList()))
@@ -132,7 +132,7 @@ public class ModelSelectScreen<T extends Entity & IHasMultiModel> extends Screen
                 .elementSize(listWidth, scale * heightRatio)
                 .items(sortedSelectable(textureHolders,
                         th -> th.hasArmorTexture() &&
-                                modelManager.getModel(th.getModelName(), IHasMultiModel.Layer.INNER).isPresent())
+                                modelManager.getLMModel(th.getModelName(), IHasMultiModel.Layer.INNER).isPresent())
                         .stream()
                         .map(t -> new ArmorModelGUI(t, scale, this.dummy, this.armors))
                         .collect(Collectors.toList()))

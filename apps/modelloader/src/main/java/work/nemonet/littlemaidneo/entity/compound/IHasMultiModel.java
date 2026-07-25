@@ -2,8 +2,7 @@ package work.nemonet.littlemaidneo.entity.compound;
 
 import net.minecraft.world.entity.Entity;
 import net.minecraft.resources.Identifier;
-import work.nemonet.littlemaidneo.maidmodel.IModelCaps;
-import work.nemonet.littlemaidneo.multimodel.IMultiModel;
+import work.nemonet.littlemaidneo.maidmodel.LMModel;
 import work.nemonet.littlemaidneo.resource.holder.TextureHolder;
 import work.nemonet.littlemaidneo.resource.util.TextureColors;
 
@@ -25,12 +24,11 @@ public interface IHasMultiModel {
 
     boolean isContractMM();
 
-    Optional<IMultiModel> getModel(Layer layer, Part part);
+    Optional<LMModel<?>> getModel(Layer layer, Part part);
     Optional<Identifier> getTexture(Layer layer, Part part, boolean isLight);
 
-    IModelCaps getCaps();
-boolean isArmorVisible(Part part);
-boolean isArmorGlint(Part part);
+    boolean isArmorVisible(Part part);
+    boolean isArmorGlint(Part part);
 
     enum Layer {
         SKIN(0, 0, false),

@@ -13,21 +13,19 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import work.nemonet.littlemaidneo.common.LMNLib;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
-import work.nemonet.littlemaidneo.maidmodel.ModelMultiBase;
-import work.nemonet.littlemaidneo.multimodel.layer.MMMatrixStack;
+import work.nemonet.littlemaidneo.maidmodel.LMModel;
 
-import static work.nemonet.littlemaidneo.maidmodel.IModelCaps.*;
 public class MultiModelRenderer<T extends LivingEntity & IHasMultiModel>
-        extends LivingEntityRenderer<T, MultiModelRenderState, MultiModel<MultiModelRenderState>> {
+        extends LivingEntityRenderer<T, MultiModelRenderState, LMMultiModel<MultiModelRenderState>> {
 
     private static final Identifier NULL_TEXTURE = Identifier.fromNamespaceAndPath(LMNLib.MODID, "null");
 
     public MultiModelRenderer(EntityRendererProvider.Context ctx) {
-        super(ctx, new MultiModel<>(), 0.5F);
-        this.addLayer(new MultiModelSkinLayer<>(this));
-        this.addLayer(new MultiModelArmorLayer<>(this));
-        this.addLayer(new MultiModelHeldItemLayer<>(this));
-        this.addLayer(new MultiModelLightLayer<>(this));
+        super(ctx, new LMMultiModel<>(), 0.5F);
+        this.addLayer(new LMSkinLayer<>(this));
+        this.addLayer(new LMArmorLayer<>(this));
+        this.addLayer(new LMHeldItemLayer<>(this));
+        this.addLayer(new LMLightLayer<>(this));
     }
 
     @Override
@@ -49,7 +47,6 @@ public class MultiModelRenderer<T extends LivingEntity & IHasMultiModel>
         state.walkAnimationPos = entity.walkAnimation.position(partialTick);
         state.walkAnimationSpeed = entity.walkAnimation.speed(partialTick);
 
-        state.caps = entity.getCaps();
         state.skinModel = entity.getModel(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD).orElse(null);
         state.skinTexture = entity.getTexture(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD, false).orElse(null);
         state.skinTextureLight = entity.getTexture(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD, true).orElse(null);
@@ -76,17 +73,17 @@ public class MultiModelRenderer<T extends LivingEntity & IHasMultiModel>
             state.outerTextures.setArmor(entity.getTexture(IHasMultiModel.Layer.OUTER, part, false).orElse(null), part);
             state.outerTexturesLight.setArmor(entity.getTexture(IHasMultiModel.Layer.OUTER, part, true).orElse(null), part);
 
-            entity.getModel(IHasMultiModel.Layer.INNER, part)
-                    .filter(m -> m instanceof ModelMultiBase)
-                    .ifPresent(m -> syncCaps(entity, (ModelMultiBase) m, partialTick));
-            entity.getModel(IHasMultiModel.Layer.OUTER, part)
-                    .filter(m -> m instanceof ModelMultiBase)
-                    .ifPresent(m -> syncCaps(entity, (ModelMultiBase) m, partialTick));
+            state.armorStates[part.getIndex()] = new MultiModelRenderState.ArmorRenderState(
+                    state.innerModels.getArmor(part).orElse(null),
+                    state.outerModels.getArmor(part).orElse(null),
+                    state.innerTextures.getArmor(part).orElse(null),
+                    state.innerTexturesLight.getArmor(part).orElse(null),
+                    state.outerTextures.getArmor(part).orElse(null),
+                    state.outerTexturesLight.getArmor(part).orElse(null),
+                    entity.isArmorVisible(part),
+                    entity.isArmorGlint(part)
+            );
         }
-
-        entity.getModel(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD)
-                .filter(m -> m instanceof ModelMultiBase)
-                .ifPresent(m -> syncCaps(entity, (ModelMultiBase) m, partialTick));
     }
 
     @Override
@@ -97,21 +94,8 @@ public class MultiModelRenderer<T extends LivingEntity & IHasMultiModel>
     }
 
     @Override
-    protected void setupRotations(MultiModelRenderState state, PoseStack poseStack, float bodyYaw, float scale) {
-        super.setupRotations(state, poseStack, bodyYaw, scale);
-        if (state.multiModel == null) return;
-        state.multiModel.getModel(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD)
-                .ifPresent(model -> model.setupTransform(state.multiModel.getCaps(),
-                        new MMMatrixStack(poseStack), state.ageInTicks, bodyYaw, state.partialTick));
-    }
-
-    @Override
     protected void scale(MultiModelRenderState state, PoseStack poseStack) {
-        if (state.multiModel == null) return;
-        state.multiModel.getModel(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD)
-                .filter(m -> m instanceof ModelMultiBase)
-                .map(m -> (float) ((ModelMultiBase) m).getCapsValue(caps_ScaleFactor))
-                .ifPresent(s -> poseStack.scale(s, s, s));
+        poseStack.scale(0.9375F, 0.9375F, 0.9375F);
     }
 
     @Override
@@ -124,44 +108,5 @@ public class MultiModelRenderer<T extends LivingEntity & IHasMultiModel>
         if (state.multiModel == null) return NULL_TEXTURE;
         return state.multiModel.getTexture(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD, false)
                 .orElse(NULL_TEXTURE);
-    }
-
-    public void syncCaps(T entity, ModelMultiBase model, float partialTicks) {
-        float swingProgress = entity.getAttackAnim(partialTicks);
-        float right = 0;
-        float left = 0;
-        if (entity.swingingArm == InteractionHand.MAIN_HAND) {
-            if (entity.getMainArm() == HumanoidArm.RIGHT) {
-                right = swingProgress;
-            } else {
-                left = swingProgress;
-            }
-        } else {
-            if (entity.getMainArm() != HumanoidArm.RIGHT) {
-                right = swingProgress;
-            } else {
-                left = swingProgress;
-            }
-        }
-        model.setCapsValue(caps_onGround, right, left);
-        model.setCapsValue(caps_isRiding, entity.isPassenger());
-        model.setCapsValue(caps_isSneak, entity.isCrouching());
-        model.setCapsValue(caps_isChild, entity.isBaby());
-        
-        ItemStack mainHand = entity.getMainHandItem();
-        ItemStack offHand = entity.getOffhandItem();
-        float mainHandVal = mainHand.isEmpty() ? 0F : 1.0F;
-        float offHandVal = offHand.isEmpty() ? 0F : 1.0F;
-        if (entity.getMainArm() == HumanoidArm.RIGHT) {
-            model.setCapsValue(caps_heldItemRight, mainHandVal);
-            model.setCapsValue(caps_heldItemLeft, offHandVal);
-        } else {
-            model.setCapsValue(caps_heldItemRight, offHandVal);
-            model.setCapsValue(caps_heldItemLeft, mainHandVal);
-        }
-        
-        model.setCapsValue(caps_aimedBow, false);
-        model.setCapsValue(caps_entityIdFactor, 0F);
-        model.setCapsValue(caps_ticksExisted, entity.tickCount);
     }
 }

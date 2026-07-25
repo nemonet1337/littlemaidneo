@@ -65,8 +65,8 @@ public class MultiModelGUI extends GUIElement implements ListGUIElement {
     }
 
     private void renderAllColorModel(GuiGraphicsExtractor context, int scale, float mouseX, float mouseY,
-                                     work.nemonet.littlemaidneo.multimodel.IMultiModel model,
-                                     TextureHolder holder, boolean isContract) {
+                                      work.nemonet.littlemaidneo.maidmodel.LMModel<?> model,
+                                      TextureHolder holder, boolean isContract) {
         for (TextureColors color : TextureColors.values()) {
             MultiModelGUIUtil.getTexturePair(holder, color, isContract).ifPresent(texturePair ->
                     MultiModelGUIUtil.renderModel(context,

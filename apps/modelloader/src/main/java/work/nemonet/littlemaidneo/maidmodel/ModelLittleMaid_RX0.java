@@ -88,4 +88,5 @@ public class ModelLittleMaid_RX0 extends LMModel<MultiModelRenderState> {
         skirt.addOrReplaceChild("skirt_main", CubeListBuilder.create()
                 .texOffs(20, 26).addBox(-3, 0, -3, 6, 8, 6, CubeDeformation.NONE.extend(0.05F)), PartPose.offset(0, 0, 0));
     }
+
 }

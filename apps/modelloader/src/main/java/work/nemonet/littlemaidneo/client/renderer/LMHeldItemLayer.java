@@ -43,9 +43,18 @@ public class LMHeldItemLayer<S extends MultiModelRenderState, M extends LMModel<
             boolean isLeft = hand == HumanoidArm.LEFT;
             M model = getParentModel();
             if (model != null) {
-                ModelPart arm = isLeft ? model.getSkinRoot().getChild("left_arm") : model.getSkinRoot().getChild("right_arm");
-                if (arm != null) {
+                // 旧 postRender と同様、親チェーン全体（main_frame→torso→neck→arm）の変換を順に適用する
+                ModelPart mainFrame = LMModel.getChildSafe(model.getSkinRoot(), "main_frame");
+                ModelPart torso = LMModel.getChildSafe(mainFrame, "biped_torso");
+                ModelPart neck = LMModel.getChildSafe(torso, "biped_neck");
+                ModelPart arm = LMModel.getChildSafe(neck, isLeft ? "biped_left_arm" : "biped_right_arm");
+                if (mainFrame != null && torso != null && neck != null && arm != null) {
+                    mainFrame.translateAndRotate(poseStack);
+                    torso.translateAndRotate(poseStack);
+                    neck.translateAndRotate(poseStack);
                     arm.translateAndRotate(poseStack);
+                    // 旧 Arms ハンドアンカー相当（腕の先端へ移動）
+                    poseStack.translate(isLeft ? 0.0625F : -0.0625F, 0.3125F, -0.0625F);
                 }
             }
             poseStack.mulPose(Axis.XP.rotationDegrees(-90.0F));

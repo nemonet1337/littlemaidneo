@@ -5,9 +5,22 @@ import net.minecraft.client.model.geom.builders.CubeDeformation;
 import net.minecraft.client.model.geom.builders.CubeListBuilder;
 import net.minecraft.client.model.geom.builders.MeshDefinition;
 import net.minecraft.client.model.geom.PartPose;
+import net.minecraft.util.Mth;
 import work.nemonet.littlemaidneo.client.renderer.MultiModelRenderState;
 
 public class ModelLittleMaid_Orign extends LMModel<MultiModelRenderState> {
+
+    private final ModelPart mainFrame;
+    private final ModelPart bipedTorso;
+    private final ModelPart bipedNeck;
+    private final ModelPart bipedHead;
+    private final ModelPart bipedRightArm;
+    private final ModelPart bipedLeftArm;
+    private final ModelPart bipedBody;
+    private final ModelPart bipedPelvic;
+    private final ModelPart bipedRightLeg;
+    private final ModelPart bipedLeftLeg;
+    private final ModelPart skirt;
 
     public ModelLittleMaid_Orign() {
         this(0.0F);
@@ -27,6 +40,17 @@ public class ModelLittleMaid_Orign extends LMModel<MultiModelRenderState> {
             buildAndBake(pyoffset, texW, texH, CubeDeformation.NONE.extend(0.1F + psize)),
             buildAndBake(pyoffset, texW, texH, CubeDeformation.NONE.extend(0.5F + psize))
         );
+        this.mainFrame = skinRoot.getChild("main_frame");
+        this.bipedTorso = mainFrame.getChild("biped_torso");
+        this.bipedNeck = bipedTorso.getChild("biped_neck");
+        this.bipedHead = bipedNeck.getChild("biped_head");
+        this.bipedRightArm = bipedNeck.getChild("biped_right_arm");
+        this.bipedLeftArm = bipedNeck.getChild("biped_left_arm");
+        this.bipedBody = bipedTorso.getChild("biped_body");
+        this.bipedPelvic = bipedTorso.getChild("biped_pelvic");
+        this.bipedRightLeg = bipedPelvic.getChild("biped_right_leg");
+        this.bipedLeftLeg = bipedPelvic.getChild("biped_left_leg");
+        this.skirt = bipedPelvic.getChild("skirt");
     }
 
     private static ModelPart buildAndBake(float pyoffset, int texW, int texH, CubeDeformation deform) {
@@ -86,4 +110,5 @@ public class ModelLittleMaid_Orign extends LMModel<MultiModelRenderState> {
     protected void buildMesh(MeshDefinition mesh, CubeDeformation deform) {
         buildMesh(mesh, deform, 0.0F);
     }
+
 }

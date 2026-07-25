@@ -9,13 +9,11 @@ import net.minecraft.world.item.ItemStack;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
 import work.nemonet.littlemaidneo.maidmodel.LMModel;
-import work.nemonet.littlemaidneo.maidmodel.ModelLittleMaidBase;
-import work.nemonet.littlemaidneo.maidmodel.ModelRenderer;
 import net.minecraft.client.model.geom.builders.MeshDefinition;
 import net.minecraft.client.model.geom.builders.CubeDeformation;
 
-public class LMMultiModel<S extends MaidRenderState> extends LMModel<S> implements HeadedModel {
-    private LittleMaidEntity entity;
+public class LMMultiModel<S extends MultiModelRenderState> extends LMModel<S> implements HeadedModel {
+    private LMModel<?> delegate;
     private final ModelPart modelPart = new ModelPart(ImmutableList.of(), ImmutableMap.of());
 
     public LMMultiModel() {
@@ -31,41 +29,53 @@ public class LMMultiModel<S extends MaidRenderState> extends LMModel<S> implemen
     }
 
     @Override
+    public ModelPart getSkinRoot() {
+        return delegate != null ? delegate.getSkinRoot() : super.getSkinRoot();
+    }
+
+    @Override
+    public ModelPart getInnerRoot() {
+        return delegate != null ? delegate.getInnerRoot() : super.getInnerRoot();
+    }
+
+    @Override
+    public ModelPart getOuterRoot() {
+        return delegate != null ? delegate.getOuterRoot() : super.getOuterRoot();
+    }
+
+    @Override
     public void setupAnim(S state) {
-        this.entity = state.maidEntity;
-        super.setupAnim(state);
+        this.delegate = state.skinModel;
+        setupDelegate(state.skinModel, state);
+        if (state.armorStates != null) {
+            for (MultiModelRenderState.ArmorRenderState ars : state.armorStates) {
+                if (ars == null || !ars.visible()) continue;
+                setupDelegate(ars.innerModel(), state);
+                setupDelegate(ars.outerModel(), state);
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void setupDelegate(LMModel<?> model, S state) {
+        if (model != null) ((LMModel<MultiModelRenderState>) model).setupAnim(state);
     }
 
     @Override
     public ModelPart getHead() {
-        if (this.entity == null) return modelPart;
-        this.entity.getModel(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD)
-                .filter(model -> model instanceof ModelLittleMaidBase)
-                .map(model -> (ModelLittleMaidBase) model)
-                .ifPresent(model -> {
-                    modelPart.x = 0;
-                    modelPart.y = 0;
-                    modelPart.z = 0;
-                    modelPart.zRot = 0;
-                    modelPart.yRot = 0;
-                    modelPart.xRot = 0;
-                    ModelRenderer modelRenderer;
-                    ItemStack stack = this.entity.getItemBySlot(EquipmentSlot.HEAD);
-                    if (this.entity.getEquipmentSlotForItem(stack) == EquipmentSlot.HEAD) {
-                        modelRenderer = model.bipedHead;
-                    } else {
-                        modelRenderer = model.bipedHead;
-                    }
-                    while (modelRenderer != null) {
-                        modelPart.x += (modelRenderer.rotationPointX + modelRenderer.offsetX * 16.0f) * 0.9375F;
-                        modelPart.y += (modelRenderer.rotationPointY + modelRenderer.offsetY * 16.0f) * 0.9375F;
-                        modelPart.z += (modelRenderer.rotationPointZ + modelRenderer.offsetZ * 16.0f) * 0.9375F;
-                        modelPart.zRot += modelRenderer.rotateAngleZ;
-                        modelPart.yRot += modelRenderer.rotateAngleY;
-                        modelPart.xRot += modelRenderer.rotateAngleX;
-                        modelRenderer = modelRenderer.pearent;
-                    }
-                });
+        if (this.delegate != null) {
+            ModelPart head = findHead(this.delegate.getSkinRoot());
+            if (head != null) return head;
+        }
         return modelPart;
+    }
+
+    private static ModelPart findHead(ModelPart root) {
+        ModelPart mainFrame = LMModel.getChildSafe(root, "main_frame");
+        ModelPart base = mainFrame != null ? mainFrame : root;
+        ModelPart torso = LMModel.getChildSafe(base, "biped_torso");
+        ModelPart neck = torso != null ? LMModel.getChildSafe(torso, "biped_neck") : LMModel.getChildSafe(base, "biped_neck");
+        ModelPart head = neck != null ? LMModel.getChildSafe(neck, "biped_head") : LMModel.getChildSafe(base, "biped_head");
+        return head != null ? head : mainFrame;
     }
 }

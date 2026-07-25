@@ -87,4 +87,5 @@ public class ModelMulti_Slim64 extends LMModel<MultiModelRenderState> {
         bipedLeftLeg.addOrReplaceChild("leg_left_legwear", CubeListBuilder.create()
                 .texOffs(0, 48).mirror().addBox(-2, 0, -2, 4, 12, 4, CubeDeformation.NONE.extend(0.25F)), PartPose.offset(0, 0, 0));
     }
+
 }

@@ -47,9 +47,7 @@ import work.nemonet.littlemaidneo.entity.targeting.TargetTagManager;
 import work.nemonet.littlemaidneo.entity.targeting.TargetTagManagerImpl;
 import work.nemonet.littlemaidneo.entity.targeting.TargetingSystem;
 import work.nemonet.littlemaidneo.entity.util.*;
-import work.nemonet.littlemaidneo.maidmodel.IModelCaps;
-import work.nemonet.littlemaidneo.multimodel.IMultiModel;
-import work.nemonet.littlemaidneo.multimodel.layer.MMPose;
+import work.nemonet.littlemaidneo.maidmodel.LMModel;
 import work.nemonet.littlemaidneo.network.NetworkHandler;
 import work.nemonet.littlemaidneo.resource.holder.TextureHolder;
 import work.nemonet.littlemaidneo.resource.manager.LMConfigManager;
@@ -154,7 +152,6 @@ public class LittleMaidEntity
     public final MultiModelCompound multiModel;
     public final SoundPlayableCompound soundPlayer;
     private final LMScreenHandlerFactory screenFactory = new LMScreenHandlerFactory(this);
-    private final IModelCaps caps = new LittleMaidModelCaps(this);
     private final TargetTagManager targetTagManager;
 
     @Override
@@ -639,22 +636,15 @@ private float prevInterestedAngle;
     // ????????????????????????etMountedYOffset / getyOffset????????????
     // getPassengerRidingPosition / getVehicleAttachmentPoint ??????????
 
-    /**
-     * ??????????????????????????????? (1.21.1????getPassengerRidingPosition??????)
-     */
     public double getMountedYOffset() {
-        IMultiModel model = getModel(Layer.SKIN, Part.HEAD).orElse(
-                LMModelManager.INSTANCE.getDefaultModel());
-        return model.getMountedYOffset(getCaps());
+        return 0.35F;
     }
 
     /**
      * ???????????????
      */
     public double getRidingYOffset() {
-        IMultiModel model = getModel(Layer.SKIN, Part.HEAD).orElse(
-                LMModelManager.INSTANCE.getDefaultModel());
-        return model.getyOffset(getCaps()) - getBbHeight();
+        return 1.35F * 0.9F - getBbHeight();
     }
 
     @Override
@@ -674,11 +664,9 @@ private float prevInterestedAngle;
     // ????????????????????????????????????????????????????????????????????????????
     @Override
     public EntityDimensions getDefaultDimensions(Pose pose) {
-        IMultiModel model = getModel(Layer.SKIN, Part.HEAD).orElse(
-                LMModelManager.INSTANCE.getDefaultModel());
-        float height = model.getHeight(getCaps(), MMPose.convertPose(pose));
-        float width = model.getWidth(getCaps(), MMPose.convertPose(pose));
-        float eyeHeight = model.getEyeHeight(getCaps(), MMPose.convertPose(pose));
+        float height = 1.35F;
+        float width = 0.5F;
+        float eyeHeight = height * 0.85F;
         EntityDimensions dimensions = EntityDimensions.scalable(width, height);
         dimensions = dimensions.scale(getAgeScale());
         dimensions = dimensions.withEyeHeight(eyeHeight * getAgeScale());
@@ -1309,11 +1297,6 @@ public Optional<String> getModeName() {
         if (layer == Layer.SKIN) {
             refreshDimensions();
         }
-    }
-
-    @Override
-    public IModelCaps getCaps() {
-        return caps;
     }
 
     public boolean isPlayingSnow() {

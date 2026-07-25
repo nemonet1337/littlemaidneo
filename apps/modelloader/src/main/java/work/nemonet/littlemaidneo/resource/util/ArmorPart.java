@@ -2,7 +2,7 @@ package work.nemonet.littlemaidneo.resource.util;
 
 import net.minecraft.resources.Identifier;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
-import work.nemonet.littlemaidneo.multimodel.IMultiModel;
+import work.nemonet.littlemaidneo.maidmodel.LMModel;
 import work.nemonet.littlemaidneo.resource.holder.TextureHolder;
 
 import java.lang.ref.WeakReference;
@@ -11,12 +11,12 @@ import java.util.*;
 public class ArmorPart {
     private final TexturePair innerTex;
     private final TexturePair outerTex;
-    private final IMultiModel innerModel;
-    private final IMultiModel outerModel;
+    private final LMModel<?> innerModel;
+    private final LMModel<?> outerModel;
 
     public ArmorPart(Identifier innerTex, Identifier innerTexLight,
                      Identifier outerTex, Identifier outerTexLight,
-                     IMultiModel innerModel, IMultiModel outerModel) {
+                     LMModel<?> innerModel, LMModel<?> outerModel) {
         this.innerTex = new TexturePair(innerTex, innerTexLight);
         this.outerTex = new TexturePair(outerTex, outerTexLight);
         this.innerModel = innerModel;
@@ -28,7 +28,7 @@ public class ArmorPart {
         return layer == IHasMultiModel.Layer.INNER ? innerTex.getTexture(isLight) : outerTex.getTexture(isLight);
     }
 
-    public IMultiModel getModel(IHasMultiModel.Layer layer) {
+    public LMModel<?> getModel(IHasMultiModel.Layer layer) {
         if (layer.isArmor()) throw new IllegalArgumentException("取得できません。");
         return layer == IHasMultiModel.Layer.INNER ? innerModel : outerModel;
     }
@@ -53,8 +53,8 @@ public class ArmorPart {
         private Identifier innerTexLight;
         private Identifier outerTex;
         private Identifier outerTexLight;
-        private IMultiModel innerModel;
-        private IMultiModel outerModel;
+        private LMModel<?> innerModel;
+        private LMModel<?> outerModel;
 
         private Builder() {}
 
@@ -66,8 +66,8 @@ public class ArmorPart {
         public Builder innerTexLight(Identifier innerTexLight) { this.innerTexLight = innerTexLight; return this; }
         public Builder outerTex(Identifier outerTex) { this.outerTex = outerTex; return this; }
         public Builder outerTexLight(Identifier outerTexLight) { this.outerTexLight = outerTexLight; return this; }
-        public Builder innerModel(IMultiModel innerModel) { this.innerModel = innerModel; return this; }
-        public Builder outerModel(IMultiModel outerModel) { this.outerModel = outerModel; return this; }
+        public Builder innerModel(LMModel<?> innerModel) { this.innerModel = innerModel; return this; }
+        public Builder outerModel(LMModel<?> outerModel) { this.outerModel = outerModel; return this; }
 
         public ArmorPart build() {
             return new ArmorPart(innerTex, innerTexLight, outerTex, outerTexLight, innerModel, outerModel);

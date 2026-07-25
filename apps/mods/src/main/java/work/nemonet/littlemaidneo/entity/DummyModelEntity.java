@@ -9,9 +9,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
-import work.nemonet.littlemaidneo.maidmodel.EntityCaps;
-import work.nemonet.littlemaidneo.maidmodel.IModelCaps;
-import work.nemonet.littlemaidneo.multimodel.IMultiModel;
+import work.nemonet.littlemaidneo.maidmodel.LMModel;
 import work.nemonet.littlemaidneo.resource.holder.TextureHolder;
 import work.nemonet.littlemaidneo.resource.util.ArmorPart;
 import work.nemonet.littlemaidneo.resource.util.ArmorSets;
@@ -22,8 +20,7 @@ import work.nemonet.littlemaidneo.setup.ModRegistration;
 import java.util.Optional;
 
 public class DummyModelEntity extends LivingEntity implements IHasMultiModel {
-    private final EntityCaps caps = new EntityCaps(this);
-    private IMultiModel skinModel;
+    private LMModel<?> skinModel;
     private TexturePair skinTexture;
     private final ArmorSets<ArmorPart> armorsData = new ArmorSets<>();
     private final ArmorSets<Boolean> armorsVisible = new ArmorSets<>();
@@ -36,7 +33,7 @@ public class DummyModelEntity extends LivingEntity implements IHasMultiModel {
         super(type, worldIn);
     }
 
-    public void setSkinModel(IMultiModel model) {
+    public void setSkinModel(LMModel<?> model) {
         skinModel = model;
     }
 
@@ -109,7 +106,7 @@ public class DummyModelEntity extends LivingEntity implements IHasMultiModel {
     }
 
     @Override
-    public Optional<IMultiModel> getModel(IHasMultiModel.Layer layer, IHasMultiModel.Part part) {
+    public Optional<LMModel<?>> getModel(IHasMultiModel.Layer layer, IHasMultiModel.Part part) {
         if (layer == IHasMultiModel.Layer.SKIN) {
             return Optional.ofNullable(skinModel);
         } else {
@@ -129,10 +126,6 @@ public class DummyModelEntity extends LivingEntity implements IHasMultiModel {
     }
 
     @Override
-    public IModelCaps getCaps() {
-        return caps;
-    }
-@Override
     public boolean isArmorVisible(IHasMultiModel.Part part) {
         return armorsVisible.getArmor(part).orElse(false);
     }

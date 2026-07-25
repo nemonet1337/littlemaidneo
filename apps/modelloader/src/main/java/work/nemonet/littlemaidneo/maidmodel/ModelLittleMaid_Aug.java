@@ -19,6 +19,9 @@ public class ModelLittleMaid_Aug extends LMModel<MultiModelRenderState> {
             buildAndBake(pyoffset, texW, texH, CubeDeformation.NONE.extend(0.1F + psize)),
             buildAndBake(pyoffset, texW, texH, CubeDeformation.NONE.extend(0.5F + psize))
         );
+        // まばたきオーバーレイは旧実装では通常非表示（まばたきの瞬間のみ表示）
+        setHeadPartVisible("eye_right", false);
+        setHeadPartVisible("eye_left", false);
     }
 
     private static ModelPart buildAndBake(float pyoffset, int texW, int texH, CubeDeformation deform) {
@@ -43,43 +46,54 @@ public class ModelLittleMaid_Aug extends LMModel<MultiModelRenderState> {
 
         var bipedPelvic = bipedTorso.addOrReplaceChild("biped_pelvic", CubeListBuilder.create(), PartPose.offset(0, 7, 0));
 
-        var bipedHead = bipedNeck.addOrReplaceChild("biped_head", CubeListBuilder.create(), PartPose.offset(0, 0, 0));
-        bipedHead.addOrReplaceChild("head_main", CubeListBuilder.create()
-                .texOffs(0, 0).addBox(-4, -8, -4, 8, 8, 8, deform), PartPose.offset(0, 0, 0));
-        bipedHead.addOrReplaceChild("head_front", CubeListBuilder.create()
-                .texOffs(24, 0).addBox(-4, 0, 1, 8, 4, 3, deform), PartPose.offset(0, 0, 0));
-        bipedHead.addOrReplaceChild("head_cheek_left", CubeListBuilder.create()
-                .texOffs(24, 18).addBox(-5, -7, 0.2F, 1, 3, 3, deform), PartPose.offset(0, 0, 0));
-        bipedHead.addOrReplaceChild("head_cheek_right", CubeListBuilder.create()
-                .texOffs(24, 18).mirror().addBox(4, -7, 0.2F, 1, 3, 3, deform), PartPose.offset(0, 0, 0));
-        bipedHead.addOrReplaceChild("head_hair_back", CubeListBuilder.create()
-                .texOffs(52, 10).addBox(-2, -7.2F, 4, 4, 4, 2, deform), PartPose.offset(0, 0, 0));
-        bipedHead.addOrReplaceChild("head_hair_side", CubeListBuilder.create()
-                .texOffs(46, 20).addBox(-1.5F, -6.8F, 4, 3, 9, 3, deform), PartPose.offset(0, 0, 0));
-        bipedHead.addOrReplaceChild("head_hair_back_left", CubeListBuilder.create()
-                .texOffs(58, 21).addBox(-5.5F, -6.8F, 0.9F, 1, 8, 2, deform), PartPose.offset(0, 0, 0));
-        bipedHead.addOrReplaceChild("head_hair_back_right", CubeListBuilder.create()
-                .texOffs(58, 21).mirror().addBox(4.5F, -6.8F, 0.9F, 1, 8, 2, deform), PartPose.offset(0, 0, 0));
-        bipedHead.addOrReplaceChild("head_hair_top", CubeListBuilder.create()
-                .texOffs(52, 15).addBox(-3.5F, -9.5F, 0.9F, 7, 3, 2, deform), PartPose.offset(0, 0, 0));
+        // 旧 initModel は clearCubeList() でベースの頭を破棄し、独自の5箱＋プレート群に差し替えていた
+        var bipedHead = bipedNeck.addOrReplaceChild("biped_head", CubeListBuilder.create()
+                .texOffs(0, 0).addBox(-4, -8, -4, 8, 8, 8, deform)
+                .texOffs(0, 18).addBox(-5, -8.5F, 0.2F, 1, 3, 3, deform)
+                .texOffs(24, 18).addBox(4, -8.5F, 0.2F, 1, 3, 3, deform)
+                .texOffs(52, 10).addBox(-7.5F, -9.5F, 0.9F, 4, 3, 2, deform)
+                .texOffs(52, 15).addBox(3.5F, -9.5F, 0.9F, 4, 3, 2, deform),
+                PartPose.offset(0, 0, 0));
         bipedHead.addOrReplaceChild("side_tail_right", CubeListBuilder.create()
                 .texOffs(46, 20).addBox(-1.5F, -0.5F, -1.0F, 2, 10, 2, deform), PartPose.offset(-5F, -7.8F, 1.9F));
         bipedHead.addOrReplaceChild("side_tail_left", CubeListBuilder.create()
                 .texOffs(54, 20).addBox(0.5F, -0.5F, -1.0F, 2, 10, 2, deform), PartPose.offset(4F, -7.8F, 1.9F));
-        bipedHead.addOrReplaceChild("shaggy_back", CubeListBuilder.create()
-                .texOffs(24, 0).addBox(-5.0F, 0.0F, 0.0F, 10, 4, 4, deform), PartPose.offset(0.0F, -1.0F, 4.0F));
-        bipedHead.addOrReplaceChild("shaggy_right", CubeListBuilder.create()
-                .texOffs(34, 4).addBox(0.0F, 0.0F, -5.0F, 10, 4, 1, deform), PartPose.offset(4.0F, -1.0F, 0.0F));
-        bipedHead.addOrReplaceChild("shaggy_left", CubeListBuilder.create()
-                .texOffs(24, 4).addBox(0.0F, 0.0F, -5.0F, 10, 4, 5, deform), PartPose.offset(-4.0F, -1.0F, 0.0F));
+        // 旧 ModelPlate は片面クアッド。厚み0の addBox は裏面が隣の UV 領域（ゴミ）をサンプリング
+        // してしまうため NORTH 面のみ生成し、旧プレートの向き（planeXY=前/XYInv=後/ZY=+X/ZYInv=-X）
+        // は子パーツの yRot（0 / 180° / -90° / +90°）で再現する
+        var shaggyB = bipedHead.addOrReplaceChild("shaggy_back", CubeListBuilder.create(),
+                PartPose.offsetAndRotation(0, -1, 4, 0.4F, 0, 0));
+        shaggyB.addOrReplaceChild("plate", CubeListBuilder.create()
+                .texOffs(24, 0).addBox(-5, 0, 0, 10, 4, 0, PLATE_FACE),
+                PartPose.offsetAndRotation(0, 0, 0, 0, (float) Math.PI, 0));
+        var shaggyR = bipedHead.addOrReplaceChild("shaggy_right", CubeListBuilder.create(),
+                PartPose.offsetAndRotation(4, -1, 0, 0, 0, -0.4F));
+        shaggyR.addOrReplaceChild("plate", CubeListBuilder.create()
+                .texOffs(34, 4).addBox(-5, 0, 0, 10, 4, 0, PLATE_FACE),
+                PartPose.offsetAndRotation(0, 0, 0, 0, (float) (-Math.PI / 2), 0));
+        var shaggyL = bipedHead.addOrReplaceChild("shaggy_left", CubeListBuilder.create(),
+                PartPose.offsetAndRotation(-4, -1, 0, 0, 0, 0.4F));
+        shaggyL.addOrReplaceChild("plate", CubeListBuilder.create()
+                .texOffs(24, 4).addBox(-5, 0, 0, 10, 4, 0, PLATE_FACE),
+                PartPose.offsetAndRotation(0, 0, 0, 0, (float) (Math.PI / 2), 0));
+        // センサーは旧 setLivingAnimations の基準角を初期ポーズとして固定（微細な揺れアニメは未移植）
         bipedHead.addOrReplaceChild("sensor1", CubeListBuilder.create()
-                .texOffs(0, 0).addBox(-8.0F, -4.0F, 0.0F, 8, 4, 0, deform), PartPose.offset(0.0F, -8.0F, 0.0F));
+                .texOffs(0, 0).addBox(-8, -4, 0, 8, 4, 0, PLATE_FACE),
+                PartPose.offsetAndRotation(0, -8, 0, 0, -0.698F, 0));
         bipedHead.addOrReplaceChild("sensor2", CubeListBuilder.create()
-                .texOffs(0, 4).addBox(0.0F, -4.0F, 0.0F, 8, 4, 0, deform), PartPose.offset(0.0F, -8.0F, 0.0F));
-        bipedHead.addOrReplaceChild("sensor3", CubeListBuilder.create()
-                .texOffs(44, 0).addBox(0.0F, -7.0F, -4.0F, 4, 8, 1, deform), PartPose.offset(0.0F, -8.0F, 0.0F));
-        bipedHead.addOrReplaceChild("sensor4", CubeListBuilder.create()
-                .texOffs(34, 0).addBox(0.0F, -4.0F, -10.0F, 10, 4, 1, deform), PartPose.offset(0.0F, -8.0F, 0.0F));
+                .texOffs(0, 4).addBox(0, -4, 0, 8, 4, 0, PLATE_FACE),
+                PartPose.offsetAndRotation(0, -8, 0, 0, 0.698F, 0));
+        var sensor3 = bipedHead.addOrReplaceChild("sensor3", CubeListBuilder.create(),
+                PartPose.offsetAndRotation(0, -8, 0, -1.2F, 0, 0));
+        sensor3.addOrReplaceChild("plate", CubeListBuilder.create()
+                .texOffs(44, 0).addBox(-4, -7, 0, 4, 8, 0, PLATE_FACE),
+                PartPose.offsetAndRotation(0, 0, 0, 0, (float) (-Math.PI / 2), 0));
+        var sensor4 = bipedHead.addOrReplaceChild("sensor4", CubeListBuilder.create(),
+                PartPose.offset(0, -8, 0));
+        sensor4.addOrReplaceChild("plate", CubeListBuilder.create()
+                .texOffs(34, 0).addBox(-10, -4, 0, 10, 4, 0, PLATE_FACE),
+                PartPose.offsetAndRotation(0, 0, 0, 0, (float) (-Math.PI / 2), 0));
+        // まばたき用オーバーレイ（旧実装では通常非表示、まばたき時のみ表示）
         bipedHead.addOrReplaceChild("eye_right", CubeListBuilder.create()
                 .texOffs(32, 19).addBox(-4, -5, -4.001F, 4, 4, 0, deform), PartPose.offset(0, 0, 0));
         bipedHead.addOrReplaceChild("eye_left", CubeListBuilder.create()
@@ -108,5 +122,10 @@ public class ModelLittleMaid_Aug extends LMModel<MultiModelRenderState> {
         var skirt = bipedPelvic.addOrReplaceChild("skirt", CubeListBuilder.create(), PartPose.offset(0, 0, 0));
         skirt.addOrReplaceChild("skirt_main", CubeListBuilder.create()
                 .texOffs(0, 16).addBox(-4, -2, -4, 8, 8, 8, deform), PartPose.offset(0, 0, 0));
+    }
+
+    @Override
+    protected void applyExtraPose(MultiModelRenderState state, ModelPart mainFrame, BipedParts parts) {
+        applyBlinkSlow(state, parts);
     }
 }

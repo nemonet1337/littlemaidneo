@@ -4,8 +4,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.resources.Identifier;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
 import work.nemonet.littlemaidneo.entity.compound.MultiModelCompound;
-import work.nemonet.littlemaidneo.maidmodel.IModelCaps;
-import work.nemonet.littlemaidneo.multimodel.IMultiModel;
+import work.nemonet.littlemaidneo.maidmodel.LMModel;
 import work.nemonet.littlemaidneo.resource.holder.TextureHolder;
 import work.nemonet.littlemaidneo.resource.util.TextureColors;
 
@@ -51,18 +50,13 @@ public interface MultiModelHolder extends IHasMultiModel {
     }
 
     @Override
-    default Optional<IMultiModel> getModel(Layer layer, Part part) {
+    default Optional<LMModel<?>> getModel(Layer layer, Part part) {
         return getMultiModel().getModel(layer, part);
     }
 
     @Override
     default Optional<Identifier> getTexture(Layer layer, Part part, boolean isLight) {
         return getMultiModel().getTexture(layer, part, isLight);
-    }
-
-    @Override
-    default IModelCaps getCaps() {
-        return getMultiModel().getCaps();
     }
 
     @Override
