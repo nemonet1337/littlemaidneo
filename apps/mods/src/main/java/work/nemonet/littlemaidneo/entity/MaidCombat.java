@@ -139,6 +139,10 @@ public final class MaidCombat {
                 arrow.pickup = AbstractArrow.Pickup.ALLOWED;
             }
             arrow = EPEntityUtil.arrowCustomHook(bowItem, arrow);
+            // 火打ち石と打ち金（または火の玉）を持っていれば火矢
+            if (hasFireArrowSource(mob)) {
+                arrow.igniteForSeconds(100);
+            }
             double xDiff = target.getX() - mob.getX();
             double yDiff = target.getEyeY() - arrow.getY();
             double zDiff = target.getZ() - mob.getZ();
@@ -200,6 +204,24 @@ public final class MaidCombat {
                 return;
             stack.hurtAndBreak((int) amount, mob, EquipmentSlot.HEAD);
         }
+    }
+
+    /** オフハンドまたはインベントリに火打ち石と打ち金／火の玉があれば true。 */
+    private static boolean hasFireArrowSource(LittleMaidEntity mob) {
+        if (isFireSource(mob.getOffhandItem()) || isFireSource(mob.getMainHandItem())) {
+            return true;
+        }
+        var inv = mob.getInventory();
+        for (int i = 0; i < inv.getContainerSize(); i++) {
+            if (isFireSource(inv.getItem(i))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isFireSource(ItemStack stack) {
+        return stack.is(Items.FLINT_AND_STEEL) || stack.is(Items.FIRE_CHARGE);
     }
 
     public static ItemStack getProjectile(LittleMaidEntity mob, ItemStack stack) {

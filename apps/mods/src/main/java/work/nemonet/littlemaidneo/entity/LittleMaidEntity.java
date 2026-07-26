@@ -119,7 +119,8 @@ public class LittleMaidEntity
             EntityDataSerializers.INT);
     // ?????????????????????????????????????????????????????????????????????
     // LMInteractionHandler ???????????????????????????????
-    static final int EXPERIENCE_BOTTLE_COST = 7;
+    /** 経験値瓶 1 本に必要な XP（旧 7 → 5 に軽減） */
+    static final int EXPERIENCE_BOTTLE_COST = 5;
 
     // ????s
     public final LMHasInventory littleMaidInventory = new LMHasInventory();
@@ -547,6 +548,12 @@ private float prevInterestedAngle;
 
     @Override
     protected void customServerAiStep(ServerLevel serverLevel) {
+        // インベントリ GUI が開いている間は移動を止める（QOL）
+        if (isInventoryOpenedByAnyPlayer(serverLevel)) {
+            this.getNavigation().stop();
+            this.getBrain().eraseMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.WALK_TARGET);
+        }
+
         this.getBrain().tick(serverLevel, this);
         super.customServerAiStep(serverLevel);
         if (TameableUtil.hasTameOwner(this) ||
@@ -556,15 +563,24 @@ private float prevInterestedAngle;
         itemContractable.tick();
         work.nemonet.littlemaidneo.entity.util.MaidJobManager.tick(this);
 
-        // ?????????
         if (this.tickCount % 40 == 0 && this.getHealth() < this.getMaxHealth()) {
             tryEatingFromInventory();
         }
 
-        // ?????????????????????????
         if (TameableUtil.isWait(this) && this.isInWater()) {
             TameableUtil.setWait(this, false);
         }
+    }
+
+    /** いずれかのプレイヤーがこのメイドさんのインベントリを開いているか。 */
+    private boolean isInventoryOpenedByAnyPlayer(ServerLevel serverLevel) {
+        for (ServerPlayer player : serverLevel.players()) {
+            if (player.containerMenu instanceof LittleMaidScreenHandler handler
+                    && handler.getGuiEntity() == this) {
+                return true;
+            }
+        }
+        return false;
     }
 
     protected void pickupItem() {

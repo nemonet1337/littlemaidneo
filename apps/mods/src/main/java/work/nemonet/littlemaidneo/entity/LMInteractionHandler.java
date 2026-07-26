@@ -145,6 +145,7 @@ final class LMInteractionHandler {
         }
         // 金リンゴ
         if (stack.is(Items.GOLDEN_APPLE) || stack.is(Items.ENCHANTED_GOLDEN_APPLE)) {
+            boolean enchanted = stack.is(Items.ENCHANTED_GOLDEN_APPLE);
             if (!player.getAbilities().instabuild) {
                 stack.shrink(1);
             }
@@ -152,7 +153,7 @@ final class LMInteractionHandler {
             mob.playSound(SoundEvents.GENERIC_EAT.value(), 1.0F, 1.0F);
             mob.swing(InteractionHand.MAIN_HAND);
             if (!mob.level().isClientSide()) {
-                if (stack.is(Items.ENCHANTED_GOLDEN_APPLE)) {
+                if (enchanted) {
                     mob.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 400, 1));
                     mob.addEffect(new MobEffectInstance(MobEffects.RESISTANCE, 6000, 0));
                     mob.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 6000, 0));
@@ -163,6 +164,33 @@ final class LMInteractionHandler {
                 }
             }
             return InteractionResult.SUCCESS;
+        }
+        // 飲むポーション（スプラッシュ／残留は対象外）
+        if (stack.is(Items.POTION)) {
+            var contents = stack.get(net.minecraft.core.component.DataComponents.POTION_CONTENTS);
+            if (contents != null) {
+                if (!mob.level().isClientSide() && mob.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+                    for (MobEffectInstance effect : contents.getAllEffects()) {
+                        if (effect.getEffect().value().isInstantenous()) {
+                            effect.getEffect().value().applyInstantenousEffect(
+                                    serverLevel, player, player, mob, effect.getAmplifier(), 1.0);
+                        } else {
+                            mob.addEffect(new MobEffectInstance(effect));
+                        }
+                    }
+                }
+                if (!player.getAbilities().instabuild) {
+                    stack.shrink(1);
+                    if (stack.isEmpty()) {
+                        player.setItemInHand(hand, new ItemStack(Items.GLASS_BOTTLE));
+                    } else if (!player.getInventory().add(new ItemStack(Items.GLASS_BOTTLE))) {
+                        player.drop(new ItemStack(Items.GLASS_BOTTLE), false);
+                    }
+                }
+                mob.playSound(SoundEvents.GENERIC_DRINK.value(), 1.0F, 1.0F);
+                mob.swing(InteractionHand.MAIN_HAND);
+                return InteractionResult.SUCCESS;
+            }
         }
         // 砂糖
         if (stack.is(LMTags.Items.MAIDS_SALARY)) {
@@ -196,25 +224,31 @@ final class LMInteractionHandler {
             }
             return InteractionResult.SUCCESS;
         }
-        // ガラス瓶->エンチャントの瓶
-        if (mob.getXpReward_LM() >= LittleMaidEntity.EXPERIENCE_BOTTLE_COST &&
-                stack.is(Items.GLASS_BOTTLE)) {
-            mob.level().playSound(
-                    null,
-                    mob.getX(),
-                    mob.getY(),
-                    mob.getZ(),
-                    SoundEvents.BOTTLE_FILL,
-                    SoundSource.PLAYERS,
-                    1.0f,
-                    1.0f);
-            ItemStack itemStack2 = ItemUtils.createFilledResult(
-                    stack,
-                    player,
-                    Items.EXPERIENCE_BOTTLE.getDefaultInstance());
-            player.setItemInHand(hand, itemStack2);
-            mob.addExperience(-LittleMaidEntity.EXPERIENCE_BOTTLE_COST);
-            return InteractionResult.SUCCESS;
+        // ガラス瓶 -> 経験値瓶（所持 XP と瓶の数だけまとめて変換）
+        if (stack.is(Items.GLASS_BOTTLE) && mob.getXpReward_LM() >= LittleMaidEntity.EXPERIENCE_BOTTLE_COST) {
+            int cost = LittleMaidEntity.EXPERIENCE_BOTTLE_COST;
+            int maxByXp = mob.getXpReward_LM() / cost;
+            int count = Math.min(stack.getCount(), maxByXp);
+            if (count > 0) {
+                mob.level().playSound(
+                        null,
+                        mob.getX(),
+                        mob.getY(),
+                        mob.getZ(),
+                        SoundEvents.BOTTLE_FILL,
+                        SoundSource.PLAYERS,
+                        1.0f,
+                        1.0f);
+                if (!player.getAbilities().instabuild) {
+                    stack.shrink(count);
+                }
+                ItemStack bottles = new ItemStack(Items.EXPERIENCE_BOTTLE, count);
+                if (!player.getInventory().add(bottles)) {
+                    player.drop(bottles, false);
+                }
+                mob.addExperience(-cost * count);
+                return InteractionResult.SUCCESS;
+            }
         }
         // モブミルク
         if (LittleMaidEntity.getConfig().misc.canMilking && stack.is(Items.BUCKET)) {

@@ -4,6 +4,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.*;
+import net.minecraft.world.item.alchemy.Potions;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.item.IRangedWeapon;
 import work.nemonet.littlemaidneo.tags.LMTags;
@@ -70,8 +71,27 @@ public class MaidJobManager {
             return contents != null && contents.potion().isPresent();
         }, 0));
 
-        // Pharmacist
+        // Pharmacist（醸造台用アイテム：水瓶・空瓶もモード継続用に認める）
         RULES.add(new JobRule(JOB_PHARMCIST, stack -> stack.is(LMTags.Items.PHARMCIST_MODE), 400));
+        RULES.add(new JobRule(JOB_PHARMCIST, MaidJobManager::isWaterBottle, 300));
+        RULES.add(new JobRule(JOB_PHARMCIST, stack -> stack.is(Items.GLASS_BOTTLE), 200));
+        RULES.add(new JobRule(JOB_PHARMCIST, stack -> stack.is(Items.NETHER_WART)
+                || stack.is(Items.BLAZE_POWDER)
+                || stack.is(Items.GLOWSTONE_DUST)
+                || stack.is(Items.REDSTONE)
+                || stack.is(Items.FERMENTED_SPIDER_EYE)
+                || stack.is(Items.GUNPOWDER)
+                || stack.is(Items.DRAGON_BREATH)
+                || stack.is(Items.SUGAR)
+                || stack.is(Items.SPIDER_EYE)
+                || stack.is(Items.MAGMA_CREAM)
+                || stack.is(Items.GHAST_TEAR)
+                || stack.is(Items.RABBIT_FOOT)
+                || stack.is(Items.GLISTERING_MELON_SLICE)
+                || stack.is(Items.GOLDEN_CARROT)
+                || stack.is(Items.PUFFERFISH)
+                || stack.is(Items.PHANTOM_MEMBRANE)
+                || stack.is(Items.TURTLE_HELMET), 100));
 
         // 優先度が高い順にソートしておく
         RULES.sort(Comparator.comparingInt(JobRule::priority).reversed());
@@ -105,9 +125,13 @@ public class MaidJobManager {
         // 手持ちアイテムが現在のジョブを継続可能か確認
         if (!currentJob.equals(JOB_NONE)) {
             ItemStack mainHand = maid.getMainHandItem();
-            if (isModeItemForJob(currentJob, mainHand)) {
+            // 無手でも「インベントリにモードアイテムがある／無手継続を許すジョブ」なら継続する
+            boolean mainHandOk = isModeItemForJob(currentJob, mainHand);
+            boolean emptyHandContinue = mainHand.isEmpty() && canContinueJobEmptyHanded(currentJob);
+
+            if (mainHandOk || emptyHandContinue) {
                 if (scanInventory) {
-                    int currentPriority = getCurrentJobItemPriority(currentJob, mainHand);
+                    int currentPriority = mainHandOk ? getCurrentJobItemPriority(currentJob, mainHand) : -1;
                     // より高い優先度のアイテムをインベントリから探索
                     for (JobRule rule : RULES) {
                         if (rule.priority() > currentPriority) {
@@ -174,6 +198,29 @@ public class MaidJobManager {
             }
         }
         return false;
+    }
+
+    /**
+     * メインハンドが空でもジョブを継続してよいか。
+     * 薬剤師など「インベントリ素材で作業する」ジョブ向け。
+     * 実作業に必要な素材はインベントリ探索で持ち替えるため、無手そのものを許可する。
+     */
+    public static boolean canContinueJobEmptyHanded(String job) {
+        return JOB_PHARMCIST.equals(job)
+                || JOB_COOKING.equals(job)
+                || JOB_HEALER.equals(job)
+                || JOB_TORCHER.equals(job)
+                || JOB_RIPPER.equals(job);
+    }
+
+    private static boolean isWaterBottle(ItemStack stack) {
+        if (!stack.is(Items.POTION)) {
+            return false;
+        }
+        var contents = stack.get(DataComponents.POTION_CONTENTS);
+        return contents != null
+                && contents.potion().isPresent()
+                && contents.potion().get().is(Potions.WATER);
     }
 
     private static int findItemForJobInInventory(LittleMaidEntity maid, String job) {

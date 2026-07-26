@@ -12,6 +12,14 @@ public class LMLanguageProvider extends LanguageProvider {
         this.locale = locale;
     }
 
+    private void addCombinedStateEn(String moving, String job, String text) {
+        add("state.littlemaidneo." + moving + "_" + job, text);
+    }
+
+    private void addCombinedStateJa(String moving, String job, String text) {
+        add("state.littlemaidneo." + moving + "_" + job, text);
+    }
+
     @Override
     protected void addTranslations() {
         if ("en_us".equals(locale)) {
@@ -36,6 +44,34 @@ public class LMLanguageProvider extends LanguageProvider {
             add("mode.littlemaidneo.Ripper", "Ripper");
             add("mode.littlemaidneo.Torcher", "Torcher");
             add("mode.littlemaidneo.Healer", "Healer");
+            // Combined movement × job display names
+            addCombinedStateEn("Escort", "Fencer", "Escort Fencer");
+            addCombinedStateEn("Freedom", "Fencer", "Free Fencer");
+            addCombinedStateEn("Tracer", "Fencer", "Tracer Fencer");
+            addCombinedStateEn("Escort", "Archer", "Escort Archer");
+            addCombinedStateEn("Freedom", "Archer", "Free Archer");
+            addCombinedStateEn("Tracer", "Archer", "Tracer Archer");
+            addCombinedStateEn("Escort", "Cooking", "Escort Cook");
+            addCombinedStateEn("Freedom", "Cooking", "Free Cook");
+            addCombinedStateEn("Tracer", "Cooking", "Tracer Cook");
+            addCombinedStateEn("Escort", "Pharmcist", "Escort Pharmacist");
+            addCombinedStateEn("Freedom", "Pharmcist", "Free Pharmacist");
+            addCombinedStateEn("Tracer", "Pharmcist", "Tracer Pharmacist");
+            addCombinedStateEn("Escort", "Ripper", "Escort Ripper");
+            addCombinedStateEn("Freedom", "Ripper", "Free Ripper");
+            addCombinedStateEn("Tracer", "Ripper", "Tracer Ripper");
+            addCombinedStateEn("Escort", "Torcher", "Escort Torcher");
+            addCombinedStateEn("Freedom", "Torcher", "Free Torcher");
+            addCombinedStateEn("Tracer", "Torcher", "Tracer Torcher");
+            addCombinedStateEn("Escort", "Healer", "Escort Healer");
+            addCombinedStateEn("Freedom", "Healer", "Free Healer");
+            addCombinedStateEn("Tracer", "Healer", "Tracer Healer");
+
+            add("gui.littlemaidneo.littlemaid.salary.ok", "Salary: OK");
+            add("gui.littlemaidneo.littlemaid.salary.unpaid", "Unpaid days: %s");
+            add("gui.littlemaidneo.littlemaid.salary.strike", "On strike!");
+            add("gui.littlemaidneo.target_tag.reset_all", "Reset IFF");
+            add("gui.littlemaidneo.target_tag.reset_all.tooltip", "Clear all target tags back to defaults");
 
             add("block.littlemaidneo.salary_box", "LittleMaid Salary Box");
 
@@ -122,6 +158,34 @@ public class LMLanguageProvider extends LanguageProvider {
             add("mode.littlemaidneo.Ripper", "毛狩り隊");
             add("mode.littlemaidneo.Torcher", "照明係");
             add("mode.littlemaidneo.Healer", "回復係");
+            // 移動×お仕事の組み合わせ表示名（旧版の護衛剣士など）
+            addCombinedStateJa("Escort", "Fencer", "護衛剣士");
+            addCombinedStateJa("Freedom", "Fencer", "自由剣士");
+            addCombinedStateJa("Tracer", "Fencer", "探知剣士");
+            addCombinedStateJa("Escort", "Archer", "護衛弓兵");
+            addCombinedStateJa("Freedom", "Archer", "自由弓兵");
+            addCombinedStateJa("Tracer", "Archer", "探知弓兵");
+            addCombinedStateJa("Escort", "Cooking", "護衛お料理係");
+            addCombinedStateJa("Freedom", "Cooking", "自由お料理係");
+            addCombinedStateJa("Tracer", "Cooking", "探知お料理係");
+            addCombinedStateJa("Escort", "Pharmcist", "護衛調合係");
+            addCombinedStateJa("Freedom", "Pharmcist", "自由調合係");
+            addCombinedStateJa("Tracer", "Pharmcist", "探知調合係");
+            addCombinedStateJa("Escort", "Ripper", "護衛毛狩り隊");
+            addCombinedStateJa("Freedom", "Ripper", "自由毛狩り隊");
+            addCombinedStateJa("Tracer", "Ripper", "探知毛狩り隊");
+            addCombinedStateJa("Escort", "Torcher", "護衛照明係");
+            addCombinedStateJa("Freedom", "Torcher", "自由照明係");
+            addCombinedStateJa("Tracer", "Torcher", "探知照明係");
+            addCombinedStateJa("Escort", "Healer", "護衛回復係");
+            addCombinedStateJa("Freedom", "Healer", "自由回復係");
+            addCombinedStateJa("Tracer", "Healer", "探知回復係");
+
+            add("gui.littlemaidneo.littlemaid.salary.ok", "お給料: 正常");
+            add("gui.littlemaidneo.littlemaid.salary.unpaid", "未払い: %s日");
+            add("gui.littlemaidneo.littlemaid.salary.strike", "ストライキ中！");
+            add("gui.littlemaidneo.target_tag.reset_all", "IFFリセット");
+            add("gui.littlemaidneo.target_tag.reset_all.tooltip", "すべての敵対タグを初期状態に戻します");
 
             add("block.littlemaidneo.salary_box", "メイドさんのお給料箱");
 

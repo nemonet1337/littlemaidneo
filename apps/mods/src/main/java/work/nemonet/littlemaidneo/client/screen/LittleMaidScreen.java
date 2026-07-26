@@ -185,16 +185,25 @@ public class LittleMaidScreen
             return Component.translatable(
                     "state." + LittleMaidNeo.MODID + ".Strike").withStyle(ChatFormatting.RED, ChatFormatting.BOLD);
         }
-        MutableComponent stateText = Component.translatable(
+        // 待機中は移動モードより待機表示を優先
+        if (owner.isInSittingPose()) {
+            return Component.translatable("state." + LittleMaidNeo.MODID + ".Wait");
+        }
+        Optional<String> modeNameOpt = owner.getModeName();
+        if (modeNameOpt.isPresent()) {
+            String modeName = modeNameOpt.get();
+            // 移動×お仕事の組み合わせ表示名（例: 護衛剣士 = Escort_Fencer）
+            String compoundKey = "state." + LittleMaidNeo.MODID + "." + movingMode.getName() + "_" + modeName;
+            if (net.minecraft.client.resources.language.I18n.exists(compoundKey)) {
+                return Component.translatable(compoundKey);
+            }
+            MutableComponent stateText = Component.translatable(
+                    "state." + LittleMaidNeo.MODID + "." + movingMode.getName());
+            return stateText.append(" : ").append(
+                    Component.translatable("mode." + LittleMaidNeo.MODID + "." + modeName));
+        }
+        return Component.translatable(
                 "state." + LittleMaidNeo.MODID + "." + movingMode.getName());
-        owner
-                .getModeName()
-                .ifPresent(modeName -> stateText
-                        .append(" : ")
-                        .append(
-                                Component.translatable(
-                                        "mode." + LittleMaidNeo.MODID + "." + modeName)));
-        return stateText;
     }
 
     @Override
@@ -341,6 +350,20 @@ public class LittleMaidScreen
             int mouseY) {
         int textX = 8;
         context.text(font, this.stateText, textX, 61, 0xFF404040, false);
+        // お給料状態表示（未払い日数）
+        int unpaid = this.menu.getUnpaidDays();
+        Component salaryText;
+        if (owner.isStrike()) {
+            salaryText = Component.translatable("gui.littlemaidneo.littlemaid.salary.strike")
+                    .withStyle(ChatFormatting.RED);
+        } else if (unpaid > 0) {
+            salaryText = Component.translatable("gui.littlemaidneo.littlemaid.salary.unpaid", unpaid)
+                    .withStyle(ChatFormatting.GOLD);
+        } else {
+            salaryText = Component.translatable("gui.littlemaidneo.littlemaid.salary.ok")
+                    .withStyle(ChatFormatting.DARK_GREEN);
+        }
+        context.text(font, salaryText, textX, 71, 0xFF404040, false);
         String insideSkirt = Component.translatable(
                 "entity.littlemaidneo.little_maid_mob.InsideSkirt").getString();
         context.text(

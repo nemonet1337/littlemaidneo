@@ -73,6 +73,26 @@ public class TargetTagScreen extends AbstractFilterableListScreen<TargetTagScree
                 .searchInputHeight(searchInputHeight)
                 .withPlaceholder("Search entities...")
                 .build();
+
+        // IFF（ターゲットタグ）リセットボタン
+        int resetW = 100;
+        int resetH = 20;
+        this.addRenderableWidget(Button.builder(
+                        Component.translatable("gui.littlemaidneo.target_tag.reset_all"),
+                        b -> resetAllTags())
+                .bounds(this.width - resetW - 8, 8, resetW, resetH)
+                .tooltip(Tooltip.create(Component.translatable("gui.littlemaidneo.target_tag.reset_all.tooltip")))
+                .build());
+    }
+
+    /** 全ターゲットタグをクリア（デフォルト IFF に戻す）。閉じるときに同期される。 */
+    private void resetAllTags() {
+        targetTags.clear();
+        if (listGUI != null) {
+            for (TargetTagGUIElement element : listGUI.getListGUI().getAllElements()) {
+                element.resetTags();
+            }
+        }
     }
 
     @Override
@@ -354,6 +374,13 @@ public class TargetTagScreen extends AbstractFilterableListScreen<TargetTagScree
             }
 
             return tags;
+        }
+
+        /** IFF をデフォルト（制限なし）に戻す。 */
+        public void resetTags() {
+            this.attackState = AttackState.PREEMPTIVE_ATTACK_ALLOWED;
+            this.weaponState = WeaponState.NO_WEAPON_RESTRICTION;
+            this.approachState = ApproachState.APPROACH_ALLOWED;
         }
     }
 }
