@@ -16,12 +16,15 @@ import net.minecraft.network.codec.StreamCodec;
  * <p>値そのもの（{@link #FREEDOM}/{@link #ESCORT}/{@link #TRACER}）は表示名・lang キー
  * （{@code state.littlemaidneo.<Name>}）・外部モデルパックが参照する描画 caps
  * （{@code caps_isFreedom}/{@code caps_isTracer}）・本パラメータ（{@code moving=...}）の契約と
- * 結びついているため不変とする。
+ * 結びついているため、既存3値の名前・IDは不変とする。
+ * {@link #STROLL} は後から追加したお散歩モード（ご主人周辺の徘徊）。
  */
 public enum MaidMode {
     FREEDOM("Freedom", 0),
     ESCORT("Escort", 1),
-    TRACER("Tracer", 2);
+    TRACER("Tracer", 2),
+    /** ご主人の周辺を散歩する（自由行動だが原点はご主人） */
+    STROLL("Stroll", 3);
 
     private final String name;
     private final int id;

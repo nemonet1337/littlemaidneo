@@ -108,7 +108,8 @@ public class LittleMaidScreen
                             }
                             switch (movingMode) {
                                 case ESCORT -> movingMode = MaidMode.FREEDOM;
-                                case FREEDOM -> movingMode = MaidMode.TRACER;
+                                case FREEDOM -> movingMode = MaidMode.STROLL;
+                                case STROLL -> movingMode = MaidMode.TRACER;
                                 case TRACER -> movingMode = MaidMode.ESCORT;
                             }
                             stateText = getStateText();
@@ -242,6 +243,10 @@ public class LittleMaidScreen
                 case FREEDOM -> {
                     movingIcon = Items.FEATHER.getDefaultInstance();
                     movingTooltip = Component.translatable("state." + LittleMaidNeo.MODID + ".Freedom");
+                }
+                case STROLL -> {
+                    movingIcon = Items.LEATHER_BOOTS.getDefaultInstance();
+                    movingTooltip = Component.translatable("state." + LittleMaidNeo.MODID + ".Stroll");
                 }
                 case TRACER -> {
                     movingIcon = Items.REDSTONE.getDefaultInstance();

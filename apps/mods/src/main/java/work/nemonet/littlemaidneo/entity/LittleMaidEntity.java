@@ -274,6 +274,7 @@ private float prevInterestedAngle;
                             new work.nemonet.littlemaidneo.entity.ai.behavior.MaidMoveToDropItemBehavior(),
                             new work.nemonet.littlemaidneo.entity.ai.behavior.MaidFollowOwnerBehavior(),
                             new work.nemonet.littlemaidneo.entity.ai.behavior.MaidFreedomBehavior(),
+                            new work.nemonet.littlemaidneo.entity.ai.behavior.MaidStrollBehavior(),
                             new work.nemonet.littlemaidneo.entity.ai.behavior.MaidTraceBehavior(),
                             new work.nemonet.littlemaidneo.entity.ai.behavior.MaidPlaySnowBehavior(),
                             entity.lookAroundBehavior,

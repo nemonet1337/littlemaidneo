@@ -34,8 +34,13 @@ public class LMLanguageProvider extends LanguageProvider {
             add("state.littlemaidneo.Wait", "Wait");
             add("state.littlemaidneo.Escort", "Escort");
             add("state.littlemaidneo.Freedom", "Freedom");
+            add("state.littlemaidneo.Stroll", "Stroll");
             add("state.littlemaidneo.Tracer", "Tracer");
             add("state.littlemaidneo.Strike", "Strike");
+            add("chat.littlemaidneo.main_hand.left", "%s is now left-handed.");
+            add("chat.littlemaidneo.main_hand.right", "%s is now right-handed.");
+            add("commands.littlemaidneo.config.bake.success", "LittleMaidNeo config rebaked (server values applied).");
+            add("commands.littlemaidneo.config.bake.failure", "Config bake failed: %s");
             add("mode.littlemaidneo.Combat", "Combat");
             add("mode.littlemaidneo.Fencer", "Fencer");
             add("mode.littlemaidneo.Archer", "Archer");
@@ -66,6 +71,13 @@ public class LMLanguageProvider extends LanguageProvider {
             addCombinedStateEn("Escort", "Healer", "Escort Healer");
             addCombinedStateEn("Freedom", "Healer", "Free Healer");
             addCombinedStateEn("Tracer", "Healer", "Tracer Healer");
+            addCombinedStateEn("Stroll", "Fencer", "Stroll Fencer");
+            addCombinedStateEn("Stroll", "Archer", "Stroll Archer");
+            addCombinedStateEn("Stroll", "Cooking", "Stroll Cook");
+            addCombinedStateEn("Stroll", "Pharmcist", "Stroll Pharmacist");
+            addCombinedStateEn("Stroll", "Ripper", "Stroll Ripper");
+            addCombinedStateEn("Stroll", "Torcher", "Stroll Torcher");
+            addCombinedStateEn("Stroll", "Healer", "Stroll Healer");
 
             add("gui.littlemaidneo.littlemaid.salary.ok", "Salary: OK");
             add("gui.littlemaidneo.littlemaid.salary.unpaid", "Unpaid days: %s");
@@ -148,8 +160,13 @@ public class LMLanguageProvider extends LanguageProvider {
             add("state.littlemaidneo.Wait", "待機");
             add("state.littlemaidneo.Escort", "従者");
             add("state.littlemaidneo.Freedom", "自由人");
+            add("state.littlemaidneo.Stroll", "お散歩");
             add("state.littlemaidneo.Tracer", "赤石探知");
             add("state.littlemaidneo.Strike", "ストライキ");
+            add("chat.littlemaidneo.main_hand.left", "%s は左利きになりました。");
+            add("chat.littlemaidneo.main_hand.right", "%s は右利きになりました。");
+            add("commands.littlemaidneo.config.bake.success", "リトルメイドネオのコンフィグを再適用しました。");
+            add("commands.littlemaidneo.config.bake.failure", "コンフィグの再適用に失敗: %s");
             add("mode.littlemaidneo.Combat", "戦闘係");
             add("mode.littlemaidneo.Fencer", "剣士");
             add("mode.littlemaidneo.Archer", "弓兵");
@@ -180,6 +197,13 @@ public class LMLanguageProvider extends LanguageProvider {
             addCombinedStateJa("Escort", "Healer", "護衛回復係");
             addCombinedStateJa("Freedom", "Healer", "自由回復係");
             addCombinedStateJa("Tracer", "Healer", "探知回復係");
+            addCombinedStateJa("Stroll", "Fencer", "散歩剣士");
+            addCombinedStateJa("Stroll", "Archer", "散歩弓兵");
+            addCombinedStateJa("Stroll", "Cooking", "散歩お料理係");
+            addCombinedStateJa("Stroll", "Pharmcist", "散歩調合係");
+            addCombinedStateJa("Stroll", "Ripper", "散歩毛狩り隊");
+            addCombinedStateJa("Stroll", "Torcher", "散歩照明係");
+            addCombinedStateJa("Stroll", "Healer", "散歩回復係");
 
             add("gui.littlemaidneo.littlemaid.salary.ok", "お給料: 正常");
             add("gui.littlemaidneo.littlemaid.salary.unpaid", "未払い: %s日");

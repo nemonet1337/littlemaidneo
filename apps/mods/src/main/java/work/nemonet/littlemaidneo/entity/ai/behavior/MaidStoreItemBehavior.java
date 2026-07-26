@@ -41,6 +41,7 @@ public class MaidStoreItemBehavior extends AbstractMaidBehavior {
         if (TameableUtil.getTameOwnerUuid(entity).isEmpty()) return false;
         if (TameableUtil.isWait(entity)) return false;
         if (entity.getMaidMode() != MaidMode.FREEDOM
+                && entity.getMaidMode() != MaidMode.STROLL
                 && entity.getMaidMode() != MaidMode.TRACER) return false;
 
         boolean runningBF = blockFinder != null && !blockFinder.isEnd() && count++ < 1000;

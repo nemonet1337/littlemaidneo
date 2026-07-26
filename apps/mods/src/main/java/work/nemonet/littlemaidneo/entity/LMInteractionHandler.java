@@ -198,30 +198,50 @@ final class LMInteractionHandler {
             mob.heal(config.health.healAmount);
             return mob.changeState(player, stack);
         }
-        // Freedom切替
+        // Freedom / Stroll 切替（羽）: ESCORT → FREEDOM → STROLL → ESCORT
         if (stack.getItem() == Items.FEATHER) {
-            if (mob.getMaidMode() == MaidMode.ESCORT) {
-                mob.level().broadcastEntityEvent(mob, (byte) 73);
-                mob.setMaidMode(MaidMode.FREEDOM);
-                mob.setFreedomPos(mob.blockPosition());
-            } else {
-                mob.level().broadcastEntityEvent(mob, (byte) 74);
-                mob.setMaidMode(MaidMode.ESCORT);
+            switch (mob.getMaidMode()) {
+                case ESCORT -> {
+                    mob.level().broadcastEntityEvent(mob, (byte) 73);
+                    mob.setMaidMode(MaidMode.FREEDOM);
+                    mob.setFreedomPos(mob.blockPosition());
+                }
+                case FREEDOM -> {
+                    mob.level().broadcastEntityEvent(mob, (byte) 73);
+                    mob.setMaidMode(MaidMode.STROLL);
+                }
+                default -> {
+                    mob.level().broadcastEntityEvent(mob, (byte) 74);
+                    mob.setMaidMode(MaidMode.ESCORT);
+                }
             }
             return InteractionResult.SUCCESS;
         }
-        // Tracer切替
+        // Tracer切替（赤石）: FREEDOM/STROLL ↔ TRACER
         if ((mob.getMaidMode() == MaidMode.FREEDOM ||
+                mob.getMaidMode() == MaidMode.STROLL ||
                 mob.getMaidMode() == MaidMode.TRACER) &&
                 stack.getItem() == Items.REDSTONE) {
-            if (mob.getMaidMode() == MaidMode.FREEDOM) {
-                mob.level().broadcastEntityEvent(mob, (byte) 75);
-                mob.setMaidMode(MaidMode.TRACER);
-            } else {
+            if (mob.getMaidMode() == MaidMode.TRACER) {
                 mob.level().broadcastEntityEvent(mob, (byte) 73);
                 mob.setMaidMode(MaidMode.FREEDOM);
                 mob.setFreedomPos(mob.blockPosition());
+            } else {
+                mob.level().broadcastEntityEvent(mob, (byte) 75);
+                mob.setMaidMode(MaidMode.TRACER);
             }
+            return InteractionResult.SUCCESS;
+        }
+        // 利き手切替（棒）
+        if (stack.getItem() == Items.STICK) {
+            boolean left = !mob.isLeftHanded();
+            mob.setLeftHanded(left);
+            if (!mob.level().isClientSide()) {
+                player.sendSystemMessage(Component.translatable(
+                        left ? "chat.littlemaidneo.main_hand.left" : "chat.littlemaidneo.main_hand.right",
+                        mob.getDisplayName()));
+            }
+            mob.swing(InteractionHand.MAIN_HAND);
             return InteractionResult.SUCCESS;
         }
         // ガラス瓶 -> 経験値瓶（所持 XP と瓶の数だけまとめて変換）

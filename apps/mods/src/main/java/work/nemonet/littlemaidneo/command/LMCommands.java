@@ -6,6 +6,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.network.chat.Component;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.resource.loader.LMFileLoader;
 import work.nemonet.littlemaidneo.resource.manager.LMModelManager;
 import work.nemonet.littlemaidneo.resource.manager.LMConfigManager;
@@ -46,6 +47,12 @@ public class LMCommands {
                         .executes(LMCommands::executeMaidDismiss)
                     )
                 )
+                .then(Commands.literal("config")
+                    .then(Commands.literal("bake")
+                        .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                        .executes(LMCommands::executeConfigBake)
+                    )
+                )
                 .then(Commands.literal("debug")
                     .then(Commands.literal("dump")
                         .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
@@ -77,6 +84,12 @@ public class LMCommands {
                     .then(Commands.literal("dismiss")
                         .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                         .executes(LMCommands::executeMaidDismiss)
+                    )
+                )
+                .then(Commands.literal("config")
+                    .then(Commands.literal("bake")
+                        .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                        .executes(LMCommands::executeConfigBake)
                     )
                 )
                 .then(Commands.literal("debug")
@@ -175,5 +188,22 @@ public class LMCommands {
         source.sendSystemMessage(Component.literal("Models Loaded: " + modelNames.size()));
         source.sendSystemMessage(Component.literal("Sound Packs Loaded: " + soundPacksCount));
         return 1;
+    }
+
+    /**
+     * サーバー/共通コンフィグを再 bake し、メモリ上の設定値を TOML と揃える。
+     * SERVER 型コンフィグは NeoForge がクライアントへ同期する。
+     */
+    private static int executeConfigBake(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
+        try {
+            // SERVER コンフィグをメモリへ再適用。クライアント同期は NeoForge の SERVER config 配信に委ねる
+            LMNConfig.bake();
+            source.sendSystemMessage(Component.translatable("commands.littlemaidneo.config.bake.success"));
+            return 1;
+        } catch (Exception e) {
+            source.sendFailure(Component.translatable("commands.littlemaidneo.config.bake.failure", e.getMessage()));
+            return 0;
+        }
     }
 }
