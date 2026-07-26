@@ -2,6 +2,8 @@ package work.nemonet.littlemaidneo.entity.targeting;
 
 import java.util.Objects;
 import java.util.Optional;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 
@@ -26,12 +28,12 @@ public class TargetIdentifier {
      * EntityTypeが実在するものだけインスタンス化できる。
      */
     public static Optional<TargetIdentifier> tryParse(String id) {
-        return EntityType.byString(id)
+        return BuiltInRegistries.ENTITY_TYPE.getOptional(Identifier.parse(id))
                 .map(TargetIdentifier::new);
     }
 
     public EntityType<?> getEntityType() {
-        return EntityType.byString(this.id).orElseThrow();
+        return BuiltInRegistries.ENTITY_TYPE.getOptional(Identifier.parse(this.id)).orElseThrow();
     }
 
     @Override

@@ -61,18 +61,23 @@ public class ModelLittleMaid_Beverly7 extends LMModel<MultiModelRenderState> {
                 .texOffs(18, 39).addBox(-4, 0, -2.4F, 8, 4, 5, deform.extend(-0.2F)),
                 PartPose.offsetAndRotation(0, 0, 0, 0.2F, 0, 0));
 
+        // 顔本体のみ。髪は眼より後に描画する子パーツへ分離（眼が前髪を貫通するのを防ぐ）
         var bipedHead = bipedNeck.addOrReplaceChild("biped_head", CubeListBuilder.create()
-                .texOffs(0, 0).addBox(-4, -8, -4, 8, 8, 8, deform)
+                .texOffs(0, 0).addBox(-4, -8, -4, 8, 8, 8, deform),
+                PartPose.offset(0, -9, 0));
+        // まばたきオーバーレイ（通常非表示）。片面プレートで隣接 UV の裏抜けを防ぐ
+        bipedHead.addOrReplaceChild("eye_right", CubeListBuilder.create()
+                .texOffs(0, 0).addBox(-4, -8, -4.01F, 4, 8, 0, PLATE_FACE), PartPose.offset(0, 0, 0));
+        bipedHead.addOrReplaceChild("eye_left", CubeListBuilder.create()
+                .texOffs(4, 0).addBox(0, -8, -4.01F, 4, 8, 0, PLATE_FACE), PartPose.offset(0, 0, 0));
+        // 髪・横髪は眼の後に描画（カットアウト半透明の前髪が眼より手前に来る）
+        bipedHead.addOrReplaceChild("head_hair", CubeListBuilder.create()
                 .texOffs(32, 0).addBox(-4, -8, -4, 8, 12, 8, deform.extend(0.3F))
                 .texOffs(72, 0).addBox(-2, -7.2F, 4, 4, 4, 2, deform)
                 .texOffs(56, 0).addBox(-5, -7, 0.2F, 1, 3, 3, deform)
                 .mirror()
                 .texOffs(64, 0).addBox(4, -7, 0.2F, 1, 3, 3, deform),
-                PartPose.offset(0, -9, 0));
-        bipedHead.addOrReplaceChild("eye_right", CubeListBuilder.create()
-                .texOffs(0, 0).addBox(-4, -8, -4.01F, 4, 8, 0, deform), PartPose.offset(0, 0, 0));
-        bipedHead.addOrReplaceChild("eye_left", CubeListBuilder.create()
-                .texOffs(4, 0).addBox(0, -8, -4.01F, 4, 8, 0, deform), PartPose.offset(0, 0, 0));
+                PartPose.offset(0, 0, 0));
         bipedHead.addOrReplaceChild("ponytail", CubeListBuilder.create()
                 .texOffs(76, 6).addBox(-1.5F, -1.5F, -1, 3, 9, 3, deform),
                 PartPose.offsetAndRotation(0, -5.2F, 5, 0.05F, 0, 0));

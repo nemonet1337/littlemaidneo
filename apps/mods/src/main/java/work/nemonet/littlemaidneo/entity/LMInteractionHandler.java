@@ -171,8 +171,8 @@ final class LMInteractionHandler {
             if (contents != null) {
                 if (!mob.level().isClientSide() && mob.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
                     for (MobEffectInstance effect : contents.getAllEffects()) {
-                        if (effect.getEffect().value().isInstantenous()) {
-                            effect.getEffect().value().applyInstantenousEffect(
+                        if (effect.getEffect().value().isInstantaneous()) {
+                            effect.getEffect().value().applyInstantaneousEffect(
                                     serverLevel, player, player, mob, effect.getAmplifier(), 1.0);
                         } else {
                             mob.addEffect(new MobEffectInstance(effect));

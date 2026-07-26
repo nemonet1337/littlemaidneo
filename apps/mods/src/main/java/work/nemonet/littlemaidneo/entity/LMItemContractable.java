@@ -83,7 +83,7 @@ public class LMItemContractable<T extends LittleMaidEntity> extends ItemContract
                 salaryBoxPosSet.remove(farthestPos);
                 salaryBoxPosSet.add(pos);
                 if (this.mob.level() instanceof ServerLevel serverWorld) {
-                    var particlePos = pos.getCenter();
+                    var particlePos = net.minecraft.world.phys.Vec3.atCenterOf(pos);
 
                     serverWorld.sendParticles(ParticleTypes.FIREWORK,
                             particlePos.x, particlePos.y, particlePos.z,

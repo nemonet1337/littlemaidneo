@@ -49,8 +49,15 @@ public class ModelLittleMaid_Elsa5 extends LMModel<MultiModelRenderState> {
         var bipedPelvic = bipedTorso.addOrReplaceChild("biped_pelvic", CubeListBuilder.create(), PartPose.offset(0, 3, 0));
 
         var bipedHead = bipedNeck.addOrReplaceChild("biped_head", CubeListBuilder.create(), PartPose.offset(0, -6, 0));
+        // 顔本体
         bipedHead.addOrReplaceChild("head_main", CubeListBuilder.create()
                 .texOffs(0, 0).addBox(-4, -8, -4, 8, 8, 8, deform), PartPose.offset(0, 0, 0));
+        // 眼は髪より先に登録（描画順: 顔 → 眼 → 髪）。貫通防止。
+        bipedHead.addOrReplaceChild("eye_right", CubeListBuilder.create()
+                .texOffs(0, 0).addBox(-4, -8, -4.001F, 4, 8, 0, PLATE_FACE), PartPose.offset(0, 0, 0));
+        bipedHead.addOrReplaceChild("eye_left", CubeListBuilder.create()
+                .texOffs(4, 0).addBox(0, -8, -4.001F, 4, 8, 0, PLATE_FACE), PartPose.offset(0, 0, 0));
+        // 髪レイヤー（眼の後に描画）
         bipedHead.addOrReplaceChild("head_front", CubeListBuilder.create()
                 .texOffs(32, 0).addBox(-4, -8, -4, 8, 12, 8, CubeDeformation.NONE.extend(0.3F)), PartPose.offset(0, 0, 0));
         bipedHead.addOrReplaceChild("head_hair_back", CubeListBuilder.create()
@@ -59,19 +66,19 @@ public class ModelLittleMaid_Elsa5 extends LMModel<MultiModelRenderState> {
                 .texOffs(36, 20).addBox(-5, -7, 0.2F, 1, 3, 3, deform), PartPose.offset(0, 0, 0));
         bipedHead.addOrReplaceChild("head_hair_side_right", CubeListBuilder.create()
                 .texOffs(44, 20).mirror().addBox(4, -7, 0.2F, 1, 3, 3, deform), PartPose.offset(0, 0, 0));
-        bipedHead.addOrReplaceChild("eye_right", CubeListBuilder.create()
-                .texOffs(0, 0).addBox(-4, -8, -4.001F, 4, 8, 0, deform), PartPose.offset(0, 0, 0));
-        bipedHead.addOrReplaceChild("eye_left", CubeListBuilder.create()
-                .texOffs(4, 0).addBox(0, -8, -4.001F, 4, 8, 0, deform), PartPose.offset(0, 0, 0));
         bipedHead.addOrReplaceChild("head_mount", CubeListBuilder.create(), PartPose.offset(0, -4, 0));
 
         var bipedRightArm = bipedNeck.addOrReplaceChild("biped_right_arm", CubeListBuilder.create(), PartPose.offset(-3.5F, -5F, 0));
         bipedRightArm.addOrReplaceChild("arm_main", CubeListBuilder.create()
                 .texOffs(20, 24).addBox(-1.5F, -0.5F, -0.5F, 2, 10, 2, deform), PartPose.offset(0, 0, 0));
+        // 旧 Arms[0]: setLivingAnimations で (-0.5, 7, 0)
+        bipedRightArm.addOrReplaceChild("arm_right", CubeListBuilder.create(), PartPose.offset(-0.5F, 7, 0));
 
         var bipedLeftArm = bipedNeck.addOrReplaceChild("biped_left_arm", CubeListBuilder.create(), PartPose.offset(3.5F, -5F, 0));
         bipedLeftArm.addOrReplaceChild("arm_main", CubeListBuilder.create()
                 .texOffs(28, 24).mirror().addBox(-0.5F, -0.5F, -0.5F, 2, 10, 2, deform), PartPose.offset(0, 0, 0));
+        // 旧 Arms[1]: setLivingAnimations で (0.5, 7, 0)
+        bipedLeftArm.addOrReplaceChild("arm_left", CubeListBuilder.create(), PartPose.offset(0.5F, 7, 0));
 
         var bipedRightLeg = bipedPelvic.addOrReplaceChild("biped_right_leg", CubeListBuilder.create(), PartPose.offset(-1.5F, 3, 0));
         bipedRightLeg.addOrReplaceChild("leg_main", CubeListBuilder.create()

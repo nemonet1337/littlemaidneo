@@ -3,15 +3,20 @@ package work.nemonet.littlemaidneo.client.renderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
-import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import work.nemonet.littlemaidneo.maidmodel.LMModel;
 
+/**
+ * メイドさんの手持ちアイテム描画。
+ * 旧 {@code Arms[n].postRender} 相当: main_frame→torso→neck→arm→(arm_lower)→arm_right/left
+ * まで親チェーンを辿り、ハンドアンカー位置でアイテムを描画する。
+ */
 public class LMHeldItemLayer<S extends MultiModelRenderState, M extends LMModel<S>> extends RenderLayer<S, M> {
 
     public LMHeldItemLayer(RenderLayerParent<S, M> context) {
@@ -38,31 +43,58 @@ public class LMHeldItemLayer<S extends MultiModelRenderState, M extends LMModel<
 
     private void handRender(S state, ItemStack stack, ItemDisplayContext mode, HumanoidArm hand,
                              PoseStack poseStack, SubmitNodeCollector submitNodeCollector, int light) {
-        if (!stack.isEmpty()) {
-            poseStack.pushPose();
-            boolean isLeft = hand == HumanoidArm.LEFT;
-            M model = getParentModel();
-            if (model != null) {
-                // 旧 postRender と同様、親チェーン全体（main_frame→torso→neck→arm）の変換を順に適用する
-                ModelPart mainFrame = LMModel.getChildSafe(model.getSkinRoot(), "main_frame");
-                ModelPart torso = LMModel.getChildSafe(mainFrame, "biped_torso");
-                ModelPart neck = LMModel.getChildSafe(torso, "biped_neck");
-                ModelPart arm = LMModel.getChildSafe(neck, isLeft ? "biped_left_arm" : "biped_right_arm");
-                if (mainFrame != null && torso != null && neck != null && arm != null) {
-                    mainFrame.translateAndRotate(poseStack);
-                    torso.translateAndRotate(poseStack);
-                    neck.translateAndRotate(poseStack);
-                    arm.translateAndRotate(poseStack);
-                    // 旧 Arms ハンドアンカー相当（腕の先端へ移動）
-                    poseStack.translate(isLeft ? 0.0625F : -0.0625F, 0.3125F, -0.0625F);
-                }
-            }
-            poseStack.mulPose(Axis.XP.rotationDegrees(-90.0F));
-            poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
-            poseStack.translate(isLeft ? -0.0125F : 0.0125F, 0.05f, -0.15f);
-            Minecraft.getInstance().getEntityRenderDispatcher().getItemInHandRenderer()
-                    .renderItem(state.entity, stack, mode, poseStack, submitNodeCollector, light);
-            poseStack.popPose();
+        if (stack.isEmpty()) return;
+
+        poseStack.pushPose();
+        boolean isLeft = hand == HumanoidArm.LEFT;
+        M model = getParentModel();
+        if (model != null) {
+            translateToHand(model, isLeft, poseStack);
+        }
+        // ItemInHandRenderer が想定する第三者視点ハンド向きへ合わせる
+        poseStack.mulPose(Axis.XP.rotationDegrees(-90.0F));
+        poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
+        // 旧 renderItems: glTranslatef(0, 0.05, -0.05) 相当 + わずかな左右補正
+        poseStack.translate(isLeft ? -0.0125F : 0.0125F, 0.05F, -0.05F);
+        Minecraft.getInstance().getEntityRenderDispatcher().getItemInHandRenderer()
+                .renderItem(state.entity, stack, mode, poseStack, submitNodeCollector, light);
+        poseStack.popPose();
+    }
+
+    /**
+     * 旧 Arms.postRender 相当の変換を PoseStack に適用する。
+     * <pre>
+     * main_frame → biped_torso → biped_neck → biped_*_arm
+     *   → [arm_lower] → arm_right / arm_left   （ハンドアンカー）
+     * </pre>
+     * アンカーが無いモデルは旧 Orign 系の固定オフセット (∓1, 5, -1)/16 にフォールバックする。
+     */
+    private void translateToHand(M model, boolean isLeft, PoseStack poseStack) {
+        ModelPart mainFrame = LMModel.getChildSafe(model.getSkinRoot(), "main_frame");
+        ModelPart torso = LMModel.getChildSafe(mainFrame, "biped_torso");
+        ModelPart neck = LMModel.getChildSafe(torso, "biped_neck");
+        ModelPart arm = LMModel.getChildSafe(neck, isLeft ? "biped_left_arm" : "biped_right_arm");
+        if (mainFrame == null || torso == null || neck == null || arm == null) {
+            return;
+        }
+        mainFrame.translateAndRotate(poseStack);
+        torso.translateAndRotate(poseStack);
+        neck.translateAndRotate(poseStack);
+        arm.translateAndRotate(poseStack);
+
+        // 二節腕: 下腕を経由
+        ModelPart lower = LMModel.getChildSafe(arm, "arm_lower");
+        if (lower != null) {
+            lower.translateAndRotate(poseStack);
+        }
+
+        // ハンドアンカー（旧 Arms[0]/[1]）
+        ModelPart anchor = LMModel.getChildSafe(lower != null ? lower : arm, isLeft ? "arm_left" : "arm_right");
+        if (anchor != null) {
+            anchor.translateAndRotate(poseStack);
+        } else {
+            // アンカー未定義モデル用フォールバック（旧 ModelLittleMaidBase Arms 位置）
+            poseStack.translate(isLeft ? 0.0625F : -0.0625F, 0.3125F, -0.0625F);
         }
     }
 }

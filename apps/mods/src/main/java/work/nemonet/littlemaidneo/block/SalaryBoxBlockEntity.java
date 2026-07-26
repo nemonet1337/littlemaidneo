@@ -163,7 +163,7 @@ public class SalaryBoxBlockEntity extends RandomizableContainerBlockEntity {
             return;
         }
 
-        var centerPos = pos.getCenter();
+        var centerPos = net.minecraft.world.phys.Vec3.atCenterOf(pos);
         float range = getConfigNotifyRange();
         var box = new AABB(
                 centerPos.x - range,

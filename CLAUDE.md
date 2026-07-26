@@ -43,7 +43,7 @@ LittleMaidNeo は、レガシー Mod 系譜 **LittleMaidRebirth (LMRB)** と **L
 
 ## Environment
 
-- Minecraft 26.1.2 / NeoForge 26.1.2.64-beta
+- Minecraft 26.2 / NeoForge 26.2.0.32-beta
 - **Java 25** が必要（`java.toolchain.languageVersion = 25`）
 - Gradle: NeoForge moddev plugin `net.neoforged.moddev` 2.0.141
 - 旧 LMML/LMRB は MC 1.20.1 + Architectury + Java 17 だったが、NeoForge 移行で大幅にアップデートされている

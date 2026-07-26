@@ -60,18 +60,23 @@ public class ModelLittleMaid_Chloe2 extends LMModel<MultiModelRenderState> {
                 .texOffs(18, 39).addBox(-4, 0, -2.4F, 8, 3, 5, deform.extend(-0.2F)),
                 PartPose.offsetAndRotation(0, 0, 0, 0.2F, 0, 0));
 
+        // 顔本体のみ。髪は眼より後に描画する子パーツへ分離（眼が前髪を貫通するのを防ぐ）
         var bipedHead = bipedNeck.addOrReplaceChild("biped_head", CubeListBuilder.create()
-                .texOffs(0, 0).addBox(-4, -8, -4, 8, 8, 8, deform)
+                .texOffs(0, 0).addBox(-4, -8, -4, 8, 8, 8, deform),
+                PartPose.offset(0, -8, 0));
+        // まばたきオーバーレイ（通常非表示）。片面プレートで隣接 UV の裏抜けを防ぐ
+        bipedHead.addOrReplaceChild("eye_right", CubeListBuilder.create()
+                .texOffs(0, 0).addBox(-4, -8, -4.01F, 4, 8, 0, PLATE_FACE), PartPose.offset(0, 0, 0));
+        bipedHead.addOrReplaceChild("eye_left", CubeListBuilder.create()
+                .texOffs(4, 0).addBox(0, -8, -4.01F, 4, 8, 0, PLATE_FACE), PartPose.offset(0, 0, 0));
+        // 髪・横髪は眼の後に描画（カットアウト半透明の前髪が眼より手前に来る）
+        bipedHead.addOrReplaceChild("head_hair", CubeListBuilder.create()
                 .texOffs(32, 0).addBox(-4, -8, -4, 8, 12, 8, deform.extend(0.3F))
                 .texOffs(72, 0).addBox(-2, -7.2F, 4, 4, 4, 2, deform)
                 .texOffs(56, 0).addBox(-5, -7, 0.2F, 1, 3, 3, deform)
                 .mirror()
                 .texOffs(64, 0).addBox(4, -7, 0.2F, 1, 3, 3, deform),
-                PartPose.offset(0, -8, 0));
-        bipedHead.addOrReplaceChild("eye_right", CubeListBuilder.create()
-                .texOffs(0, 0).addBox(-4, -8, -4.01F, 4, 8, 0, deform), PartPose.offset(0, 0, 0));
-        bipedHead.addOrReplaceChild("eye_left", CubeListBuilder.create()
-                .texOffs(4, 0).addBox(0, -8, -4.01F, 4, 8, 0, deform), PartPose.offset(0, 0, 0));
+                PartPose.offset(0, 0, 0));
         bipedHead.addOrReplaceChild("ponytail", CubeListBuilder.create()
                 .texOffs(76, 6).addBox(-1.5F, -1.5F, -1, 3, 9, 3, deform),
                 PartPose.offsetAndRotation(0, -5.2F, 5, 0.05F, 0, 0));
@@ -90,7 +95,8 @@ public class ModelLittleMaid_Chloe2 extends LMModel<MultiModelRenderState> {
         var rightArmLower = bipedRightArm.addOrReplaceChild("arm_lower", CubeListBuilder.create()
                 .texOffs(0, 25).addBox(-1, 0, -1.5F, 2, 7, 3, deform),
                 PartPose.offset(0, 4, 0.5F));
-        rightArmLower.addOrReplaceChild("arm_right", CubeListBuilder.create(), PartPose.offset(-0.5F, 6, 0));
+        // 旧 Arms[0]: 下腕先端 (-0.5, 7, 0)
+        rightArmLower.addOrReplaceChild("arm_right", CubeListBuilder.create(), PartPose.offset(-0.5F, 7, 0));
 
         var bipedLeftArm = bipedNeck.addOrReplaceChild("biped_left_arm", CubeListBuilder.create()
                 .texOffs(10, 16).mirror().addBox(-1, -1, -1, 2, 5, 3, deform),
@@ -98,7 +104,8 @@ public class ModelLittleMaid_Chloe2 extends LMModel<MultiModelRenderState> {
         var leftArmLower = bipedLeftArm.addOrReplaceChild("arm_lower", CubeListBuilder.create()
                 .texOffs(10, 25).mirror().addBox(-1, 0, -1.5F, 2, 7, 3, deform),
                 PartPose.offset(0, 4, 0.5F));
-        leftArmLower.addOrReplaceChild("arm_left", CubeListBuilder.create(), PartPose.offset(0.5F, 6, 0));
+        // 旧 Arms[1]: 下腕先端 (0.5, 7, 0)
+        leftArmLower.addOrReplaceChild("arm_left", CubeListBuilder.create(), PartPose.offset(0.5F, 7, 0));
 
         var bipedPelvic = bipedTorso.addOrReplaceChild("biped_pelvic", CubeListBuilder.create(), PartPose.offset(0, 3, 0));
 

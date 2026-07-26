@@ -61,7 +61,7 @@ public class LittleMaidScreen
     protected void init() {
         super.init();
         if (owner == null) {
-            minecraft.setScreen(null);
+            minecraft.gui.setScreen(null);
             return;
         }
         int left = (int) ((this.width - imageWidth) / 2F) - 5;
@@ -84,7 +84,7 @@ public class LittleMaidScreen
                         NOTE,
                         Component.translatable(
                                 "gui.littlemaidneo.littlemaid.tooltip.open_sound_pack_select"),
-                        button -> minecraft.setScreen(
+                        button -> minecraft.gui.setScreen(
                                 new SoundPackSelectScreen<>(title, owner))));
         this.addRenderableWidget(
                 new IconButtonWidget(
@@ -93,7 +93,7 @@ public class LittleMaidScreen
                         ARMOR,
                         Component.translatable(
                                 "gui.littlemaidneo.littlemaid.tooltip.open_model_select"),
-                        button -> minecraft.setScreen(
+                        button -> minecraft.gui.setScreen(
                                 new ModelSelectScreen<>(title, owner.level(), owner))));
         this.changeMovingModeButton = this.addRenderableWidget(
                 new IconButtonWidget(
@@ -195,7 +195,7 @@ public class LittleMaidScreen
             String modeName = modeNameOpt.get();
             // 移動×お仕事の組み合わせ表示名（例: 護衛剣士 = Escort_Fencer）
             String compoundKey = "state." + LittleMaidNeo.MODID + "." + movingMode.getName() + "_" + modeName;
-            if (net.minecraft.client.resources.language.I18n.exists(compoundKey)) {
+            if (net.minecraft.locale.Language.getInstance().has(compoundKey)) {
                 return Component.translatable(compoundKey);
             }
             MutableComponent stateText = Component.translatable(

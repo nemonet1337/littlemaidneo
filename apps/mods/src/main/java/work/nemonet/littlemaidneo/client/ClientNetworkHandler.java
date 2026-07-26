@@ -121,7 +121,7 @@ public class ClientNetworkHandler {
                     }
                 }
             }
-            Minecraft.getInstance().setScreen(new TargetTagScreen(entity, targetTagMap));
+            Minecraft.getInstance().gui.setScreen(new TargetTagScreen(entity, targetTagMap));
         });
     }
 
@@ -131,7 +131,7 @@ public class ClientNetworkHandler {
             if (player == null) return;
             var lmInfos = new ArrayList<MaidManager.LMInfo>();
             MaidManagerImpl.read(TagValueInput.create(ProblemReporter.DISCARDING, player.level().registryAccess(), payload.nbt()), lmInfos);
-            Minecraft.getInstance().setScreen(new MaidManagerScreen(lmInfos));
+            Minecraft.getInstance().gui.setScreen(new MaidManagerScreen(lmInfos));
         });
     }
 }

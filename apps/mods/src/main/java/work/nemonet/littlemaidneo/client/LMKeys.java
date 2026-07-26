@@ -35,7 +35,7 @@ public class LMKeys {
         }
         if (flag) {
             var mc = net.minecraft.client.Minecraft.getInstance();
-            if (mc.player == null || mc.screen != null) {
+            if (mc.player == null || mc.gui.screen() != null) {
                 return;
             }
             ClientPacketDistributor.sendToServer(OpenMaidManagerScreenC2SPayload.INSTANCE);

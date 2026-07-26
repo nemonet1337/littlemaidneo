@@ -1,6 +1,6 @@
 package work.nemonet.littlemaidneo.advancement.criterion;
 
-import net.minecraft.advancements.CriteriaTriggers;
+import net.minecraft.advancements.triggers.CriteriaTriggers;
 
 public class LMNCriteria {
     public static ContractMaidCriterion CONTRACT_MAID;

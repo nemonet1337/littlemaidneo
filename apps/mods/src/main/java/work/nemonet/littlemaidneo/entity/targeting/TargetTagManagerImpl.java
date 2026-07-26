@@ -7,6 +7,7 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import work.nemonet.littlemaidneo.tags.LMEntityTags;
 
 import java.util.HashMap;
@@ -66,30 +67,31 @@ public class TargetTagManagerImpl implements TargetTagManager {
         } else {
             boolean isMonster = category == MobCategory.MONSTER;
 
-            if (type == EntityType.CREEPER || type == EntityType.WARDEN) {
+            // 26.2: エンティティ定数は EntityType → EntityTypes に分離
+            if (type == EntityTypes.CREEPER || type == EntityTypes.WARDEN) {
                 tags.add(TargetingSystem.TargetTag.APPROACH_PROHIBITED);
                 tags.add(TargetingSystem.TargetTag.MELEE_WEAPON_PROHIBITED);
             }
-            if (type == EntityType.ENDERMAN) {
+            if (type == EntityTypes.ENDERMAN) {
                 tags.add(TargetingSystem.TargetTag.RANGED_WEAPON_PROHIBITED);
             }
             
             // 先制攻撃禁止の判定
-            if (!isMonster || type == EntityType.PIGLIN || type == EntityType.ZOMBIFIED_PIGLIN || type == EntityType.ENDERMAN) {
+            if (!isMonster || type == EntityTypes.PIGLIN || type == EntityTypes.ZOMBIFIED_PIGLIN || type == EntityTypes.ENDERMAN) {
                 tags.add(TargetingSystem.TargetTag.PREEMPTIVE_ATTACK_PROHIBITED);
             }
 
             // 攻撃禁止の判定
-            if (type == EntityType.VILLAGER || type == EntityType.WANDERING_TRADER || type == EntityType.ARMOR_STAND
-                    || type == EntityType.IRON_GOLEM || type == EntityType.SNOW_GOLEM || type == EntityType.ALLAY
-                    || type == EntityType.BAT || type == EntityType.CAT || type == EntityType.WOLF
-                    || type == EntityType.PARROT || type == EntityType.OCELOT || type == EntityType.FOX
-                    || type == EntityType.PANDA || type == EntityType.BEE || type == EntityType.STRIDER
-                    || type == EntityType.DOLPHIN || type == EntityType.AXOLOTL) {
+            if (type == EntityTypes.VILLAGER || type == EntityTypes.WANDERING_TRADER || type == EntityTypes.ARMOR_STAND
+                    || type == EntityTypes.IRON_GOLEM || type == EntityTypes.SNOW_GOLEM || type == EntityTypes.ALLAY
+                    || type == EntityTypes.BAT || type == EntityTypes.CAT || type == EntityTypes.WOLF
+                    || type == EntityTypes.PARROT || type == EntityTypes.OCELOT || type == EntityTypes.FOX
+                    || type == EntityTypes.PANDA || type == EntityTypes.BEE || type == EntityTypes.STRIDER
+                    || type == EntityTypes.DOLPHIN || type == EntityTypes.AXOLOTL) {
                 tags.add(TargetingSystem.TargetTag.ATTACK_PROHIBITED);
             }
 
-            if (type == EntityType.WARDEN) {
+            if (type == EntityTypes.WARDEN) {
                 tags.add(TargetingSystem.TargetTag.ATTACK_PROHIBITED);
             }
         }

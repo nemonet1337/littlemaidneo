@@ -12,7 +12,7 @@ import java.util.Optional;
 
 public class ClientScreenHelper {
     public static void openModelSelectScreen(Level level, MultiModelEntity entity) {
-        Minecraft.getInstance().setScreen(new ModelSelectScreen<>(
+        Minecraft.getInstance().gui.setScreen(new ModelSelectScreen<>(
                 Component.translatable("screen.littlemaidneo.model_select"), level, entity));
     }
 
