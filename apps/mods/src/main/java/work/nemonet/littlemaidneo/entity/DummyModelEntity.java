@@ -19,6 +19,13 @@ import work.nemonet.littlemaidneo.setup.ModRegistration;
 
 import java.util.Optional;
 
+/**
+ * GUI プレビュー等で使う軽量マルチモデルエンティティ。
+ * <p>
+ * {@code @Deprecated} 付き API は旧 IHasMultiModel 互換のための薄い委譲であり、
+ * 外部モデルパック／既存 GUI との接続を維持する目的で残している（削除予定ではない）。
+ * 新規コードからは非 Deprecated のゲッター／セッターを使うこと。
+ */
 public class DummyModelEntity extends LivingEntity implements IHasMultiModel {
     private LMModel<?> skinModel;
     private TexturePair skinTexture;

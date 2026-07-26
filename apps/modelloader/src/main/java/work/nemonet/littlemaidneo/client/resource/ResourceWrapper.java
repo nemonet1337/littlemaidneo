@@ -14,16 +14,17 @@ import net.minecraft.util.InclusiveRange;
 import net.minecraft.server.packs.resources.IoSupplier;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+
 public class ResourceWrapper implements PackResources {
     public static final ResourceWrapper INSTANCE = new ResourceWrapper();
     // pack format を固定値にすると MC 更新のたびに「非互換パック」扱いになり
@@ -100,17 +101,32 @@ public class ResourceWrapper implements PackResources {
 
         public InputStream getInputStream() throws IOException {
             if (isArchive) {
-                String resourcePath = homePath.toString();
-                ZipFile zipfile = new ZipFile(resourcePath);
+                // ZipFile は InputStream を閉じても自動では閉じないため、
+                // ストリーム close 時に ZipFile も閉じるラッパーを返す（ハンドルリーク防止）
+                ZipFile zipfile = new ZipFile(homePath.toFile());
                 ZipEntry zipentry = zipfile.getEntry(path);
                 if (zipentry == null) {
                     zipfile.close();
                     throw new NoSuchFileException(path);
-                } else {
-                    return zipfile.getInputStream(zipentry);
                 }
+                InputStream entryStream = zipfile.getInputStream(zipentry);
+                return new FilterInputStream(entryStream) {
+                    @Override
+                    public void close() throws IOException {
+                        try {
+                            super.close();
+                        } finally {
+                            zipfile.close();
+                        }
+                    }
+                };
             } else {
-                return Files.newInputStream(Paths.get(homePath.toString(), path));
+                // path はフォルダ相対（先頭セパレータ付きの場合あり）。'\\' を '/' にしてから解決
+                String relative = path.replace('\\', '/');
+                while (relative.startsWith("/")) {
+                    relative = relative.substring(1);
+                }
+                return Files.newInputStream(homePath.resolve(relative));
             }
         }
     }

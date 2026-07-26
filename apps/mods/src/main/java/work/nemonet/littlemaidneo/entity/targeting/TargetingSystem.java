@@ -95,7 +95,8 @@ public class TargetingSystem {
     }
 
     /**
-     * メイドさんクラス
+     * メイドさんクラス。
+     * 等価性はエンティティ同一性のみ（戦闘モードは動的状態であり identity に含めない）。
      */
     public static class Maid extends Mob {
         private final LittleMaidEntity maid;
@@ -114,10 +115,23 @@ public class TargetingSystem {
             }
             return BattleModeType.NONE;
         }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            // 同一エンティティを包む EntityWrapper 系は等価（Set 重複排除用）
+            return super.equals(obj);
+        }
+
+        @Override
+        public int hashCode() {
+            return super.hashCode();
+        }
     }
 
     /**
-     * モブエンティティクラス
+     * モブエンティティクラス。
+     * 追加フィールド {@code mob} は親の entity と同じ参照のため、等価性は親（entity 同一性）に委譲する。
      */
     public static class Mob extends EntityWrapper {
         private final net.minecraft.world.entity.Mob mob;
@@ -129,6 +143,17 @@ public class TargetingSystem {
 
         public net.minecraft.world.entity.Mob getMob() {
             return mob;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            return super.equals(obj);
+        }
+
+        @Override
+        public int hashCode() {
+            return super.hashCode();
         }
     }
 

@@ -339,7 +339,6 @@ public class LittleMaidScreen
             GuiGraphicsExtractor context,
             int mouseX,
             int mouseY) {
-        System.out.println("[ScreenDebug] extractLabels called: stateText=" + (this.stateText != null ? this.stateText.getString() : "null"));
         int textX = 8;
         context.text(font, this.stateText, textX, 61, 0xFF404040, false);
         String insideSkirt = Component.translatable(

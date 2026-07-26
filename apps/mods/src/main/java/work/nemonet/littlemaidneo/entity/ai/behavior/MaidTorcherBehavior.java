@@ -168,8 +168,7 @@ public class MaidTorcherBehavior extends AbstractMaidBehavior {
                         )
                 );
             } catch (Exception e) {
-                LittleMaidNeo.LOGGER.warn("Torcherでのブロック設置時に例外が発生しました。");
-                e.printStackTrace();
+                LittleMaidNeo.LOGGER.warn("Torcherでのブロック設置時に例外が発生しました。", e);
             }
             mob.swing(InteractionHand.MAIN_HAND);
             mob.play(LMSounds.INSTALLATION);

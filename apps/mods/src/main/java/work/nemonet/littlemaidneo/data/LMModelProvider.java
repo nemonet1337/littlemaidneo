@@ -119,6 +119,18 @@ public class LMModelProvider implements DataProvider {
                 }
                 """));
 
+        // 5b. models/item/little_maid_spawn_egg.json（旧手書き assets から DataGen へ移行）
+        futures.add(save(cache, assetsDir.resolve("models").resolve("item").resolve("little_maid_spawn_egg.json"),
+                """
+                {
+                  "parent": "minecraft:item/generated",
+                  "textures": {
+                    "layer0": "littlemaidneo:item/spawn_egg",
+                    "layer1": "littlemaidneo:item/spawn_egg_overlay"
+                  }
+                }
+                """));
+
         // 6. items/little_maid_spawn_egg.json
         futures.add(save(cache, assetsDir.resolve("items").resolve("little_maid_spawn_egg.json"),
                 """

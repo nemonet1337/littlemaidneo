@@ -129,10 +129,15 @@ public class ResourceHelper {
             String zipName = homePath.getFileName().toString();
             return Optional.of(zipName.substring(0, zipName.lastIndexOf(".")));
         } else {
-            path = path.substring(1);
-            int firstSplitter = path.indexOf("\\");
+            // フォルダ形式: OS セパレータを '/' に正規化してから先頭セグメントをパック名とする
+            // （旧実装は indexOf("\\") 固定で Linux/macOS では常に empty になっていた）
+            String name = normalizePath(path, false);
+            if (name.startsWith("/")) {
+                name = name.substring(1);
+            }
+            int firstSplitter = name.indexOf('/');
             if (firstSplitter == -1) return Optional.empty();
-            return Optional.of(path.substring(0, firstSplitter));
+            return Optional.of(name.substring(0, firstSplitter));
         }
     }
 

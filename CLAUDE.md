@@ -10,7 +10,7 @@ LittleMaidNeo は、レガシー Mod 系譜 **LittleMaidRebirth (LMRB)** と **L
 ## Architecture
 
 - **Gradle 3 モジュール構成**（依存方向は `mods -> modelloader -> common` の一方向のみ）:
-  - `apps/common/` — 全モジュール共通基盤。`common/LMNLib`（MODID/LOGGER）、汎用 `util/`（`BlockFinder`, `BlockFinderPD`, `ProcessDivider`, `PlayerList`, `Tuple` 等）
+  - `apps/common/` — 全モジュール共通基盤。`common/LMNLib`（MODID/LOGGER）、汎用 `util/`（`BlockFinder`, `BlockFinderPD`, `ProcessDivider`, `Tuple` 等）
   - `apps/modelloader/` — 外部モデル読み込み基盤（旧 LMML 系・保護コア A/B の本体）。`multimodel/`, `maidmodel/`, `resource/`, `client/resource/`, `client/renderer/MultiModel*`, `entity/compound/`, `entity/MultiModelEntity`, `entity/EntityLittleMaid`(スタブ), `common/MultiModelHolder`/`SoundHolder`, `config/LMNModelConfig`
   - `apps/mods/` — メイドさん本体の Mod 実装（残り全部）。リソース（`assets`/`data`/`templates`/`src/generated`）と Mixin もここ。最終 jar はこのモジュールが 3 モジュール分のクラスを束ねて生成
 - ルートパッケージ: `work.nemonet.littlemaidneo`（Java パッケージは全モジュール共通。モジュール間で同一パッケージを共有する箇所あり — 例: `entity/`）
@@ -114,12 +114,12 @@ LittleMaidNeo は、レガシー Mod 系譜 **LittleMaidRebirth (LMRB)** と **L
   - `LMSafeMovement` (`maybeBackOffFromEdge` の落下/危険ブロック安全移動の移譲。`calculateFallDamage`/`fallDistance` へは `_LM` ブリッジ経由)
   - `LMHasInventory` (インベントリ処理の移譲)
   - `LMItemContractable` (給料・契約・時間管理の移譲)
-  - `HasModeImpl` (モード管理・切り替えの移譲)
+  - `HasMaidMode` / `MaidMode` (移動モード管理。旧 `HasModeImpl` / `MovingMode` から改名)
   - `TargetTagManagerImpl` (ターゲットタグ情報の管理)
   - `TargetingSystem` (他エンティティの友好/敵対ターゲット評価)
   - `work.nemonet.littlemaidneo.entity.ai.control.MaidLookControl` (首振り最大角度制限のクランプおよび視線・頭部向き制御の一元化)
 - `getNavigation()` は `Mob` に定義（`LivingEntity` ではない）— NeoForge / Mojang マッピングでは Yarn 時代の `MobEntity` → `Mob`
-- `registerGoals()` は `Mob` の `initGoals()` 経由でコンストラクタ内に呼ばれる — サブクラスのフィールドは未初期化。外部委譲時はラムダで遅延参照すること。`registerGoals()` は残存 Goal 全廃後に削除予定（§A 参照）
+- AI は Brain Behavior に移行済み。`registerGoals()` の空オーバーライドは削除済み（親 `Mob` の空実装を利用）
 
 ### Networking
 - NeoForge `RegisterPayloadHandlersEvent` ベース（`network/NetworkHandler.register(event)`）。旧 Architectury Networking API からは置き換え済み

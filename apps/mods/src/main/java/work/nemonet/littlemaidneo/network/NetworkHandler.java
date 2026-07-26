@@ -29,7 +29,6 @@ import work.nemonet.littlemaidneo.resource.holder.ConfigHolder;
 import work.nemonet.littlemaidneo.resource.manager.LMConfigManager;
 import work.nemonet.littlemaidneo.resource.manager.LMTextureManager;
 import work.nemonet.littlemaidneo.resource.util.ArmorSets;
-import work.nemonet.littlemaidneo.util.PlayerList;
 
 import java.util.Map;
 import java.util.Set;
@@ -201,6 +200,9 @@ public static void sendSyncSoundPackC2S(Entity entity, ConfigHolder configHolder
     private static void handleSyncSoundPackServer(SyncSoundPackPayload payload, IPayloadContext context) {
         PayloadHandlers.resolveEntity(context, payload.entityId(), Entity.class, (player, entity) -> {
             if (!(entity instanceof SoundPlayable soundPlayable)) return;
+            if (PayloadHandlers.isNotOwner(player, entity)) {
+                return;
+            }
             ConfigHolder configHolder = LMConfigManager.INSTANCE.getConfig(payload.soundPackName())
                     .orElse(LMConfigManager.EMPTY_CONFIG);
             soundPlayable.setConfigHolder(configHolder);
@@ -212,12 +214,14 @@ public static void sendSyncSoundPackC2S(Entity entity, ConfigHolder configHolder
 
     public static void sendLMSoundS2C(Entity entity, String soundName) {
         if (!(entity.level() instanceof net.minecraft.server.level.ServerLevel serverLevel)) return;
-        var payload = new LMSoundPayload(entity.getId(), soundName);
-        for (ServerPlayer player : serverLevel.players()) {
-            if (player.distanceToSqr(entity) < 16 * 16) {
-                PacketDistributor.sendToPlayer(player, payload);
-            }
-        }
+        PacketDistributor.sendToPlayersNear(
+                serverLevel,
+                null,
+                entity.getX(),
+                entity.getY(),
+                entity.getZ(),
+                16.0,
+                new LMSoundPayload(entity.getId(), soundName));
     }
 
     // --- C2SSetMovingState ---
@@ -269,7 +273,7 @@ public static void sendSetMovingStateC2S(Entity entity, MaidMode state) {
             if (!(entity instanceof TargetTagManager targetTagManager)) {
                 return;
             }
-            if (PayloadHandlers.isOwnerOrUnowned(player, entity)) {
+            if (PayloadHandlers.isNotOwner(player, entity)) {
                 return;
             }
             targetTagManager.readTargetTags(TagValueInput.create(ProblemReporter.DISCARDING, player.level().registryAccess(), payload.tag()));
@@ -310,9 +314,8 @@ public static void sendSetMovingStateC2S(Entity entity, MaidMode state) {
     }
 
     public static void sendSyncSoundConfigS2C(Entity entity, String configName) {
-        for (ServerPlayer player : PlayerList.tracking(entity)) {
-            PacketDistributor.sendToPlayer(player, new SyncSoundConfigPayload(entity.getId(), configName));
-        }
+        PacketDistributor.sendToPlayersTrackingEntity(entity,
+                new SyncSoundConfigPayload(entity.getId(), configName));
     }
 
     private static void handleSyncSoundConfigServer(SyncSoundConfigPayload payload, IPayloadContext context) {
@@ -320,7 +323,7 @@ public static void sendSetMovingStateC2S(Entity entity, MaidMode state) {
             if (!(entity instanceof SoundPlayable soundPlayable)) {
                 return;
             }
-            if (PayloadHandlers.isOwnerOrUnowned(player, entity)) {
+            if (PayloadHandlers.isNotOwner(player, entity)) {
                 return;
             }
             LMConfigManager.INSTANCE.getConfig(payload.configName())
@@ -348,7 +351,7 @@ public static void sendSetMovingStateC2S(Entity entity, MaidMode state) {
     private static void handleOpenTargetTagScreenServer(OpenTargetTagScreenC2SPayload payload, IPayloadContext context) {
         PayloadHandlers.resolveEntity(context, payload.entityId(), Entity.class, (player, entity) -> {
             if ((!(entity instanceof TargetTagManager) && !entity.hasData(ModRegistration.TARGET_TAG_ATTACHMENT.get()))
-                    || PayloadHandlers.isOwnerOrUnowned(player, entity)) {
+                    || PayloadHandlers.isNotOwner(player, entity)) {
                 return;
             }
             sendOpenTargetTagScreenS2C(entity, player);

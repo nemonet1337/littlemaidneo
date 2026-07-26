@@ -33,14 +33,7 @@ public class LMFileLoader {
     }
 
     public void addLoadFolderPath(Path path) {
-        if (Files.notExists(path)) {
-            try {
-                Files.createDirectory(path);
-            } catch (Exception e) {
-                e.printStackTrace();
-                return;
-            }
-        }
+        // ディレクトリ生成は collectUnits() に集約（ここでは登録のみ）
         folderPaths.add(path);
     }
 
@@ -74,13 +67,15 @@ public class LMFileLoader {
         List<FileUnit> units = new ArrayList<>();
         folderPaths.forEach(folderPath -> {
             try {
-                if (Files.notExists(folderPath)) Files.createDirectory(folderPath);
+                if (Files.notExists(folderPath)) {
+                    Files.createDirectories(folderPath);
+                }
                 try (Stream<Path> stream = Files.walk(folderPath)) {
                     stream.filter(path -> !Files.isDirectory(path))
                             .forEach(path -> units.add(new FileUnit(folderPath, path, isArchive(path))));
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                LOGGER.error("ロードフォルダの走査に失敗しました。: {}", folderPath, e);
             }
         });
         return units;

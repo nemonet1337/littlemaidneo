@@ -44,10 +44,11 @@ public class PayloadHandlers {
     }
 
     /**
-     * テイム可能エンティティの場合に「送信者が所有者か」を判定する。
-     * テイム対象でないエンティティは常に許可する（従来の各ハンドラのガードと同値）。
+     * テイム可能エンティティについて「送信者が所有者でない（拒否すべき）」とき true。
+     * Ownable でないエンティティは常に false（許可）。
+     * 所有者が未設定の Ownable も true（拒否）— 未所有のメイドさんを他人が操作できないようにする。
      */
-    public static boolean isOwnerOrUnowned(ServerPlayer player, Entity entity) {
+    public static boolean isNotOwner(ServerPlayer player, Entity entity) {
         if (!(entity instanceof OwnableEntity ownable)) {
             return false;
         }
