@@ -149,14 +149,24 @@ public interface MaidManager {
                     loaded ? maid : null, loaded ? maid.getId() : -1);
         }
 
+        /** 参照が失われた／アンロード時用。entityId を落として再ログイン後の stale ID を防ぐ。 */
+        public static MaidLMInfo unloaded(MaidLMInfo info) {
+            BlockPos pos = info.maid != null ? info.maid.blockPosition() : info.lastPos;
+            return new MaidLMInfo(info.id, info.name, pos, info.worldId, null, -1);
+        }
+
         @Override
         public Optional<Entity> getEntity() {
-            return Optional.ofNullable(maid);
+            if (maid != null && maid.isAlive()) {
+                return Optional.of(maid);
+            }
+            return Optional.empty();
         }
 
         @Override
         public boolean isLoaded() {
-            return this.maid != null || this.entityId != -1;
+            // entityId だけではセッション跨ぎで stale になるため、実体参照があるときだけ loaded
+            return this.maid != null && this.maid.isAlive();
         }
 
         @Override
@@ -192,6 +202,11 @@ public interface MaidManager {
                     loaded ? soul : null, soul.getSoul(), loaded ? soul.getId() : -1);
         }
 
+        public static SoulEntityLMInfo unloaded(SoulEntityLMInfo info) {
+            BlockPos pos = info.soulEntity != null ? info.soulEntity.blockPosition() : info.lastPos;
+            return new SoulEntityLMInfo(info.id, info.name, pos, info.worldId, null, info.soul, -1);
+        }
+
         @Override
         public void write(ValueOutput output) {
             super.write(output);
@@ -200,12 +215,15 @@ public interface MaidManager {
 
         @Override
         public Optional<Entity> getEntity() {
-            return Optional.ofNullable(soulEntity);
+            if (soulEntity != null && soulEntity.isAlive()) {
+                return Optional.of(soulEntity);
+            }
+            return Optional.empty();
         }
 
         @Override
         public boolean isLoaded() {
-            return this.soulEntity != null || this.entityId != -1;
+            return this.soulEntity != null && this.soulEntity.isAlive();
         }
 
         @Override

@@ -1,5 +1,6 @@
 package work.nemonet.littlemaidneo.entity.util;
 
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
@@ -62,25 +63,43 @@ public class MaidManagerImpl implements MaidManager {
     @Override
     public void checkMaidUnload() {
         Map<UUID, LMInfo> updates = new HashMap<>();
-        
-        this.maidMap.values().stream()
-                .filter(lmInfo -> lmInfo.status() == Status.ALIVE || lmInfo.status() == Status.SOUL_ENTITY)
-                .map(LMInfo::getEntity)
-                .filter(Optional::isPresent)
-                .forEach(o -> {
-                    var entity = o.get();
-                    // エンティティが死亡 or ワールドが読み込まれていない
-                    if (!entity.isAlive() || !(entity.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) || serverLevel.getServer().getLevel(entity.level().dimension()) == null) {
-                        if (entity instanceof LittleMaidEntity maid) {
-                            updates.put(maid.getUUID(), MaidLMInfo.create(maid, false));
-                        } else if (entity instanceof MaidSoulEntity soul) {
-                            updates.put(soul.getUUID(), SoulEntityLMInfo.create(soul, false));
-                        }
-                    }
-                });
-        
-        // ストリーム処理が完了してから一括で更新
+
+        for (LMInfo lmInfo : this.maidMap.values()) {
+            if (lmInfo.status() == Status.ALIVE && lmInfo instanceof MaidLMInfo maidInfo) {
+                Optional<Entity> entity = maidInfo.getEntity();
+                if (entity.isEmpty()) {
+                    // 参照喪失・セッション跨ぎの stale エントリ
+                    updates.put(maidInfo.id(), MaidLMInfo.unloaded(maidInfo));
+                    continue;
+                }
+                Entity e = entity.get();
+                if (!isEntityInLiveWorld(e)) {
+                    updates.put(maidInfo.id(), MaidLMInfo.create((LittleMaidEntity) e, false));
+                }
+            } else if (lmInfo.status() == Status.SOUL_ENTITY && lmInfo instanceof SoulEntityLMInfo soulInfo) {
+                Optional<Entity> entity = soulInfo.getEntity();
+                if (entity.isEmpty()) {
+                    updates.put(soulInfo.id(), SoulEntityLMInfo.unloaded(soulInfo));
+                    continue;
+                }
+                Entity e = entity.get();
+                if (!isEntityInLiveWorld(e)) {
+                    updates.put(soulInfo.id(), SoulEntityLMInfo.create((MaidSoulEntity) e, false));
+                }
+            }
+        }
+
         this.maidMap.putAll(updates);
+    }
+
+    private static boolean isEntityInLiveWorld(Entity entity) {
+        if (!entity.isAlive()) {
+            return false;
+        }
+        if (!(entity.level() instanceof net.minecraft.server.level.ServerLevel serverLevel)) {
+            return false;
+        }
+        return serverLevel.getServer().getLevel(entity.level().dimension()) != null;
     }
 
     public static void write(ValueOutput output, List<MaidManager.LMInfo> lmInfos) {

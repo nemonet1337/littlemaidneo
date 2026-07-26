@@ -1,5 +1,6 @@
 package work.nemonet.littlemaidneo.entity.ai.behavior;
 
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
@@ -15,7 +16,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
-import work.nemonet.littlemaidneo.LittleMaidNeo;
 import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.util.MaidJobManager;
@@ -144,22 +144,11 @@ public class MaidCombatBehavior extends AbstractMaidBehavior {
         @Override
         public void tick(LittleMaidEntity mob) {
             this.cooldown = Math.max(0, this.cooldown - 1);
+            // ガード角度判定は頭の向きを使うため、常にターゲットを見る
             mob.getLookControl().setLookAt(target, 30.0F, 30.0F);
             recalcPathCool = Math.max(0, recalcPathCool - 1);
 
-            ItemStack offhand = mob.getOffhandItem();
-            ItemStack mainhand = mob.getMainHandItem();
-            InteractionHand shieldHand = null;
-            if (offhand.getItem() instanceof net.minecraft.world.item.ShieldItem) {
-                shieldHand = InteractionHand.OFF_HAND;
-            } else if (mainhand.getItem() instanceof net.minecraft.world.item.ShieldItem) {
-                shieldHand = InteractionHand.MAIN_HAND;
-            }
-
-            if (mob.tickCount % 20 == 0) {
-                LittleMaidNeo.LOGGER.info("[ShieldDebug] tick target={} shieldHand={} offhand={} mainhand={} isUsingItem={} isBlocking={}",
-                        this.target, shieldHand, offhand.getItem(), mainhand.getItem(), mob.isUsingItem(), mob.isBlocking());
-            }
+            InteractionHand shieldHand = findShieldHand(mob);
 
             double boundingDistSq = getBoundingDistanceSq(mob, this.target);
             if (!isClose(mob, boundingDistSq)) {
@@ -168,10 +157,8 @@ public class MaidCombatBehavior extends AbstractMaidBehavior {
                     recalcPathCool = maxRecalcPathCool;
                     mob.getNavigation().moveTo(this.target, speedFunc.apply(1.0f));
                 }
-                if (shieldHand != null && !mob.isUsingItem() && mob.getSensing().hasLineOfSight(this.target)) {
-                    LittleMaidNeo.LOGGER.info("[ShieldDebug] startUsingItem (far) hand={}", shieldHand);
-                    mob.startUsingItem(shieldHand);
-                }
+                // 接近中も盾を構える（視線があるときだけ）
+                tryRaiseShield(mob, shieldHand, true);
             } else {
                 mob.getNavigation().stop();
                 if (canAttack(mob)) {
@@ -180,12 +167,39 @@ public class MaidCombatBehavior extends AbstractMaidBehavior {
                     }
                     attack(mob);
                 } else {
-                    if (shieldHand != null && !mob.isUsingItem()) {
-                        LittleMaidNeo.LOGGER.info("[ShieldDebug] startUsingItem (close) hand={}", shieldHand);
-                        mob.startUsingItem(shieldHand);
-                    }
+                    // 攻撃クールダウン中は盾で防御
+                    tryRaiseShield(mob, shieldHand, false);
                 }
             }
+        }
+
+        /**
+         * BLOCKS_ATTACKS コンポーネントを持つアイテム（バニラ盾など）を優先順位
+         * オフハンド → メインハンドで探す。
+         */
+        @Nullable
+        private static InteractionHand findShieldHand(LittleMaidEntity mob) {
+            if (canBlockWith(mob.getOffhandItem())) {
+                return InteractionHand.OFF_HAND;
+            }
+            if (canBlockWith(mob.getMainHandItem())) {
+                return InteractionHand.MAIN_HAND;
+            }
+            return null;
+        }
+
+        private static boolean canBlockWith(ItemStack stack) {
+            return !stack.isEmpty() && stack.has(DataComponents.BLOCKS_ATTACKS);
+        }
+
+        private void tryRaiseShield(LittleMaidEntity mob, @Nullable InteractionHand shieldHand, boolean requireLineOfSight) {
+            if (shieldHand == null || mob.isUsingItem()) {
+                return;
+            }
+            if (requireLineOfSight && (this.target == null || !mob.getSensing().hasLineOfSight(this.target))) {
+                return;
+            }
+            mob.startUsingItem(shieldHand);
         }
 
         @Override

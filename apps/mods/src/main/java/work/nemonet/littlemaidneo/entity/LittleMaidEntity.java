@@ -965,14 +965,9 @@ private float prevInterestedAngle;
         }
     }
 
-    @Override
-    public boolean isBlocking() {
-        if (this.isUsingItem()) {
-            ItemStack activeItem = this.getUseItem();
-            return !activeItem.isEmpty() && activeItem.getItem() instanceof net.minecraft.world.item.ShieldItem;
-        }
-        return false;
-    }
+    // isBlocking / getItemBlockingWith はバニラ実装をそのまま使う。
+    // MC 26+ では盾は DataComponents.BLOCKS_ATTACKS で判定されるため、
+    // ShieldItem 固定の override はガード（ダメージ軽減）を壊す。
 
     @Override
     protected void dropEquipment(ServerLevel serverLevel) {
@@ -1373,10 +1368,12 @@ public Optional<String> getModeName() {
 
     @Override
     public boolean shouldShowName() {
-        if (net.neoforged.fml.loading.FMLEnvironment.getDist() == net.neoforged.api.distmarker.Dist.CLIENT) {
-            if (work.nemonet.littlemaidneo.client.util.ClientScreenHelper.shouldShowOwnerName(this)) {
-                return true;
-            }
+        // Dist.CLIENT ではなく level.isClientSide を使う。
+        // 統合クライアント（SP ホスト）では Dist が常に CLIENT のため、
+        // サーバースレッドから ClientScreenHelper に触るとマルチ/SP 不安定の原因になる。
+        if (this.level().isClientSide()
+                && work.nemonet.littlemaidneo.client.util.ClientScreenHelper.shouldShowOwnerName(this)) {
+            return true;
         }
         return super.shouldShowName();
     }
@@ -1384,7 +1381,7 @@ public Optional<String> getModeName() {
     @Override
     public net.minecraft.network.chat.Component getDisplayName() {
         net.minecraft.network.chat.Component name = super.getDisplayName();
-        if (net.neoforged.fml.loading.FMLEnvironment.getDist() == net.neoforged.api.distmarker.Dist.CLIENT) {
+        if (this.level().isClientSide()) {
             var ownerNameOpt = work.nemonet.littlemaidneo.client.util.ClientScreenHelper.getOwnerNameForClient(this);
             if (ownerNameOpt.isPresent()) {
                 return net.minecraft.network.chat.Component.literal(name.getString() + " (" + net.minecraft.network.chat.Component.translatable("chat.littlemaidneo.owner_name_prefix").getString() + ": " + ownerNameOpt.get() + ")");

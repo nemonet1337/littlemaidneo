@@ -104,6 +104,8 @@ public final class PlayerEventHandler {
     private static void onPlayerLoggedOut(PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             sleepingPlayers.remove(player.getUUID());
+            // ログアウト時に entityId を落としておき、再ログイン後の stale ID を防ぐ
+            player.getData(ModRegistration.MAID_MANAGER_ATTACHMENT.get()).checkMaidUnload();
         }
     }
 

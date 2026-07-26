@@ -11,6 +11,9 @@ import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
+import net.minecraft.world.entity.ai.navigation.PathNavigation;
+import net.minecraft.world.level.pathfinder.Path;
+import org.jetbrains.annotations.Nullable;
 import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.util.MaidMode;
@@ -20,16 +23,20 @@ import work.nemonet.littlemaidneo.setup.ModRegistration;
 /**
  * Brain Behavior: 赤石動力を探知して移動する（旧 {@code RedstoneTraceGoal} の移植・AI-3）。
  *
- * <p>TRACER モードのみで起動する。これにより全移動モード（ESCORT/FREEDOM/TRACER）が
- * Brain Behavior に統一され、TRACER だけ GoalSelector に残っていた非対称が解消される。
- * 移動は WALK_TARGET ではなく直接 navigation を操作し、旧 Goal の挙動を厳密に維持する。
- * 実行時間上限は実質無制限とし、継続可否は {@link #canStillUse} で旧 {@code canContinueToUse}
- * と同一条件で判定する。
+ * <p>TRACER モードのみで起動する。移動は WALK_TARGET ではなく直接 navigation を操作し、
+ * 旧 Goal の挙動を維持しつつ、経路不能・スタック時の再計画で迷子を抑える。
  */
 public class MaidTraceBehavior extends AbstractMaidBehavior {
 
     private final List<BlockPos> aroundSignalPos = Lists.newArrayList();
     private int recalcTimer;
+    /** 現在向かっている信号（経路再評価・除外用）。 */
+    @Nullable
+    private BlockPos currentTarget;
+    /** スタック検知用: 前回位置。 */
+    @Nullable
+    private BlockPos lastPos;
+    private int stuckTicks;
 
     public MaidTraceBehavior() {
         super(ImmutableMap.of(
@@ -55,7 +62,17 @@ public class MaidTraceBehavior extends AbstractMaidBehavior {
                 // 現在立っている列(X/Z)にある pos は除外する（高度は無視）。
                 .filter(pos -> Mth.floor(entity.getX()) != pos.getX()
                         || Mth.floor(entity.getZ()) != pos.getZ())
+                // 直前に失敗した目標は少しの間避ける（同じ到達不能点へのループ防止）
+                .filter(pos -> currentTarget == null || !pos.equals(currentTarget))
                 .forEach(this.aroundSignalPos::add);
+        // 候補が currentTarget 除外だけで空になったら除外を解除して再収集
+        if (this.aroundSignalPos.isEmpty() && currentTarget != null) {
+            currentTarget = null;
+            getAroundSignalPoses(entity)
+                    .filter(pos -> Mth.floor(entity.getX()) != pos.getX()
+                            || Mth.floor(entity.getZ()) != pos.getZ())
+                    .forEach(this.aroundSignalPos::add);
+        }
         recalcTimer = 20;
         return !this.aroundSignalPos.isEmpty();
     }
@@ -63,32 +80,94 @@ public class MaidTraceBehavior extends AbstractMaidBehavior {
     @Override
     protected void start(ServerLevel level, LittleMaidEntity entity, long gameTime) {
         float speed = LittleMaidEntity.getConfig().movement.tracerSpeed;
+        PathNavigation navigation = entity.getNavigation();
+        this.stuckTicks = 0;
+        this.lastPos = entity.blockPosition();
+
+        // スコアが良い順に見て、実際に経路が取れる最初の信号へ向かう
+        // （経路不能な信号源へ張り付いて迷子になるのを防ぐ）
         this.aroundSignalPos.stream()
-                .min(Comparator.comparingDouble(pos ->
-                        // 左 55 度に近い信号を優先し、Y が高い位置を優先する。
-                        -Mth.degreesDifference(getRelYaw(entity, pos), 55f) + 180f - pos.getY()))
-                .ifPresent(pos -> {
-                    var navigation = entity.getNavigation();
-                    // accuracy=1 で信号ブロックの「隣」を目標にする（立てない信号源への到達不能を回避）。
-                    if (navigation.moveTo(navigation.createPath(pos, 1), speed)) {
+                .sorted(Comparator.comparingDouble(pos -> score(entity, pos)))
+                .filter(pos -> {
+                    Path path = navigation.createPath(pos, 1);
+                    return path != null && path.canReach();
+                })
+                .findFirst()
+                .ifPresentOrElse(pos -> {
+                    Path path = navigation.createPath(pos, 1);
+                    if (path != null && navigation.moveTo(path, speed)) {
+                        this.currentTarget = pos;
                         // 自由行動の原点を信号付近へ更新する。
                         entity.setFreedomPos(pos);
                     } else {
                         navigation.stop();
+                        this.currentTarget = pos; // 次回 start で除外
+                        this.recalcTimer = 10;
                     }
+                }, () -> {
+                    // 到達可能な信号が一つも無い
+                    navigation.stop();
+                    this.currentTarget = null;
+                    this.recalcTimer = 40;
                 });
     }
 
     @Override
     protected boolean canStillUse(ServerLevel level, LittleMaidEntity entity, long gameTime) {
-        return !TameableUtil.isWait(entity)
-                && entity.getMaidMode() == MaidMode.TRACER
-                && !entity.getNavigation().isDone();
+        if (TameableUtil.isWait(entity) || entity.getMaidMode() != MaidMode.TRACER) {
+            return false;
+        }
+        PathNavigation navigation = entity.getNavigation();
+        if (navigation.isDone()) {
+            return false;
+        }
+        // スタック: 一定時間ほぼ動かない場合は打ち切って再計画
+        if (isStuck(entity)) {
+            navigation.stop();
+            this.recalcTimer = 10;
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    protected void tick(ServerLevel level, LittleMaidEntity entity, long gameTime) {
+        // 進行監視（canStillUse でも見るが、tick で lastPos を更新）
+        BlockPos now = entity.blockPosition();
+        if (lastPos != null && lastPos.distManhattan(now) == 0) {
+            stuckTicks++;
+        } else {
+            stuckTicks = 0;
+            lastPos = now;
+        }
     }
 
     @Override
     protected void stop(ServerLevel level, LittleMaidEntity entity, long gameTime) {
+        // 到達成功時は currentTarget をクリアし、次の信号へ進める
+        if (entity.getNavigation().isDone() && currentTarget != null) {
+            BlockPos pos = entity.blockPosition();
+            // 目標近傍に着いたら成功扱い
+            if (pos.closerThan(currentTarget, 2.5)) {
+                currentTarget = null;
+            }
+        }
         this.recalcTimer = 0;
+        this.stuckTicks = 0;
+        this.lastPos = null;
+    }
+
+    private boolean isStuck(LittleMaidEntity entity) {
+        // 約 2 秒（40 tick）ほぼ動かなければスタック
+        return stuckTicks >= 40;
+    }
+
+    /**
+     * 小さいほど優先。旧ロジック:
+     * 左 55 度に近い信号を優先し、Y が高い位置を優先する。
+     */
+    private double score(LittleMaidEntity entity, BlockPos pos) {
+        return -Mth.degreesDifference(getRelYaw(entity, pos), 55f) + 180f - pos.getY();
     }
 
     private Stream<BlockPos> getAroundSignalPoses(LittleMaidEntity entity) {

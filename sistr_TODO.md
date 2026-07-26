@@ -2,10 +2,10 @@
 
 ## 高
 
-- [ ] ガード実装
-- [ ] 赤石検知中に迷子になる場合があるバグ
-- [ ] マルチ時の安定性の改善（原因不明。コード全体の調査が必要）
-- [ ] HiFM氏のKMExtend描画バグ
+- [x] ガード実装 — BLOCKS_ATTACKS 対応・isBlocking バニラ委譲・戦闘 AI 盾構え整理（2026-07-26）
+- [x] 赤石検知中に迷子になる場合があるバグ — 経路到達可能性フィルタ＋スタック再計画（2026-07-26）
+- [x] マルチ時の安定性の改善 — Dist→isClientSide、MaidManager stale entityId、ログアウト時 unload（2026-07-26）。再現依存の残件は research 参照
+- [x] HiFM氏のKMExtend描画バグ — 外部 .class パック互換廃止により対象外。research に記録（2026-07-26）
 
 ## 中
 
