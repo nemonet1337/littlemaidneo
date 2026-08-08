@@ -15,7 +15,7 @@ dependencies {
     api(project(":apps:common"))
 
     // 外部 .class モデルパックの ASM リマップ（MultiModelClassTransformer）用
-    implementation("org.ow2.asm:asm:9.7")
-    implementation("org.ow2.asm:asm-tree:9.7")
-    implementation("commons-io:commons-io:2.15.1")
+    implementation("org.ow2.asm:asm:9.10.1")
+    implementation("org.ow2.asm:asm-tree:9.10.1")
+    implementation("commons-io:commons-io:2.22.0")
 }
