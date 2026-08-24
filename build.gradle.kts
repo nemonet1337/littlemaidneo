@@ -4,7 +4,7 @@
 //   apps/mods        — メイドさん本体の Mod 実装（エンティティ・AI・GUI・ネットワーク等）
 // 依存方向は mods -> modelloader -> common の一方向のみ。
 plugins {
-    id("net.neoforged.moddev") version "2.0.143" apply false
+    id("net.neoforged.moddev") version "2.0.144" apply false
     idea
 }
 
