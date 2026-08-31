@@ -131,7 +131,7 @@ LittleMaidNeo は、レガシー Mod 系譜 **LittleMaidRebirth (LMRB)** と **L
 
 ### Rendering Notes
 - カスタムシェーダーは `assets/minecraft/shaders/core/` に配置する（NeoForge / バニラのシェーダー解決が `minecraft` 名前空間前提）
-- 最大輝度の light 値は `LightTexture.FULL_BRIGHT = 15728880`（`0xF000F0`）
+- 最大輝度の light 値は `LightCoordsUtil.FULL_BRIGHT = 15728880`（`0xF000F0`）
 - レイヤー描画は `LMSkinLayer` / `LMArmorLayer` / `LMHeldItemLayer` / `LMLightLayer` と `SubmitNodeCollector` を使う
 
 ### GameTest

@@ -1,12 +1,12 @@
 package work.nemonet.littlemaidneo.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.LightCoordsUtil;
 import work.nemonet.littlemaidneo.maidmodel.LMModel;
 
 public class LMLightLayer<S extends MultiModelRenderState, M extends LMModel<S>> extends RenderLayer<S, M> {
@@ -26,7 +26,7 @@ public class LMLightLayer<S extends MultiModelRenderState, M extends LMModel<S>>
             PoseStack local = new PoseStack();
             local.last().set(snapPose);
             pose.apply();
-            skinRoot.render(local, consumer, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+            skinRoot.render(local, consumer, LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
         });
     }
 }
