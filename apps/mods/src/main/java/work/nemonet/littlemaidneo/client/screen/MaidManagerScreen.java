@@ -18,12 +18,15 @@ import work.nemonet.littlemaidneo.client.screen.component.FilterPredicate;
 import work.nemonet.littlemaidneo.client.screen.component.FilterableListGUI;
 import work.nemonet.littlemaidneo.client.screen.component.GUIElement;
 import work.nemonet.littlemaidneo.client.screen.component.ListGUIElement;
+import work.nemonet.littlemaidneo.client.screen.component.TextInputGUI;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.util.MaidManager;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 import work.nemonet.littlemaidneo.network.C2SCallWaitPayload;
 import work.nemonet.littlemaidneo.network.NetworkHandler;
 import work.nemonet.littlemaidneo.client.util.ClientScreenHelper;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
 
 import java.util.Comparator;
 import java.util.List;
@@ -34,10 +37,15 @@ import java.util.stream.Collectors;
  */
 public class MaidManagerScreen extends AbstractFilterableListScreen<MaidManagerScreen.LMInfoGUIElement> {
     private final List<MaidManager.LMInfo> lmInfoList;
+    private TextInputGUI groupInput;
 
     public MaidManagerScreen(List<MaidManager.LMInfo> lmInfoList) {
         super(Component.translatable("gui.littlemaidneo.maidmanager.title"));
         this.lmInfoList = lmInfoList;
+    }
+
+    public String getGroupInputText() {
+        return groupInput == null ? "" : groupInput.getText();
     }
 
     @Override
@@ -45,37 +53,40 @@ public class MaidManagerScreen extends AbstractFilterableListScreen<MaidManagerS
         assert this.minecraft != null;
 
         int searchInputHeight = 20;
+        int groupInputHeight = 20;
         int elementWidth = font.lineHeight * 18;
         int elementHeight = font.lineHeight * 6 + 20;
         int widthStack = Mth.floor(this.width * 0.8f / elementWidth);
         int totalWidth = elementWidth * widthStack;
-        int totalHeight = Mth.floor(this.height * 0.9f);
+        int totalHeight = Mth.floor(this.height * 0.85f);
+        int listX = Mth.floor((this.width - totalWidth) / 2f);
+        int listY = Mth.floor((this.height - totalHeight) / 2f) + groupInputHeight + 4;
 
-        // LMInfo用のFilterPredicate（名前とステータスで検索）
         FilterPredicate<LMInfoGUIElement> lmInfoFilter = (lmInfoGUIElement, filterText) -> {
-            String searchStr = (lmInfoGUIElement.getLMInfo().name()
-                    + "," + lmInfoGUIElement.getLMInfo().status().name()).toLowerCase();
+            var info = lmInfoGUIElement.getLMInfo();
+            String searchStr = (info.name() + "," + info.status().name() + "," + info.group()).toLowerCase();
             return searchStr.contains(filterText.toLowerCase());
         };
 
-        // LMInfoのリストをGUI要素に変換
         String currentWorldId = this.minecraft.level.dimension().identifier().toString();
 
         List<LMInfoGUIElement> elements = lmInfoList.stream()
-                .map(info -> new LMInfoGUIElement(this.minecraft.font, info))
+                .map(info -> new LMInfoGUIElement(this, this.minecraft.font, info))
                 .sorted(createSortComparator(currentWorldId))
                 .collect(Collectors.toList());
 
+        this.groupInput = new TextInputGUI(listX, listY - groupInputHeight - 4, totalWidth, groupInputHeight, 32);
+        this.groupInput.setPlaceholder(Component.translatable("gui.littlemaidneo.maidmanager.group_hint").getString());
+
         this.listGUI = FilterableListGUI.<LMInfoGUIElement>builder()
-                .position(Mth.floor((this.width - totalWidth) / 2f),
-                        Mth.floor((this.height - totalHeight) / 2f))
-                .size(totalWidth, totalHeight)
+                .position(listX, listY)
+                .size(totalWidth, totalHeight - groupInputHeight - 4)
                 .elementSize(elementWidth, elementHeight)
                 .items(elements)
                 .filterBy(lmInfoFilter)
                 .withScrollBar()
                 .searchInputHeight(searchInputHeight)
-                .withPlaceholder("Search maids...")
+                .withPlaceholder(Component.translatable("gui.littlemaidneo.maidmanager.search").getString())
                 .build();
     }
 
@@ -83,9 +94,45 @@ public class MaidManagerScreen extends AbstractFilterableListScreen<MaidManagerS
     public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         context.fill(0, 0, this.width, this.height, 0x40000000);
         super.extractRenderState(context, mouseX, mouseY, delta);
+        if (groupInput != null) {
+            groupInput.extractRenderState(context, mouseX, mouseY, delta);
+        }
         if (listGUI != null) {
             listGUI.extractRenderState(context, mouseX, mouseY, delta);
         }
+    }
+
+    @Override
+    public boolean mouseClicked(MouseButtonEvent event, boolean handled) {
+        if (groupInput != null && groupInput.mouseClicked(event, handled)) {
+            if (listGUI != null) {
+                listGUI.setFocused(false);
+            }
+            return true;
+        }
+        if (super.mouseClicked(event, handled)) {
+            if (groupInput != null) {
+                groupInput.setFocused(false);
+            }
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean keyPressed(KeyEvent event) {
+        if (groupInput != null && groupInput.isFocused() && groupInput.keyPressed(event)) {
+            return true;
+        }
+        return super.keyPressed(event);
+    }
+
+    @Override
+    public boolean charTyped(CharacterEvent event) {
+        if (groupInput != null && groupInput.isFocused() && groupInput.charTyped(event)) {
+            return true;
+        }
+        return super.charTyped(event);
     }
 
     private static Comparator<LMInfoGUIElement> createSortComparator(String currentWorldId) {
@@ -126,15 +173,17 @@ public class MaidManagerScreen extends AbstractFilterableListScreen<MaidManagerS
     }
 
     public static class LMInfoGUIElement extends GUIElement implements ListGUIElement {
+        private final MaidManagerScreen screen;
         private final MaidManager.LMInfo lmInfo;
         private final LittleMaidScreen.IconButtonWidget inventoryButton;
         private final Button callWaitButton;
+        private final Button groupButton;
 
-        public LMInfoGUIElement(Font textRenderer, MaidManager.LMInfo lmInfo) {
+        public LMInfoGUIElement(MaidManagerScreen screen, Font textRenderer, MaidManager.LMInfo lmInfo) {
             super(textRenderer.lineHeight * 18, textRenderer.lineHeight * 6 + 20);
+            this.screen = screen;
             this.lmInfo = lmInfo;
 
-            // インベントリボタンを作成
             this.inventoryButton = new LittleMaidScreen.IconButtonWidget(
                     0, 0,
                     new ItemStack(Items.CHEST),
@@ -150,6 +199,15 @@ public class MaidManagerScreen extends AbstractFilterableListScreen<MaidManagerS
                                             ? C2SCallWaitPayload.State.CALL
                                             : C2SCallWaitPayload.State.WAIT)))
                     .size(30, 20)
+                    .build();
+            this.groupButton = new Button.Builder(
+                    Component.translatable("gui.littlemaidneo.maidmanager.set_group"),
+                    onPress -> {
+                        String group = this.screen.getGroupInputText();
+                        lmInfo.setGroup(group);
+                        NetworkHandler.sendSetMaidGroupC2S(lmInfo.id(), group);
+                    })
+                    .size(40, 20)
                     .build();
         }
 
@@ -219,6 +277,12 @@ public class MaidManagerScreen extends AbstractFilterableListScreen<MaidManagerS
                         .append(loadedText);
             }
 
+            String group = lmInfo.group();
+            if (!group.isEmpty()) {
+                statusText = statusText
+                        .append(Component.literal(" / ").withStyle(ChatFormatting.GRAY))
+                        .append(Component.literal(group).withStyle(ChatFormatting.YELLOW));
+            }
             context.text(textRenderer, statusText,
                     this.x, this.y + textRenderer.lineHeight, 0xFFCCCCCC, true);
 
@@ -279,10 +343,13 @@ public class MaidManagerScreen extends AbstractFilterableListScreen<MaidManagerS
                                 entitySize, 0.0625f, mouseX, mouseY, e);
                     });
 
+            int buttonX = this.x;
+            int buttonY = this.y + this.height - textRenderer.lineHeight - 20;
+            groupButton.setPosition(buttonX, buttonY);
+            groupButton.extractRenderState(context, mouseX, mouseY, delta);
+            buttonX += groupButton.getWidth();
+
             if (canInteractWithMaid()) {
-                // インベントリボタン、コールウェイトボタンを左下に配置
-                int buttonX = this.x;
-                int buttonY = this.y + this.height - textRenderer.lineHeight - 20;
                 inventoryButton.setPosition(buttonX, buttonY);
                 inventoryButton.extractRenderState(context, mouseX, mouseY, delta);
                 lmInfo.getEntityClient(client.level)
@@ -303,7 +370,9 @@ public class MaidManagerScreen extends AbstractFilterableListScreen<MaidManagerS
 
         @Override
         public boolean mouseClicked(MouseButtonEvent event, boolean handled) {
-            // インベントリボタンのクリック処理
+            if (groupButton.mouseClicked(event, handled)) {
+                return true;
+            }
             if (canInteractWithMaid()
                     && (inventoryButton.mouseClicked(event, handled)
                             || callWaitButton.mouseClicked(event, handled))) {
@@ -314,7 +383,9 @@ public class MaidManagerScreen extends AbstractFilterableListScreen<MaidManagerS
 
         @Override
         public boolean mouseReleased(MouseButtonEvent event) {
-            // インベントリボタンのリリース処理
+            if (groupButton.mouseReleased(event)) {
+                return true;
+            }
             if (canInteractWithMaid()
                     && (inventoryButton.mouseReleased(event)
                             || callWaitButton.mouseReleased(event))) {

@@ -14,17 +14,27 @@ public class MaidManagerImpl implements MaidManager {
 
     @Override
     public void registerMaid(LittleMaidEntity maid) {
-        maidMap.put(maid.getUUID(), MaidLMInfo.create(maid, true));
+        putKeepingGroup(maid.getUUID(), MaidLMInfo.create(maid, true));
     }
 
     @Override
     public void registerMaid(MaidSoulEntity soul) {
-        maidMap.put(soul.getSoul().getUuid(), SoulEntityLMInfo.create(soul, true));
+        putKeepingGroup(soul.getSoul().getUuid(), SoulEntityLMInfo.create(soul, true));
     }
 
     @Override
     public void registerMaid(MaidSoulData soul) {
-        maidMap.put(soul.getUuid(), SoulLMInfo.create(soul));
+        putKeepingGroup(soul.getUuid(), SoulLMInfo.create(soul));
+    }
+
+    @Override
+    public boolean setGroup(UUID id, String group) {
+        LMInfo info = maidMap.get(id);
+        if (info == null) {
+            return false;
+        }
+        info.setGroup(group);
+        return true;
     }
 
     @Override
@@ -69,27 +79,38 @@ public class MaidManagerImpl implements MaidManager {
                 Optional<Entity> entity = maidInfo.getEntity();
                 if (entity.isEmpty()) {
                     // 参照喪失・セッション跨ぎの stale エントリ
-                    updates.put(maidInfo.id(), MaidLMInfo.unloaded(maidInfo));
+                    updates.put(maidInfo.id(), keepGroup(maidInfo, MaidLMInfo.unloaded(maidInfo)));
                     continue;
                 }
                 Entity e = entity.get();
                 if (!isEntityInLiveWorld(e)) {
-                    updates.put(maidInfo.id(), MaidLMInfo.create((LittleMaidEntity) e, false));
+                    updates.put(maidInfo.id(), keepGroup(maidInfo, MaidLMInfo.create((LittleMaidEntity) e, false)));
                 }
             } else if (lmInfo.status() == Status.SOUL_ENTITY && lmInfo instanceof SoulEntityLMInfo soulInfo) {
                 Optional<Entity> entity = soulInfo.getEntity();
                 if (entity.isEmpty()) {
-                    updates.put(soulInfo.id(), SoulEntityLMInfo.unloaded(soulInfo));
+                    updates.put(soulInfo.id(), keepGroup(soulInfo, SoulEntityLMInfo.unloaded(soulInfo)));
                     continue;
                 }
                 Entity e = entity.get();
                 if (!isEntityInLiveWorld(e)) {
-                    updates.put(soulInfo.id(), SoulEntityLMInfo.create((MaidSoulEntity) e, false));
+                    updates.put(soulInfo.id(), keepGroup(soulInfo, SoulEntityLMInfo.create((MaidSoulEntity) e, false)));
                 }
             }
         }
 
         this.maidMap.putAll(updates);
+    }
+
+    private void putKeepingGroup(UUID id, LMInfo next) {
+        maidMap.put(id, keepGroup(maidMap.get(id), next));
+    }
+
+    private static <T extends LMInfo> T keepGroup(LMInfo previous, T next) {
+        if (previous != null) {
+            next.setGroup(previous.group());
+        }
+        return next;
     }
 
     private static boolean isEntityInLiveWorld(Entity entity) {

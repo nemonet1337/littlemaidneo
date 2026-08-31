@@ -25,6 +25,8 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
 import net.minecraft.world.entity.monster.CrossbowAttackMob;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
@@ -61,11 +63,6 @@ import work.nemonet.littlemaidneo.util.LMCollidable;
 import work.nemonet.littlemaidneo.util.ReachAttributeUtil;
 import work.nemonet.littlemaidneo.entity.soul.MaidSoulData;
 import net.minecraft.world.entity.ai.Brain;
-import net.minecraft.world.entity.ai.ActivityData;
-import net.minecraft.world.entity.schedule.Activity;
-import net.minecraft.world.entity.ai.memory.MemoryModuleType;
-import net.minecraft.world.entity.ai.behavior.BehaviorControl;
-import com.google.common.collect.ImmutableList;
 
 //????????????
 public class LittleMaidEntity
@@ -76,7 +73,6 @@ public class LittleMaidEntity
         Contractable,
         MultiModelHolder,
         SoundHolder,
-        HasMaidMode,
         CrossbowAttackMob,
         SalaryBoxPosListener,
         TargetTagManager {
@@ -117,6 +113,9 @@ public class LittleMaidEntity
     private static final EntityDataAccessor<Integer> CONTRACT_TIME = SynchedEntityData.defineId(
             LittleMaidEntity.class,
             EntityDataSerializers.INT);
+    private static final EntityDataAccessor<ItemStack> HEAD_COSMETIC = SynchedEntityData.defineId(
+            LittleMaidEntity.class,
+            EntityDataSerializers.ITEM_STACK);
     // ?????????????????????????????????????????????????????????????????????
     // LMInteractionHandler ???????????????????????????????
     /** 経験値瓶 1 本に必要な XP（旧 7 → 5 に軽減） */
@@ -233,56 +232,8 @@ private float prevInterestedAngle;
         return MaidResurrection.resurrect(world, pos, player);
     }
 
-    // Brain 行動設計メモ:
-    //   - 移動 (WALK_TARGET) は MoveToTargetSink が消費。MaidFollowOwner/Stare/Freedom 等は WALK_TARGET を書いて移動を依頼する
-    //   - 視線は旧 GoalSelector の LookAtPlayerGoal / RandomLookAroundGoal を廃止し、MaidStareBehavior 等から
-    //     getLookControl().setLookAt(...) を呼ぶ。角度クランプは MaidLookControl に一元化している
-    //   - バニラの LookAtTargetSink は LOOK_TARGET を消費するが、本 Mod は LOOK_TARGET を使わない
-    //     （登録すると no-op になる／他 Behavior と干渉するため）
-    private static final Brain.Provider<LittleMaidEntity> BRAIN_PROVIDER = Brain.provider(
-            ImmutableList.of(
-                    ModRegistration.IS_WAITING.get(),
-                    ModRegistration.OWNER.get(),
-                    ModRegistration.ACTIVE_JOB_NAME.get(),
-                    ModRegistration.ACTIVE_BATTLE_MODE.get(),
-                    MemoryModuleType.WALK_TARGET,
-                    MemoryModuleType.CANT_REACH_WALK_TARGET_SINCE,
-                    MemoryModuleType.PATH,
-                    MemoryModuleType.DOORS_TO_CLOSE
-            ),
-            ImmutableList.of(
-                    ModRegistration.LITTLE_MAID_SENSOR.get()
-            ),
-            entity -> ImmutableList.of(
-                    ActivityData.create(Activity.CORE, 0, ImmutableList.<BehaviorControl<? super LittleMaidEntity>>of(
-                            new work.nemonet.littlemaidneo.entity.ai.behavior.MaidSwim(0.8f),
-                            net.minecraft.world.entity.ai.behavior.InteractWithDoor.create(),
-                            entity.avoidBehavior,
-                            entity.panicBehavior,
-                            new work.nemonet.littlemaidneo.entity.ai.behavior.MaidTeleportBehavior(),
-                            new work.nemonet.littlemaidneo.entity.ai.behavior.MaidWaitBehavior(),
-                            new work.nemonet.littlemaidneo.entity.ai.behavior.MaidHealSelfBehavior(),
-                            new work.nemonet.littlemaidneo.entity.ai.behavior.MaidTargetBehavior(),
-                            entity.combatBehavior,
-                            entity.cookingBehavior,
-                            entity.healerBehavior,
-                            entity.pharmcistBehavior,
-                            entity.ripperBehavior,
-                            entity.torcherBehavior,
-                            new work.nemonet.littlemaidneo.entity.ai.behavior.MaidCollectSalaryBehavior(),
-                            new work.nemonet.littlemaidneo.entity.ai.behavior.MaidStoreItemBehavior(),
-                            new work.nemonet.littlemaidneo.entity.ai.behavior.MaidMoveToDropItemBehavior(),
-                            new work.nemonet.littlemaidneo.entity.ai.behavior.MaidFollowOwnerBehavior(),
-                            new work.nemonet.littlemaidneo.entity.ai.behavior.MaidFreedomBehavior(),
-                            new work.nemonet.littlemaidneo.entity.ai.behavior.MaidStrollBehavior(),
-                            new work.nemonet.littlemaidneo.entity.ai.behavior.MaidTraceBehavior(),
-                            new work.nemonet.littlemaidneo.entity.ai.behavior.MaidPlaySnowBehavior(),
-                            entity.lookAroundBehavior,
-                            new work.nemonet.littlemaidneo.entity.ai.behavior.MaidStareBehavior(),
-                            new net.minecraft.world.entity.ai.behavior.MoveToTargetSink()
-                    ))
-            )
-    );
+    // Brain: CORE は常時。非 CORE は MaidBrain.updateActivity で
+    // PANIC → AVOID → FIGHT → WORK → IDLE のどれか一つ。移動は WALK_TARGET + MoveToTargetSink。
 
     private void initBehaviors() {
         if (this.combatBehavior == null) {
@@ -293,7 +244,7 @@ private float prevInterestedAngle;
             this.ripperBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidRipperBehavior();
             this.torcherBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidTorcherBehavior();
             this.lookAroundBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidLookAroundBehavior();
-            this.panicBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidPanicBehavior(1.5f);
+            this.panicBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidPanicBehavior();
             this.avoidBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidAvoidBehavior();
         }
     }
@@ -301,7 +252,7 @@ private float prevInterestedAngle;
     @Override
     protected Brain<?> makeBrain(Brain.Packed packedBrain) {
         initBehaviors();
-        return BRAIN_PROVIDER.makeBrain(this, packedBrain);
+        return work.nemonet.littlemaidneo.entity.ai.MaidBrain.makeBrain(this, packedBrain);
     }
 
     @SuppressWarnings("unchecked")
@@ -322,6 +273,7 @@ private float prevInterestedAngle;
         builder.define(ACCELERATE, false);
         builder.define(MASTER_STANCE, (byte) 0);
         builder.define(CONTRACT_TIME, 0);
+        builder.define(HEAD_COSMETIC, ItemStack.EMPTY);
     }
 
 
@@ -334,6 +286,10 @@ private float prevInterestedAngle;
         output.putByte("maidVersion", (byte) 2);
 
         writeInventory(output);
+        ItemStack headCosmetic = getHeadCosmetic();
+        if (!headCosmetic.isEmpty()) {
+            output.store("HeadCosmetic", ItemStack.CODEC, headCosmetic);
+        }
         output.putInt("XpTotal", this.xpReward);
         if (TameableUtil.getTameOwnerUuid(this).isPresent()) {
             output.putBoolean("Wait", TameableUtil.isWait(this));
@@ -376,6 +332,7 @@ private float prevInterestedAngle;
         }
 
         readInventory(input);
+        input.read("HeadCosmetic", ItemStack.CODEC).ifPresent(this::setHeadCosmetic);
         this.xpReward = input.getIntOr("XpTotal", 0);
 
         if (TameableUtil.hasTameOwner(this)) {
@@ -555,6 +512,7 @@ private float prevInterestedAngle;
             this.getBrain().eraseMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.WALK_TARGET);
         }
 
+        work.nemonet.littlemaidneo.entity.ai.MaidBrain.updateActivity(this);
         this.getBrain().tick(serverLevel, this);
         super.customServerAiStep(serverLevel);
         if (TameableUtil.hasTameOwner(this) ||
@@ -896,12 +854,10 @@ private float prevInterestedAngle;
         return (this.entityData.get(LMM_FLAGS) & (1 << index)) != 0;
     }
 
-    @Override
     public MaidMode getMaidMode() {
         return MaidMode.fromId(this.entityData.get(MOVING_MODE));
     }
 
-    @Override
     public void setMaidMode(MaidMode movingMode) {
         this.entityData.set(MOVING_MODE, (byte) movingMode.getId());
         if (movingMode == MaidMode.ESCORT && this.isOrderedToSit()) {
@@ -1011,6 +967,36 @@ private float prevInterestedAngle;
             this.spawnAtLocation(serverLevel, stack);
             this.setItemSlot(slot, ItemStack.EMPTY);
         }
+        ItemStack cosmetic = getHeadCosmetic();
+        if (!cosmetic.isEmpty() &&
+                !net.minecraft.world.item.enchantment.EnchantmentHelper.has(
+                        cosmetic,
+                        net.minecraft.world.item.enchantment.EnchantmentEffectComponents.PREVENT_EQUIPMENT_DROP)) {
+            this.spawnAtLocation(serverLevel, cosmetic);
+            setHeadCosmetic(ItemStack.EMPTY);
+        }
+    }
+
+    public ItemStack getHeadCosmetic() {
+        return this.entityData.get(HEAD_COSMETIC);
+    }
+
+    public void setHeadCosmetic(ItemStack stack) {
+        this.entityData.set(HEAD_COSMETIC, stack.isEmpty() ? ItemStack.EMPTY : stack.copy());
+    }
+
+    /** ヘルメット枠。頭防具タグのアイテムだけ。 */
+    public static boolean isHeadArmorItem(ItemStack stack) {
+        return !stack.isEmpty() && stack.is(ItemTags.HEAD_ARMOR);
+    }
+
+    /** 頭飾り枠。頭に装備できるが防具ではないカボチャ・頭蓋骨など。 */
+    public static boolean isHeadCosmeticItem(ItemStack stack) {
+        if (stack.isEmpty() || isHeadArmorItem(stack)) {
+            return false;
+        }
+        var equippable = stack.get(DataComponents.EQUIPPABLE);
+        return equippable != null && equippable.slot() == EquipmentSlot.HEAD;
     }
 
     @Override

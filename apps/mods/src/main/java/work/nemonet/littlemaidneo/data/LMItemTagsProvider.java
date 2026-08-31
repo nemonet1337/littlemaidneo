@@ -26,6 +26,23 @@ public class LMItemTagsProvider extends ItemTagsProvider {
         tag(LMTags.Items.ARCHER_MODE);
         tag(LMTags.Items.COOKING_MODE).add(Items.BOWL.builtInRegistryHolder().key());
         tag(LMTags.Items.PHARMCIST_MODE).add(Items.GLASS_BOTTLE.builtInRegistryHolder().key());
+        tag(LMTags.Items.PHARMCIST_INGREDIENTS)
+                .add(Items.NETHER_WART.builtInRegistryHolder().key())
+                .add(Items.BLAZE_POWDER.builtInRegistryHolder().key())
+                .add(Items.GLOWSTONE_DUST.builtInRegistryHolder().key())
+                .add(Items.REDSTONE.builtInRegistryHolder().key())
+                .add(Items.FERMENTED_SPIDER_EYE.builtInRegistryHolder().key())
+                .add(Items.GUNPOWDER.builtInRegistryHolder().key())
+                .add(Items.DRAGON_BREATH.builtInRegistryHolder().key())
+                .add(Items.SPIDER_EYE.builtInRegistryHolder().key())
+                .add(Items.MAGMA_CREAM.builtInRegistryHolder().key())
+                .add(Items.GHAST_TEAR.builtInRegistryHolder().key())
+                .add(Items.RABBIT_FOOT.builtInRegistryHolder().key())
+                .add(Items.GLISTERING_MELON_SLICE.builtInRegistryHolder().key())
+                .add(Items.GOLDEN_CARROT.builtInRegistryHolder().key())
+                .add(Items.PUFFERFISH.builtInRegistryHolder().key())
+                .add(Items.PHANTOM_MEMBRANE.builtInRegistryHolder().key())
+                .add(Items.TURTLE_HELMET.builtInRegistryHolder().key());
         tag(LMTags.Items.RIPPER_MODE);
         tag(LMTags.Items.TORCHER_MODE);
         tag(LMTags.Items.HEALER_MODE);

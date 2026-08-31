@@ -3,7 +3,6 @@ package work.nemonet.littlemaidneo.entity.ai.behavior;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
-import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.ai.util.DefaultRandomPos;
 import net.minecraft.world.phys.Vec3;
@@ -17,9 +16,7 @@ public class MaidAvoidBehavior extends AbstractMaidBehavior {
     private int cooldown;
 
     public MaidAvoidBehavior() {
-        super(Map.of(
-                MemoryModuleType.WALK_TARGET, MemoryStatus.VALUE_ABSENT
-        ));
+        super(Map.of());
     }
 
     @Override

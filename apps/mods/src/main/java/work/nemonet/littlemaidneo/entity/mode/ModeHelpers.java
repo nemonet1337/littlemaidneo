@@ -3,9 +3,20 @@ package work.nemonet.littlemaidneo.entity.mode;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.Container;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.ai.behavior.EntityTracker;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.item.crafting.AbstractCookingRecipe;
+import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.BlastFurnaceBlock;
+import net.minecraft.world.level.block.SmokerBlock;
+import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.pathfinder.Path;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 
@@ -40,10 +51,12 @@ public final class ModeHelpers {
                 if (path == null || path.getEndNode() == null || !path.getEndNode().asBlockPos().closerThan(targetPos, reachDistance)) {
                     return new NavigationResult(nextTimer, true);
                 }
-                mob.getNavigation().moveTo(path, speed);
+                mob.getBrain().setMemory(MemoryModuleType.WALK_TARGET,
+                        new WalkTarget(Vec3.atCenterOf(targetPos), (float) speed, closeDistance));
             }
             return new NavigationResult(nextTimer, false);
         }
+        mob.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
         return new NavigationResult(recalcTimer, false);
     }
 
@@ -60,10 +73,12 @@ public final class ModeHelpers {
                 if (path == null || path.getEndNode() == null || path.getEndNode().asVec3().add(0.5, 0, 0.5).distanceToSqr(targetEntity.position()) > reachDistance * reachDistance) {
                     return new NavigationResult(nextTimer, true);
                 }
-                mob.getNavigation().moveTo(path, speed);
+                mob.getBrain().setMemory(MemoryModuleType.WALK_TARGET,
+                        new WalkTarget(new EntityTracker(targetEntity, false), (float) speed, closeDistance));
             }
             return new NavigationResult(nextTimer, false);
         }
+        mob.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
         return new NavigationResult(recalcTimer, false);
     }
 
@@ -90,5 +105,21 @@ public final class ModeHelpers {
             }
         }
         return OptionalInt.empty();
+    }
+
+    public static RecipeType<? extends AbstractCookingRecipe> furnaceRecipeType(AbstractFurnaceBlockEntity tile) {
+        var block = tile.getBlockState().getBlock();
+        if (block instanceof BlastFurnaceBlock) {
+            return RecipeType.BLASTING;
+        }
+        if (block instanceof SmokerBlock) {
+            return RecipeType.SMOKING;
+        }
+        return RecipeType.SMELTING;
+    }
+
+    public static boolean isFurnaceLit(AbstractFurnaceBlockEntity tile) {
+        BlockState state = tile.getBlockState();
+        return state.hasProperty(BlockStateProperties.LIT) && state.getValue(BlockStateProperties.LIT);
     }
 }

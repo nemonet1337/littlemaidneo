@@ -16,6 +16,7 @@ import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.registries.RegisterEvent;
+import net.neoforged.neoforge.registries.datamaps.RegisterDataMapTypesEvent;
 import net.neoforged.fml.event.config.ModConfigEvent;
 import org.apache.logging.log4j.Logger;
 import work.nemonet.littlemaidneo.advancement.criterion.LMNCriteria;
@@ -57,6 +58,8 @@ public class LittleMaidNeo {
         ModRegistration.MEMORY_MODULES.register(modEventBus);
         ModRegistration.SENSORS.register(modEventBus);
         ModRegistration.ATTACHMENT_TYPES.register(modEventBus);
+        ModRegistration.POI_TYPES.register(modEventBus);
+        work.nemonet.littlemaidneo.gametest.LMGameTests.TEST_FUNCTIONS.register(modEventBus);
 
         modEventBus.addListener(work.nemonet.littlemaidneo.data.LMDataGenerator::gatherClientData);
         modEventBus.addListener(work.nemonet.littlemaidneo.data.LMDataGenerator::gatherServerData);
@@ -70,6 +73,7 @@ public class LittleMaidNeo {
         modEventBus.addListener(this::onRegisterSpawnPlacements);
         modEventBus.addListener(this::onRegisterEvent);
         modEventBus.addListener(this::onModConfig);
+        modEventBus.addListener(this::onRegisterDataMapTypes);
 
         net.neoforged.neoforge.common.NeoForge.EVENT_BUS.addListener(work.nemonet.littlemaidneo.command.LMCommands::register);
         work.nemonet.littlemaidneo.event.PlayerEventHandler.register(net.neoforged.neoforge.common.NeoForge.EVENT_BUS);
@@ -105,6 +109,10 @@ public class LittleMaidNeo {
 
     private void onRegisterEvent(RegisterEvent event) {
         event.register(Registries.TRIGGER_TYPE, helper -> LMNCriteria.init());
+    }
+
+    private void onRegisterDataMapTypes(RegisterDataMapTypesEvent event) {
+        event.register(work.nemonet.littlemaidneo.setup.LMDataMaps.MAID_JOB);
     }
 
     private void onModConfig(ModConfigEvent event) {

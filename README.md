@@ -28,7 +28,7 @@ NeoForge 向けに書き直されたメイドさん Mod。レガシー Mod 系�
 ./gradlew build
 ```
 
-成果物: `build/libs/littlemaidneo-<version>.jar`
+成果物: `apps/mods/build/libs/LittleMaidNeo_<Minecraft バージョン>_<Mod バージョン>.jar`
 
 ## 開発コマンド
 
@@ -36,14 +36,14 @@ NeoForge 向けに書き直されたメイドさん Mod。レガシー Mod 系�
 |----------|------|
 | `./gradlew build` | フルビルド |
 | `./gradlew compileJava` | コンパイルのみ（軽量検証） |
-| `./gradlew runClient` | クライアント起動 |
-| `./gradlew runServer` | サーバー起動（`--nogui`） |
-| `./gradlew runGameTestServer` | GameTest 実行（namespace は `littlemaidneo`） |
-| `./gradlew runData` | データジェネレータ実行（出力先 `src/generated/resources/`） |
+| `./gradlew :apps:mods:runClient` | クライアント起動 |
+| `./gradlew :apps:mods:runServer` | サーバー起動（`--nogui`） |
+| `./gradlew :apps:mods:runGameTestServer` | GameTest 実行（namespace は `littlemaidneo`） |
+| `./gradlew :apps:mods:mergeData` | データジェネレータ実行（出力先 `apps/mods/src/generated/resources/`） |
 
 ## 外部リソース
 
-外部モデルパック（旧 LMM/MMM 形式の `.class` ファイル含む）は、ゲームディレクトリの `LMMLResources/` フォルダから読み込まれる。`resource/classloader/` の `MultiModelClassLoader` / `MultiModelClassTransformer` が実行時に ASM でリマップ・GL11→GLCompat 置換を行う。
+外部ボイスパック（`.cfg` + `.ogg`）と PNG テクスチャパックは、ゲームディレクトリの `LMMLResources/` フォルダから読み込まれる。内蔵モデルは `maidmodel/` の `ModelPart` 実装。旧 LMM/MMM 形式の `.class` モデルパック互換は廃止済み。
 
 ## マッピング
 

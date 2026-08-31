@@ -1,7 +1,6 @@
 package work.nemonet.littlemaidneo.entity.ai.behavior;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
@@ -14,10 +13,10 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import work.nemonet.littlemaidneo.entity.LMHasInventory;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
+import work.nemonet.littlemaidneo.entity.ai.WorkPoi;
 import work.nemonet.littlemaidneo.entity.mode.ModeHelpers;
-import work.nemonet.littlemaidneo.util.BlockFinder;
+import net.minecraft.world.entity.ai.village.poi.PoiTypes;
 
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 
@@ -93,16 +92,16 @@ public class MaidPharmcistBehavior extends AbstractMaidBehavior implements Persi
             return;
         }
         if (mob.distanceToSqr(brewingStandPos.getX() + 0.5, brewingStandPos.getY(), brewingStandPos.getZ() + 0.5) > 3 * 3) {
-        } else {
-            mob.getNavigation().stop();
-            mob.getLookControl().setLookAt(brewingStandPos.getX() + 0.5, brewingStandPos.getY() + 0.5, brewingStandPos.getZ() + 0.5, 30.0f, 30.0f);
+            return;
+        }
+        mob.getNavigation().stop();
+        mob.getLookControl().setLookAt(brewingStandPos.getX() + 0.5, brewingStandPos.getY() + 0.5, brewingStandPos.getZ() + 0.5, 30.0f, 30.0f);
 
-            if (processTimer++ >= 10) {
-                processTimer = 0;
-                boolean worked = performBrewingInteractions(mob, tile);
-                if (worked) {
-                    mob.swing(InteractionHand.MAIN_HAND);
-                }
+        if (processTimer++ >= 10) {
+            processTimer = 0;
+            boolean worked = performBrewingInteractions(mob, tile);
+            if (worked) {
+                mob.swing(InteractionHand.MAIN_HAND);
             }
         }
     }
@@ -282,37 +281,19 @@ public class MaidPharmcistBehavior extends AbstractMaidBehavior implements Persi
     }
 
     public Optional<BlockPos> findBrewingStandPos(LittleMaidEntity mob) {
-        return BlockFinder.searchTargetBlock(
+        if (!(mob.level() instanceof ServerLevel level)) {
+            return Optional.empty();
+        }
+        return WorkPoi.findClosest(
+                level,
                 mob.blockPosition(),
-                pos -> isNotUsedBrewingStand(mob, pos),
-                pos -> canSeeThrough(mob, pos),
-                Arrays.asList(Direction.values()),
-                1000
-        ).filter(pos -> pos.distManhattan(mob.blockPosition()) < 8);
-    }
-
-    public boolean isNotUsedBrewingStand(LittleMaidEntity mob, BlockPos pos) {
-        return getBrewingStand(mob, pos)
-                .filter(this::isNotUsedBrewingStand)
-                .isPresent();
+                8,
+                type -> type.is(PoiTypes.CLERIC),
+                pos -> getBrewingStand(mob, pos).filter(tile -> hasBrewingWork(mob, tile)).isPresent());
     }
 
     public Optional<BrewingStandBlockEntity> getBrewingStand(LittleMaidEntity mob, BlockPos pos) {
         return ModeHelpers.getBlockEntity(mob.level(), pos, BrewingStandBlockEntity.class);
-    }
-
-    public boolean isNotUsedBrewingStand(BrewingStandBlockEntity tile) {
-        for (int slot : tile.getSlotsForFace(Direction.UP)) {
-            ItemStack stack = tile.getItem(slot);
-            if (!stack.isEmpty()) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    public boolean canSeeThrough(LittleMaidEntity mob, BlockPos pos) {
-        return true;
     }
 
     @Override

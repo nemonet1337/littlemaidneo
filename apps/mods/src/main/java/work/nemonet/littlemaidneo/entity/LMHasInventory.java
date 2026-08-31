@@ -121,7 +121,7 @@ public class LMHasInventory implements HasInventory {
                     if (stack.isEmpty()) {
                         return ItemStack.EMPTY;
                     }
-                    maid.setItemInHand(InteractionHand.MAIN_HAND, stack);
+                    maid.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
                     return stack;
                 } else if (slot == 1) {
                     var stack = maid.getOffhandItem();

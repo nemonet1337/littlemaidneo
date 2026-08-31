@@ -10,8 +10,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
+import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.pathfinder.Path;
 import org.jetbrains.annotations.Nullable;
 import work.nemonet.littlemaidneo.config.LMNConfig;
@@ -23,8 +26,8 @@ import work.nemonet.littlemaidneo.setup.ModRegistration;
 /**
  * Brain Behavior: 赤石動力を探知して移動する（旧 {@code RedstoneTraceGoal} の移植・AI-3）。
  *
- * <p>TRACER モードのみで起動する。移動は WALK_TARGET ではなく直接 navigation を操作し、
- * 旧 Goal の挙動を維持しつつ、経路不能・スタック時の再計画で迷子を抑える。
+ * <p>TRACER モードのみで起動する。到達可能な信号を選んで WALK_TARGET に書き、
+ * 経路不能・スタック時の再計画で迷子を抑える。
  */
 public class MaidTraceBehavior extends AbstractMaidBehavior {
 
@@ -54,7 +57,7 @@ public class MaidTraceBehavior extends AbstractMaidBehavior {
             recalcTimer--;
             return false;
         }
-        if (entity.getMaidMode() != MaidMode.TRACER || !entity.getNavigation().isDone()) {
+        if (entity.getMaidMode() != MaidMode.TRACER) {
             return false;
         }
         this.aroundSignalPos.clear();
@@ -95,18 +98,18 @@ public class MaidTraceBehavior extends AbstractMaidBehavior {
                 .findFirst()
                 .ifPresentOrElse(pos -> {
                     Path path = navigation.createPath(pos, 1);
-                    if (path != null && navigation.moveTo(path, speed)) {
+                    if (path != null && path.canReach()) {
+                        entity.getBrain().setMemory(MemoryModuleType.WALK_TARGET,
+                                new WalkTarget(Vec3.atCenterOf(pos), speed, 1));
                         this.currentTarget = pos;
-                        // 自由行動の原点を信号付近へ更新する。
                         entity.setFreedomPos(pos);
                     } else {
-                        navigation.stop();
-                        this.currentTarget = pos; // 次回 start で除外
+                        entity.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
+                        this.currentTarget = pos;
                         this.recalcTimer = 10;
                     }
                 }, () -> {
-                    // 到達可能な信号が一つも無い
-                    navigation.stop();
+                    entity.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
                     this.currentTarget = null;
                     this.recalcTimer = 40;
                 });
@@ -117,13 +120,11 @@ public class MaidTraceBehavior extends AbstractMaidBehavior {
         if (TameableUtil.isWait(entity) || entity.getMaidMode() != MaidMode.TRACER) {
             return false;
         }
-        PathNavigation navigation = entity.getNavigation();
-        if (navigation.isDone()) {
+        if (currentTarget == null || entity.blockPosition().closerThan(currentTarget, 2.5)) {
             return false;
         }
-        // スタック: 一定時間ほぼ動かない場合は打ち切って再計画
         if (isStuck(entity)) {
-            navigation.stop();
+            entity.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
             this.recalcTimer = 10;
             return false;
         }
@@ -145,12 +146,9 @@ public class MaidTraceBehavior extends AbstractMaidBehavior {
     @Override
     protected void stop(ServerLevel level, LittleMaidEntity entity, long gameTime) {
         // 到達成功時は currentTarget をクリアし、次の信号へ進める
-        if (entity.getNavigation().isDone() && currentTarget != null) {
-            BlockPos pos = entity.blockPosition();
-            // 目標近傍に着いたら成功扱い
-            if (pos.closerThan(currentTarget, 2.5)) {
-                currentTarget = null;
-            }
+        if (currentTarget != null && entity.blockPosition().closerThan(currentTarget, 2.5)) {
+            currentTarget = null;
+            entity.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
         }
         this.recalcTimer = 0;
         this.stuckTicks = 0;

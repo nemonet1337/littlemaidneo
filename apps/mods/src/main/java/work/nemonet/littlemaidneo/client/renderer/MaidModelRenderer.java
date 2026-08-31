@@ -1,19 +1,21 @@
 package work.nemonet.littlemaidneo.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.MobRenderer;
-import net.minecraft.client.renderer.entity.layers.RenderLayer;
-import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.AbstractSkullBlock;
 import work.nemonet.littlemaidneo.LittleMaidNeo;
 import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
-import work.nemonet.littlemaidneo.maidmodel.LMModel;
 public class MaidModelRenderer extends MobRenderer<LittleMaidEntity, MaidRenderState, LMMultiModel<MaidRenderState>> {
 
     private static final Identifier NULL_TEXTURE = Identifier.fromNamespaceAndPath(LittleMaidNeo.MODID, "null");
@@ -35,53 +37,9 @@ public class MaidModelRenderer extends MobRenderer<LittleMaidEntity, MaidRenderS
     @Override
     public void extractRenderState(LittleMaidEntity entity, MaidRenderState state, float partialTick) {
         super.extractRenderState(entity, state, partialTick);
+        state.fillFrom(entity, entity, partialTick);
         state.maidEntity = entity;
-        state.multiModel = entity;
-        state.entity = entity;
-        state.mainArm = entity.getMainArm();
-        state.mainHandItem = entity.getMainHandItem();
-        state.offHandItem = entity.getOffhandItem();
-        state.walkAnimationPos = entity.walkAnimation.position(partialTick);
-        state.walkAnimationSpeed = entity.walkAnimation.speed(partialTick);
-
-        state.skinModel = entity.getModel(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD).orElse(null);
-        state.skinTexture = entity.getTexture(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD, false).orElse(null);
-        state.skinTextureLight = entity.getTexture(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD, true).orElse(null);
-
-        state.armorsVisible.clear();
-        state.armorsGlint.clear();
-        state.innerModels.clear();
-        state.outerModels.clear();
-        state.innerTextures.clear();
-        state.innerTexturesLight.clear();
-        state.outerTextures.clear();
-        state.outerTexturesLight.clear();
-
-        for (IHasMultiModel.Part part : IHasMultiModel.Part.values()) {
-            state.armorsVisible.setArmor(entity.isArmorVisible(part), part);
-            state.armorsGlint.setArmor(entity.isArmorGlint(part), part);
-
-            state.innerModels.setArmor(entity.getModel(IHasMultiModel.Layer.INNER, part).orElse(null), part);
-            state.outerModels.setArmor(entity.getModel(IHasMultiModel.Layer.OUTER, part).orElse(null), part);
-
-            state.innerTextures.setArmor(entity.getTexture(IHasMultiModel.Layer.INNER, part, false).orElse(null), part);
-            state.innerTexturesLight.setArmor(entity.getTexture(IHasMultiModel.Layer.INNER, part, true).orElse(null), part);
-
-            state.outerTextures.setArmor(entity.getTexture(IHasMultiModel.Layer.OUTER, part, false).orElse(null), part);
-            state.outerTexturesLight.setArmor(entity.getTexture(IHasMultiModel.Layer.OUTER, part, true).orElse(null), part);
-
-            LMModel<?> innerLMModel = entity.getModel(IHasMultiModel.Layer.INNER, part).orElse(null);
-            LMModel<?> outerLMModel = entity.getModel(IHasMultiModel.Layer.OUTER, part).orElse(null);
-            state.armorStates[part.getIndex()] = new MultiModelRenderState.ArmorRenderState(
-                    innerLMModel, outerLMModel,
-                    state.innerTextures.getArmor(part).orElse(null),
-                    state.innerTexturesLight.getArmor(part).orElse(null),
-                    state.outerTextures.getArmor(part).orElse(null),
-                    state.outerTexturesLight.getArmor(part).orElse(null),
-                    entity.isArmorVisible(part),
-                    entity.isArmorGlint(part)
-            );
-        }
+        applyHeadCosmetic(entity, state, partialTick);
 
         float swingProgress = entity.getAttackAnim(partialTick);
         if (entity.swingingArm == net.minecraft.world.InteractionHand.MAIN_HAND) {
@@ -127,19 +85,36 @@ public class MaidModelRenderer extends MobRenderer<LittleMaidEntity, MaidRenderS
         state.leaningPitch = swimAmount;
     }
 
-    @Override
-    protected void setupRotations(MaidRenderState state, PoseStack matrices, float bodyYaw, float scale) {
-        super.setupRotations(state, matrices, bodyYaw, scale);
+    /**
+     * 頭飾り専用スロットを {@link MaidRenderState#headItem} / {@code wornHeadType} に載せる。
+     * ヘルメットは {@link EquipmentSlot#HEAD} のまま防具レイヤが描く。
+     */
+    private void applyHeadCosmetic(LittleMaidEntity entity, MaidRenderState state, float partialTick) {
+        ItemStack cosmetic = entity.getHeadCosmetic();
+        ItemStack head = entity.getItemBySlot(EquipmentSlot.HEAD);
+        ItemStack display = !cosmetic.isEmpty() ? cosmetic
+                : (LittleMaidEntity.isHeadArmorItem(head) ? ItemStack.EMPTY : head);
+
+        state.wornHeadType = null;
+        state.wornHeadProfile = null;
+        if (display.isEmpty()) {
+            state.headItem.clear();
+            return;
+        }
+        if (display.getItem() instanceof BlockItem blockItem
+                && blockItem.getBlock() instanceof AbstractSkullBlock skullBlock) {
+            state.headItem.clear();
+            state.wornHeadType = skullBlock.getType();
+            state.wornHeadProfile = display.get(DataComponents.PROFILE);
+            state.wornHeadAnimationPos = entity.tickCount + partialTick;
+            return;
+        }
+        this.itemModelResolver.updateForLiving(state.headItem, display, ItemDisplayContext.HEAD, entity);
     }
 
     @Override
     protected void scale(MaidRenderState state, PoseStack matrices) {
         matrices.scale(0.9375F, 0.9375F, 0.9375F);
-    }
-
-    @Override
-    public void submit(MaidRenderState state, PoseStack poseStack, SubmitNodeCollector submitNodeCollector, CameraRenderState camera) {
-        super.submit(state, poseStack, submitNodeCollector, camera);
     }
 
     @Override

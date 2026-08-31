@@ -9,14 +9,18 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
+import net.minecraft.world.entity.ai.memory.WalkTarget;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.entity.HopperBlockEntity;
 import net.minecraft.world.level.pathfinder.Path;
 import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
+import work.nemonet.littlemaidneo.entity.ai.WorkPoi;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 import work.nemonet.littlemaidneo.setup.ModRegistration;
+import work.nemonet.littlemaidneo.util.ItemTransfers;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -43,6 +47,7 @@ public class MaidCollectSalaryBehavior extends AbstractMaidBehavior {
 
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, LittleMaidEntity entity) {
+        rememberNearbySalaryBoxes(level, entity);
         return entity.itemContractable.hasSalaryBoxPositions()
                 && TameableUtil.hasTameOwner(entity)
                 && entity.getRandom().nextFloat() <= (1.0f / getConfigCheckInterval())
@@ -84,9 +89,8 @@ public class MaidCollectSalaryBehavior extends AbstractMaidBehavior {
                     prevWaitPos = null;
                     return;
                 }
-                var nav = entity.getNavigation();
-                var path = nav.createPath(prevWaitPos, 0);
-                if (path != null) nav.moveTo(path, 1);
+                entity.getBrain().setMemory(MemoryModuleType.WALK_TARGET,
+                        new WalkTarget(Vec3.atCenterOf(prevWaitPos), 1.0f, 0));
             }
             return;
         }
@@ -103,7 +107,7 @@ public class MaidCollectSalaryBehavior extends AbstractMaidBehavior {
             }
             moveToContainer(entity);
         } else {
-            entity.getNavigation().stop();
+            entity.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
             if (collect(entity)) {
                 postCollect(entity);
                 this.targetContainerPos = null;
@@ -118,17 +122,17 @@ public class MaidCollectSalaryBehavior extends AbstractMaidBehavior {
             return;
         }
 
-        var navigation = entity.getNavigation();
         if (this.toContainerPath == null || --this.pathReCalcCool <= 0) {
             this.pathReCalcCool = getConfigPathReCalcCool();
-            this.toContainerPath = navigation.createPath(targetContainerPos, 1);
+            this.toContainerPath = entity.getNavigation().createPath(targetContainerPos, 1);
             if (toContainerPath == null
                     || toContainerPath.getEndNode() == null
                     || isInCollectRange(entity, targetContainerPos, toContainerPath.getEndNode().asBlockPos())) {
                 targetContainerPos = null;
                 return;
             }
-            navigation.moveTo(this.toContainerPath, 1);
+            entity.getBrain().setMemory(MemoryModuleType.WALK_TARGET,
+                    new WalkTarget(Vec3.atCenterOf(targetContainerPos), 1.0f, 1));
         }
     }
 
@@ -142,24 +146,17 @@ public class MaidCollectSalaryBehavior extends AbstractMaidBehavior {
     protected boolean collect(LittleMaidEntity entity) {
         if (targetContainerPos == null) throw new IllegalStateException("Target container pos is null");
 
-        var optional = getAvailableContainer(entity);
-        if (optional.isEmpty()) { targetContainerPos = null; return false; }
-        var inventory = optional.get();
-
-        boolean collected = false;
-        for (int i = 0; i < inventory.getContainerSize(); i++) {
-            if (!canCollectState(entity)) break;
-            var stack = inventory.getItem(i);
-            if (!isTargetItem(entity, stack)) continue;
-            stack = transfer(entity, stack);
-            inventory.setItem(i, stack);
-            collected = true;
+        if (getAvailableContainer(entity).isEmpty()) {
+            targetContainerPos = null;
+            return false;
         }
-        return collected;
-    }
-
-    protected ItemStack transfer(LittleMaidEntity entity, ItemStack stack) {
-        return HopperBlockEntity.addItem(null, entity.getInventory(), stack, null);
+        int moved = ItemTransfers.moveMatchingToContainer(
+                entity.level(),
+                targetContainerPos,
+                entity.getInventory(),
+                stack -> isTargetItem(entity, stack),
+                null);
+        return moved > 0;
     }
 
     protected boolean isContainerAvailable(LittleMaidEntity entity) {
@@ -206,6 +203,12 @@ public class MaidCollectSalaryBehavior extends AbstractMaidBehavior {
             if (inv.getItem(i).isEmpty()) return salarySlots < getConfigMaxSalarySlots();
         }
         return false;
+    }
+
+    private void rememberNearbySalaryBoxes(ServerLevel level, LittleMaidEntity entity) {
+        int range = (int) getConfigSalaryBoxRange();
+        WorkPoi.findAll(level, entity.blockPosition(), range, type -> type.is(ModRegistration.SALARY_BOX_POI))
+                .forEach(entity.itemContractable::listenSalaryBoxPos);
     }
 
     protected Optional<BlockPos> searchContainerPos(LittleMaidEntity entity) {

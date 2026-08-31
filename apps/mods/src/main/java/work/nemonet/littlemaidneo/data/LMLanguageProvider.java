@@ -126,6 +126,17 @@ public class LMLanguageProvider extends LanguageProvider {
             add("gui.littlemaidneo.model_select.toggle_contract", "Toggle Contract Status (Contract / Wild)");
 
             add("gui.littlemaidneo.maidmanager.open_inventory", "Inventory");
+            add("gui.littlemaidneo.maidmanager.title", "Maid Manager");
+            add("gui.littlemaidneo.maidmanager.search", "Search name / status / group...");
+            add("gui.littlemaidneo.maidmanager.group_hint", "Group name (then Set on a card)");
+            add("gui.littlemaidneo.maidmanager.set_group", "Set");
+            add("commands.littlemaidneo.maid.group.success", "Set group '%2$s' on %1$s nearby maids.");
+            add("commands.littlemaidneo.maid.group.cleared", "Cleared group on %s nearby maids.");
+            add("commands.littlemaidneo.job.held.empty", "Held item: (empty)");
+            add("commands.littlemaidneo.job.held.mapped", "Held item %1$s -> job %2$s (priority %3$s) via littlemaidneo:maid_job");
+            add("commands.littlemaidneo.job.held.unmapped", "Held item %s has no littlemaidneo:maid_job Data Map entry.");
+            add("commands.littlemaidneo.job.nearby.header", "Nearby maids (%s):");
+            add("commands.littlemaidneo.job.nearby.entry", " - %1$s  job=%2$s  mode=%3$s");
 
             add("container.littlemaidneo.salary_box", "Maid Salary Box");
 
@@ -252,6 +263,17 @@ public class LMLanguageProvider extends LanguageProvider {
             add("gui.littlemaidneo.model_select.toggle_contract", "契約状態切り替え (契約/野生)");
 
             add("gui.littlemaidneo.maidmanager.open_inventory", "インベントリ");
+            add("gui.littlemaidneo.maidmanager.title", "メイドさん管理");
+            add("gui.littlemaidneo.maidmanager.search", "名前 / 状態 / グループで検索...");
+            add("gui.littlemaidneo.maidmanager.group_hint", "グループ名（カードの Set で適用）");
+            add("gui.littlemaidneo.maidmanager.set_group", "Set");
+            add("commands.littlemaidneo.maid.group.success", "付近のメイドさん %1$s 体にグループ '%2$s' を設定しました。");
+            add("commands.littlemaidneo.maid.group.cleared", "付近のメイドさん %s 体のグループを解除しました。");
+            add("commands.littlemaidneo.job.held.empty", "手持ち: （なし）");
+            add("commands.littlemaidneo.job.held.mapped", "手持ち %1$s → ジョブ %2$s（優先度 %3$s） littlemaidneo:maid_job");
+            add("commands.littlemaidneo.job.held.unmapped", "手持ち %s に littlemaidneo:maid_job Data Map はありません。");
+            add("commands.littlemaidneo.job.nearby.header", "付近のメイドさん（%s）:");
+            add("commands.littlemaidneo.job.nearby.entry", " - %1$s  job=%2$s  mode=%3$s");
 
             add("container.littlemaidneo.salary_box", "メイドさんのお給料箱");
 

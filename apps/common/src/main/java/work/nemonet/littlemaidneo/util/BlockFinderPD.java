@@ -45,37 +45,34 @@ public class BlockFinderPD implements ProcessDivider<BlockPos> {
 
     @Override
     public boolean tick() {
-        if (isEnd()) {
-            return false;
-        }
-        var seed = seeds.poll();
-        //探索済みならスキップ
-        if (searched.contains(seed)) {
-            return tick();
-        }
-        //探索済みにする
-        searched.add(seed);
-        //周囲のマスをシードに追加する
-        for (Direction direction : directions) {
-            BlockPos linkPos = seed.relative(direction);
-            //探索済みならスキップ
-            if (searched.contains(linkPos)) {
+        while (!isEnd()) {
+            var seed = seeds.poll();
+            if (seed == null) {
+                return false;
+            }
+            if (searched.contains(seed)) {
                 continue;
             }
-            //ターゲットならリターン
-            if (target.test(linkPos)) {
-                result = linkPos;
-                seeds.clear();
+            searched.add(seed);
+            for (Direction direction : directions) {
+                BlockPos linkPos = seed.relative(direction);
+                if (searched.contains(linkPos)) {
+                    continue;
+                }
+                if (target.test(linkPos)) {
+                    result = linkPos;
+                    seeds.clear();
+                    searched.clear();
+                    return true;
+                }
+                if (linkable.test(linkPos)) {
+                    seeds.add(linkPos);
+                }
+            }
+            if (isEnd()) {
                 searched.clear();
-                return true;
             }
-            //探索可能ならシードに追加
-            if (linkable.test(linkPos)) {
-                seeds.add(linkPos);
-            }
-        }
-        if (isEnd()) {
-            searched.clear();
+            return false;
         }
         return false;
     }

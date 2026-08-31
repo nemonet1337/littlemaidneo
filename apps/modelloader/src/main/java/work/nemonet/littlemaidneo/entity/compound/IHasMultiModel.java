@@ -1,14 +1,10 @@
 package work.nemonet.littlemaidneo.entity.compound;
 
 import net.minecraft.world.entity.Entity;
-import net.minecraft.resources.Identifier;
-import work.nemonet.littlemaidneo.maidmodel.LMModel;
 import work.nemonet.littlemaidneo.resource.holder.TextureHolder;
 import work.nemonet.littlemaidneo.resource.util.TextureColors;
 
-import java.util.Optional;
-
-public interface IHasMultiModel {
+public interface IHasMultiModel extends MultiModelView {
 
     boolean isAllowChangeTexture(Entity changer, TextureHolder textureHolder, Layer layer, Part part);
 
@@ -23,12 +19,6 @@ public interface IHasMultiModel {
     void setContractMM(boolean isContract);
 
     boolean isContractMM();
-
-    Optional<LMModel<?>> getModel(Layer layer, Part part);
-    Optional<Identifier> getTexture(Layer layer, Part part, boolean isLight);
-
-    boolean isArmorVisible(Part part);
-    boolean isArmorGlint(Part part);
 
     enum Layer {
         SKIN(0, 0, false),
@@ -53,6 +43,15 @@ public interface IHasMultiModel {
             return partIndex;
         }
 
+        /** アーマーレイヤー（INNER/OUTER）なら true。{@link #isArmor()} は歴史的に反転している。 */
+        public boolean isArmorLayer() {
+            return isArmor;
+        }
+
+        /**
+         * SKIN のとき true。フィールド {@code isArmor} の否定であり、名前と逆。
+         * 新規コードは {@link #isArmorLayer()} か {@code layer == SKIN} を使う。
+         */
         public boolean isArmor() {
             return !isArmor;
         }

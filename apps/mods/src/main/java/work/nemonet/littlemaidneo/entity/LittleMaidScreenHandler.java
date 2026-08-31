@@ -10,14 +10,14 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import work.nemonet.littlemaidneo.entity.util.GuiEntitySupplier;
 import work.nemonet.littlemaidneo.setup.ModRegistration;
 
-public class LittleMaidScreenHandler extends AbstractContainerMenu implements GuiEntitySupplier<LittleMaidEntity> {
+public class LittleMaidScreenHandler extends AbstractContainerMenu {
     private final Inventory playerInventory;
     private final Container maidInventory;
     private final Container handInventory;
     private final Container armorInventory;
+    private final Container headCosmeticInventory;
     private final LittleMaidEntity maid;
     private final int unpaidDays;
     private final int workItemSlotSize;
@@ -162,6 +162,56 @@ public class LittleMaidScreenHandler extends AbstractContainerMenu implements Gu
 
                 }
             };
+            this.headCosmeticInventory = new Container() {
+                @Override
+                public ItemStack getItem(int slot) {
+                    return maid.getHeadCosmetic();
+                }
+
+                @Override
+                public ItemStack removeItem(int slot, int amount) {
+                    ItemStack current = maid.getHeadCosmetic();
+                    ItemStack taken = current.split(amount);
+                    maid.setHeadCosmetic(current);
+                    return taken;
+                }
+
+                @Override
+                public ItemStack removeItemNoUpdate(int slot) {
+                    ItemStack result = maid.getHeadCosmetic();
+                    maid.setHeadCosmetic(ItemStack.EMPTY);
+                    return result;
+                }
+
+                @Override
+                public void setItem(int slot, ItemStack stack) {
+                    maid.setHeadCosmetic(stack);
+                }
+
+                @Override
+                public boolean isEmpty() {
+                    return maid.getHeadCosmetic().isEmpty();
+                }
+
+                @Override
+                public int getContainerSize() {
+                    return 1;
+                }
+
+                @Override
+                public boolean stillValid(Player player) {
+                    return true;
+                }
+
+                @Override
+                public void setChanged() {
+                }
+
+                @Override
+                public void clearContent() {
+                    maid.setHeadCosmetic(ItemStack.EMPTY);
+                }
+            };
         }
 
         maidInventory.startOpen(playerInventory.player);
@@ -187,8 +237,8 @@ public class LittleMaidScreenHandler extends AbstractContainerMenu implements Gu
         return this.maid != null && this.maid.isAlive() && this.maid.distanceToSqr(player) < 8.0F * 8.0F;
     }
 
-    // 18 + 2 + 4 = 24、24 + 4 * 9 = 60
-    // 0~17メイドインベントリ、18~19メインサブ、20~23防具、24~59プレイヤーインベントリ
+    // 18 + 2 + 4 + 1 = 25、25 + 4 * 9 = 61
+    // 0~17メイドインベントリ、18~19メインサブ、20~23防具、24頭飾り、25~60プレイヤーインベントリ
     @Override
     public ItemStack quickMoveStack(Player player, int invSlot) {
         ItemStack newStack = ItemStack.EMPTY;
@@ -199,15 +249,16 @@ public class LittleMaidScreenHandler extends AbstractContainerMenu implements Gu
         ItemStack originalStack = slot.getItem();
         newStack = originalStack.copy();
         if (invSlot < 18) {// メイド->プレイヤー
-            if (!this.moveItemStackTo(originalStack, 24, 60, false)) {
+            if (!this.moveItemStackTo(originalStack, 25, 61, false)) {
                 return ItemStack.EMPTY;
             }
-        } else if (invSlot < 24) {// ハンド、防具->メイド
+        } else if (invSlot < 25) {// ハンド、防具、頭飾り->メイド
             if (!this.moveItemStackTo(originalStack, 0, 18, true)) {
                 return ItemStack.EMPTY;
             }
-        } else {// プレイヤー->メイド
-            if (!this.moveItemStackTo(originalStack, 0, 18, false)) {
+        } else {// プレイヤー->防具/頭飾り、だめならメイドインベントリ
+            if (!this.moveItemStackTo(originalStack, 20, 25, false)
+                    && !this.moveItemStackTo(originalStack, 0, 18, false)) {
                 return ItemStack.EMPTY;
             }
         }
@@ -271,7 +322,7 @@ public class LittleMaidScreenHandler extends AbstractContainerMenu implements Gu
 
             @Override
             public boolean mayPlace(ItemStack stack) {
-                return maid.getEquipmentSlotForItem(stack) == EquipmentSlot.HEAD;
+                return LittleMaidEntity.isHeadArmorItem(stack);
             }
 
             @Override
@@ -325,6 +376,19 @@ public class LittleMaidScreenHandler extends AbstractContainerMenu implements Gu
             @Override
             public Identifier getNoItemIcon() {
                 return InventoryMenu.EMPTY_ARMOR_SLOT_BOOTS;
+            }
+        });
+
+        // 24 頭飾り（ヘルメットと分離。カボチャ・頭蓋骨など）
+        addSlot(new Slot(headCosmeticInventory, 0, 8, 26) {
+            @Override
+            public int getMaxStackSize() {
+                return 1;
+            }
+
+            @Override
+            public boolean mayPlace(ItemStack stack) {
+                return LittleMaidEntity.isHeadCosmeticItem(stack);
             }
         });
     }

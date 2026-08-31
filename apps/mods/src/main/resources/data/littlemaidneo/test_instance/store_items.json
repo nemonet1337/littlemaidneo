@@ -1,0 +1,9 @@
+{
+  "environment": "minecraft:default",
+  "structure": "littlemaidneo:small_floor",
+  "max_ticks": 400,
+  "setup_ticks": 20,
+  "required": true,
+  "type": "minecraft:function",
+  "function": "littlemaidneo:store_items"
+}

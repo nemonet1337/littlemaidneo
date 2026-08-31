@@ -99,6 +99,10 @@ public class NetworkHandler {
                 C2SCallWaitPayload.TYPE,
                 C2SCallWaitPayload.STREAM_CODEC,
                 NetworkHandler::handleCallWaitServer);
+        registrar.playToServer(
+                C2SSetMaidGroupPayload.TYPE,
+                C2SSetMaidGroupPayload.STREAM_CODEC,
+                NetworkHandler::handleSetMaidGroupServer);
 
         // SyncSoundConfig (bidirectional)
         registrar.playBidirectional(
@@ -292,6 +296,18 @@ public static void sendSetMovingStateC2S(Entity entity, MaidMode state) {
     // --- C2SCallWait ---
     public static void sendCallWaitC2S(Entity entity, C2SCallWaitPayload.State state) {
         ClientPacketDistributor.sendToServer(new C2SCallWaitPayload(entity.getId(), state));
+    }
+
+    public static void sendSetMaidGroupC2S(java.util.UUID maidId, String group) {
+        ClientPacketDistributor.sendToServer(new C2SSetMaidGroupPayload(maidId, group));
+    }
+
+    private static void handleSetMaidGroupServer(C2SSetMaidGroupPayload payload, IPayloadContext context) {
+        context.enqueueWork(() -> {
+            var player = context.player();
+            player.getData(ModRegistration.MAID_MANAGER_ATTACHMENT.get())
+                    .setGroup(payload.maidId(), payload.group());
+        });
     }
 
     private static void handleCallWaitServer(C2SCallWaitPayload payload, IPayloadContext context) {

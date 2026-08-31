@@ -3,15 +3,15 @@
 LittleMaidNeo は、レガシー Mod 系譜 **LittleMaidRebirth (LMRB)** と **Little Maid Model Loader (LMML)** を統合し、NeoForge 向けに書き直された Minecraft Mod。テイム可能なメイドさんエンティティ（AI 行動付き）と、外部リソースから動的に読み込むマルチモデルレンダリングシステムを 1 つの Mod として提供する。
 
 - **旧 LMRB 系**: `LittleMaidEntity` を中心としたメイドさんエンティティ・AI・お仕事 Behavior（料理・戦闘・治癒など）・契約システム
-- **旧 LMML 系**: `MultiModelEntity`、`multimodel/`、`maidmodel/`、`MultiModel*` レンダラー — 外部モデルパックの読み込み/レンダリング基盤
+- **旧 LMML 系**: `MultiModelEntity`、`maidmodel/`、`MultiModel*` レンダラー — 内蔵 ModelPart モデルと外部テクスチャ/ボイスパック読み込み
 - 旧 Architectury / Fabric / Forge マルチプラットフォーム構成は破棄され、**NeoForge 単一プラットフォーム** に移行済み
 - 名称は **LittleMaidNeo / LMN** に統一済み（旧 LMRB / LMML / LMReengaged の名称はコード上に残さない。ただし保護コア B の `LMMLResources/` 探索パスは外部互換のため不変）
 
 ## Architecture
 
 - **Gradle 3 モジュール構成**（依存方向は `mods -> modelloader -> common` の一方向のみ）:
-  - `apps/common/` — 全モジュール共通基盤。`common/LMNLib`（MODID/LOGGER）、汎用 `util/`（`BlockFinder`, `BlockFinderPD`, `ProcessDivider`, `Tuple` 等）
-  - `apps/modelloader/` — 外部モデル読み込み基盤（旧 LMML 系・保護コア A/B の本体）。`multimodel/`, `maidmodel/`, `resource/`, `client/resource/`, `client/renderer/MultiModel*`, `entity/compound/`, `entity/MultiModelEntity`, `entity/EntityLittleMaid`(スタブ), `common/MultiModelHolder`/`SoundHolder`, `config/LMNModelConfig`
+  - `apps/common/` — 全モジュール共通基盤。`common/LMNLib`（MODID/LOGGER）、汎用 `util/`（`BlockFinder`, `BlockFinderPD`, `ProcessDivider` 等）
+  - `apps/modelloader/` — 外部テクスチャ/ボイスパック読み込みと内蔵 ModelPart モデル（旧 LMML 系・保護コア B）。`maidmodel/`, `resource/`, `client/resource/`, `client/renderer/LM*Layer`, `entity/compound/`, `entity/MultiModelEntity`, `common/MultiModelHolder`/`SoundHolder`, `config/LMNModelConfig`
   - `apps/mods/` — メイドさん本体の Mod 実装（残り全部）。リソース（`assets`/`data`/`templates`/`src/generated`）と Mixin もここ。最終 jar はこのモジュールが 3 モジュール分のクラスを束ねて生成
 - ルートパッケージ: `work.nemonet.littlemaidneo`（Java パッケージは全モジュール共通。モジュール間で同一パッケージを共有する箇所あり — 例: `entity/`）
 - メインエントリ: `LittleMaidNeo.java`（`@Mod("littlemaidneo")`）／`LittleMaidNeoClient.java`（共に apps/mods）
@@ -34,12 +34,10 @@ LittleMaidNeo は、レガシー Mod 系譜 **LittleMaidRebirth (LMRB)** と **L
 
 ### 絶対不変の保護コア（**削除・破壊的変更厳禁**）
 
-- **保護コア A: 外部モデル/テクスチャ読み込み・描画 (互換インフラの死守)**
-  - `resource/classloader/`（`MultiModelClassLoader`・`MultiModelClassTransformer`）と `maidmodel/` パッケージ全体、`maidmodel/compat/GLCompat` は、**外部ユーザー製の旧 LMM/MMM モデルパック（`.class` ファイル）を実行時に ASM でリマップ・GL11→GLCompat 置換して読み込むための互換インフラ**です。
-  - `entity/EntityLittleMaid`（中身ほぼ空のスタブ）も `MultiModelClassTransformer` のリマップ先（`net/blacklab/lmr/entity/EntityLittleMaid` → これ）なので残す必要があります。
-  - メイドさん本体の描画システムにおいて、外部パックとの互換性を崩すバニラ `ModelPart` や GeckoLib への本体移行は行わず、独自ラッパー（`MMMatrixStack` 等）と `GLCompat` を用いたブリッジ構造を維持・保護する必要があります（詳細は ADR 0001 を参照）。
-- **保護コア B: 外部ボイスパック読み込み・再生**
-  - `.cfg` 形式、`LMSounds` 定数文字列、命名規則、探索パス（`LMMLResources/`）、およびネットワーク同期パケット形式は、外部ボイスパック（`.cfg` + `.ogg`）を正常に読み込み・再生するために不変を維持します。
+- **保護コア B: 外部ボイスパック読み込み・再生、および PNG テクスチャパックの命名**
+  - `.cfg` 形式、`LMSounds` 定数文字列、命名規則、探索パス（`LMMLResources/`）、およびネットワーク同期パケット形式（`LMSoundPayload`）は、外部ボイスパック（`.cfg` + `.ogg`）を正常に読み込み・再生するために不変を維持します。
+  - PNG テクスチャのインデックス／色命名（`TextureIndexes` / `TextureColors`）と内蔵モデルの `biped_*` パーツ名も、外部テクスチャパック結合のために維持します。
+  - 旧 LMM/MMM 形式の `.class` モデルパック互換（`MultiModelClassLoader` / `GLCompat` / `EntityLittleMaid` スタブ）は **2026-07-26 に廃止済み**。描画はバニラ `ModelPart` + `SubmitNodeCollector`。復活しない。
 
 ## Environment
 
@@ -78,7 +76,7 @@ LittleMaidNeo は、レガシー Mod 系譜 **LittleMaidRebirth (LMRB)** と **L
 - ユーザーの指示がなくても、記録に値する判断をした場合は自律的に `/doc` スキルで記録する
 - 形式: `docs/{category}/yyyy-mm-dd_{タイトル}.md`
 - カテゴリ: `adr/`（設計判断）, `plan/`（作業プラン）, `research/`（調査メモ）等
-- NeoForge クリーンアップ／統合の進行プラン: `docs/plan/2026-06-01_統合リファクタリングプラン.md`（旧 `docs/neoforge-cleanup-plan.md` は廃止）
+- 残課題の作業リストは `TODO.md` / `sistr_TODO.md` を参照
 
 ## Cross-Environment Workflow
 
@@ -114,7 +112,7 @@ LittleMaidNeo は、レガシー Mod 系譜 **LittleMaidRebirth (LMRB)** と **L
   - `LMSafeMovement` (`maybeBackOffFromEdge` の落下/危険ブロック安全移動の移譲。`calculateFallDamage`/`fallDistance` へは `_LM` ブリッジ経由)
   - `LMHasInventory` (インベントリ処理の移譲)
   - `LMItemContractable` (給料・契約・時間管理の移譲)
-  - `HasMaidMode` / `MaidMode` (移動モード管理。旧 `HasModeImpl` / `MovingMode` から改名)
+  - `MaidMode` (移動モード管理。旧 `HasModeImpl` / `MovingMode` から改名)
   - `TargetTagManagerImpl` (ターゲットタグ情報の管理)
   - `TargetingSystem` (他エンティティの友好/敵対ターゲット評価)
   - `work.nemonet.littlemaidneo.entity.ai.control.MaidLookControl` (首振り最大角度制限のクランプおよび視線・頭部向き制御の一元化)
@@ -134,12 +132,11 @@ LittleMaidNeo は、レガシー Mod 系譜 **LittleMaidRebirth (LMRB)** と **L
 ### Rendering Notes
 - カスタムシェーダーは `assets/minecraft/shaders/core/` に配置する（NeoForge / バニラのシェーダー解決が `minecraft` 名前空間前提）
 - 最大輝度の light 値は `LightTexture.FULL_BRIGHT = 15728880`（`0xF000F0`）
-- `MultiModelRenderLayer` は `RenderType` を継承し、`RenderStateShard` の protected 定数にアクセスする
-- 発光テクスチャ用カスタムシェーダー `lmml_emissive` は NeoForge の `RegisterShadersEvent` で登録
+- レイヤー描画は `LMSkinLayer` / `LMArmorLayer` / `LMHeldItemLayer` / `LMLightLayer` と `SubmitNodeCollector` を使う
 
 ### GameTest
 - GameTest 用 namespace は `littlemaidneo`（`apps/mods/build.gradle.kts` の `neoforge.enabledGameTestNamespaces`）
-- テストは apps/mods のソースセットに直接配置可能
+- テスト関数は `LMGameTests`（`BuiltInRegistries.TEST_FUNCTION`）。インスタンス JSON は `data/littlemaidneo/test_instance/`
 - ストラクチャーは `apps/mods/src/main/resources/data/littlemaidneo/structure/`
 - FakePlayer ワールド登録が必要な場合は `createWorldPlayer()` + `cleanupWorldPlayers()` ペアで使用
 - コンフィグ変更テスト: try/finally でフィールドを直接書き換え+復元
@@ -153,4 +150,4 @@ LittleMaidNeo は、レガシー Mod 系譜 **LittleMaidRebirth (LMRB)** と **L
 - レビュー観点: SOLID 原則, Effective Java, Law of Demeter / Tell Don't Ask, OOP アンチパターン
 - `super` 呼び出しを含む override メソッドは外部クラスに委譲できない — 本体に残す
 - 状態を持たないオーケストレーション/ファクトリは static ユーティリティクラスで可（過度なオブジェクト化を避ける）
-- LMML/LMRB 両系譜の融合により薄い抽象・単一実装 interface が蓄積している。整理プランは `docs/plan/2026-06-01_統合リファクタリングプラン.md` を参照
+- Brain は `MaidBrain` が CORE / PANIC / AVOID / FIGHT / WORK / IDLE に分割。移動は `WALK_TARGET` + `MoveToTargetSink`

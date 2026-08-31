@@ -1,10 +1,10 @@
 # LittleMaidNeo ユーザードキュメント
 
-Minecraft 26.1 / NeoForge 向けメイドさん Mod の遊び方です。
+Minecraft 26.2 / NeoForge 向けメイドさん Mod の遊び方です。
 
 ## 導入
 
-1. NeoForge 26.1.x と Java 25 環境を用意する
+1. NeoForge 26.2.x と Java 25 環境を用意する
 2. 配布 jar を `mods/` に入れる
 3. （任意）外部ボイス・テクスチャパックはゲームディレクトリの `LMMLResources/` へ
 
@@ -41,6 +41,26 @@ Minecraft 26.1 / NeoForge 向けメイドさん Mod の遊び方です。
 
 表示名は「護衛剣士」「自由弓兵」のように移動×お仕事でまとめて出ます。
 
+datapack でジョブを足す場合は Item Data Map `littlemaidneo:maid_job`（`data/<ns>/data_maps/item/maid_job.json`）:
+
+```json
+{
+  "values": {
+    "minecraft:iron_sword": { "job": "combat", "priority": 400 }
+  }
+}
+```
+
+`job` は `combat` / `cooking` / `ripper` / `torcher` / `healer` / `pharmcist`。優先度 400 以上がインベントリからの新規開始。手持ちの対応は `/lmn job` で確認できます。インゲームのタグ編集画面はありません。
+
+## 頭飾り
+
+ヘルメットは頭防具スロット（防御あり）。カボチャや頭蓋骨などの頭飾りは、その下の専用スロットへ。両方同時に付けられます。
+
+## グループ
+
+メイドさん管理画面の上部にグループ名を入れ、カードの Set で割り当てます。検索は名前／状態／グループ。コマンドは `/lmn maid group <name>`（付近のご主人のメイドさん）、解除は `/lmn maid group clear`。
+
 ## お給料
 
 未払いが続くとストライキになります。GUI に未払い日数／ストライキ表示があります。砂糖などのお給料アイテムを渡してください。
@@ -53,6 +73,9 @@ Minecraft 26.1 / NeoForge 向けメイドさん Mod の遊び方です。
 | `/lmn models list` | モデル一覧 |
 | `/lmn maid count` | 付近のメイドさん数 |
 | `/lmn maid tp` | 自分のメイドさんを呼び寄せ |
+| `/lmn maid group <name>` | 付近のメイドさんにグループを付ける |
+| `/lmn maid group clear` | 付近のメイドさんのグループを外す |
+| `/lmn job` | 手持ちアイテムのジョブ Data Map と付近のメイドさんのジョブ |
 | `/lmn config bake` | コンフィグを再 bake（サーバー設定の再適用） |
 | `/lmn debug dump` | デバッグ情報 |
 

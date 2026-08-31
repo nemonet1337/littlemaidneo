@@ -1,7 +1,6 @@
 package work.nemonet.littlemaidneo.entity;
 
 import net.minecraft.resources.Identifier;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.HumanoidArm;
@@ -9,24 +8,19 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
+import work.nemonet.littlemaidneo.entity.compound.MultiModelView;
 import work.nemonet.littlemaidneo.maidmodel.LMModel;
-import work.nemonet.littlemaidneo.resource.holder.TextureHolder;
 import work.nemonet.littlemaidneo.resource.util.ArmorPart;
 import work.nemonet.littlemaidneo.resource.util.ArmorSets;
-import work.nemonet.littlemaidneo.resource.util.TextureColors;
 import work.nemonet.littlemaidneo.resource.util.TexturePair;
 import work.nemonet.littlemaidneo.setup.ModRegistration;
 
 import java.util.Optional;
 
 /**
- * GUI プレビュー等で使う軽量マルチモデルエンティティ。
- * <p>
- * {@code @Deprecated} 付き API は旧 IHasMultiModel 互換のための薄い委譲であり、
- * 外部モデルパック／既存 GUI との接続を維持する目的で残している（削除予定ではない）。
- * 新規コードからは非 Deprecated のゲッター／セッターを使うこと。
+ * GUI プレビュー用の軽量マルチモデルエンティティ。描画クエリだけを実装する。
  */
-public class DummyModelEntity extends LivingEntity implements IHasMultiModel {
+public class DummyModelEntity extends LivingEntity implements MultiModelView {
     private LMModel<?> skinModel;
     private TexturePair skinTexture;
     private final ArmorSets<ArmorPart> armorsData = new ArmorSets<>();
@@ -76,60 +70,23 @@ public class DummyModelEntity extends LivingEntity implements IHasMultiModel {
         return HumanoidArm.RIGHT;
     }
 
-    @Deprecated
-    @Override
-    public void setTextureHolder(TextureHolder textureHolder, IHasMultiModel.Layer layer, IHasMultiModel.Part part) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Deprecated
-    @Override
-    public TextureHolder getTextureHolder(IHasMultiModel.Layer layer, IHasMultiModel.Part part) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Deprecated
-    @Override
-    public void setColorMM(TextureColors color) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Deprecated
-    @Override
-    public TextureColors getColorMM() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Deprecated
-    @Override
-    public void setContractMM(boolean isContract) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Deprecated
-    @Override
-    public boolean isContractMM() {
-        throw new UnsupportedOperationException();
-    }
-
     @Override
     public Optional<LMModel<?>> getModel(IHasMultiModel.Layer layer, IHasMultiModel.Part part) {
         if (layer == IHasMultiModel.Layer.SKIN) {
             return Optional.ofNullable(skinModel);
-        } else {
-            return armorsData.getArmor(part)
-                    .map(armorPart -> armorPart.getModel(layer));
         }
+        return armorsData.getArmor(part).map(armorPart -> armorPart.getModel(layer));
     }
-@Override
+
+    @Override
     public Optional<Identifier> getTexture(IHasMultiModel.Layer layer, IHasMultiModel.Part part, boolean isLight) {
         if (layer == IHasMultiModel.Layer.SKIN) {
-            if (skinTexture == null) return Optional.empty();
+            if (skinTexture == null) {
+                return Optional.empty();
+            }
             return Optional.ofNullable(skinTexture.getTexture(isLight));
-        } else {
-            return armorsData.getArmor(part)
-                    .map(armorPart -> armorPart.getTexture(layer, isLight));
         }
+        return armorsData.getArmor(part).map(armorPart -> armorPart.getTexture(layer, isLight));
     }
 
     @Override
@@ -140,12 +97,5 @@ public class DummyModelEntity extends LivingEntity implements IHasMultiModel {
     @Override
     public boolean isArmorGlint(IHasMultiModel.Part part) {
         return false;
-    }
-
-    @Deprecated
-    @Override
-    public boolean isAllowChangeTexture(Entity changer, TextureHolder textureHolder,
-                                        IHasMultiModel.Layer layer, IHasMultiModel.Part part) {
-        throw new UnsupportedOperationException();
     }
 }

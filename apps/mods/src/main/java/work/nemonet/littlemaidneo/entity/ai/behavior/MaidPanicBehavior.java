@@ -4,7 +4,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
-import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.ai.util.DefaultRandomPos;
 import net.minecraft.world.phys.Vec3;
@@ -14,13 +13,9 @@ import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 import java.util.Map;
 
 public class MaidPanicBehavior extends AbstractMaidBehavior {
-    private final float speed;
 
-    public MaidPanicBehavior(float speed) {
-        super(Map.of(
-                MemoryModuleType.WALK_TARGET, MemoryStatus.VALUE_ABSENT
-        ));
-        this.speed = speed;
+    public MaidPanicBehavior() {
+        super(Map.of());
     }
 
     @Override
@@ -28,14 +23,33 @@ public class MaidPanicBehavior extends AbstractMaidBehavior {
         if (TameableUtil.hasTameOwner(mob)) {
             return false;
         }
-        return mob.getLastHurtByMob() != null || mob.isOnFire();
+        boolean recentlyHurt = mob.getLastHurtByMob() != null
+                && mob.tickCount - mob.getLastHurtByMobTimestamp() < 100;
+        return recentlyHurt || mob.isOnFire();
+    }
+
+    @Override
+    protected boolean canStillUse(ServerLevel level, LittleMaidEntity mob, long gameTime) {
+        return checkExtraStartConditions(level, mob);
     }
 
     @Override
     protected void start(ServerLevel level, LittleMaidEntity mob, long gameTime) {
+        setEscapeWalk(level, mob);
+    }
+
+    @Override
+    protected void tick(ServerLevel level, LittleMaidEntity mob, long gameTime) {
+        if (!mob.getBrain().hasMemoryValue(MemoryModuleType.WALK_TARGET) || mob.getNavigation().isDone()) {
+            setEscapeWalk(level, mob);
+        }
+    }
+
+    private void setEscapeWalk(ServerLevel level, LittleMaidEntity mob) {
         Vec3 escapePos = findEscapePos(level, mob);
         if (escapePos != null) {
-            mob.getBrain().setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(escapePos, this.speed, 1));
+            float speed = LittleMaidEntity.getConfig().movement.escapeSpeed;
+            mob.getBrain().setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(escapePos, speed, 1));
         }
     }
 

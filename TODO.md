@@ -2,22 +2,20 @@
 
 ## 高
 
-（現時点で高優先度のコード欠陥はなし。機能要望は `sistr_TODO.md` を参照）
+- かまど使用マップ `USED_FURNACE_MAP` が static・次元非対応（despawn リーク）
 
 ## 中
 
-（現時点で中優先度のコード欠陥はなし）
+- 描画: `IHasMultiModel.Layer.isArmor()` の歴史的な反転（新規は `isArmorLayer()`）
+- `pharmcist` 誤字のリネーム（datafixer 必須）
 
 ## 低
 
-（現時点で低優先度のコード欠陥はなし）
+- 好感度（`sistr_TODO.md`、仕様未確定。凍結）
+- `IHasMultiModel.Layer.isArmor()` の命名（真偽がフィールドと逆。`ArmorPart` 依存）
+- GUI の `ChatFormatting` を `Style` へ
+- `MASTER_STANCE` SynchedEntityData 未使用
 
-## sistr_TODO 実装状況（Phase 3 監査結果）
+## 機能要望
 
-コード探索の結果、`sistr_TODO.md` の機能項目は**ほぼすべて未実装**（対応するクラス・分岐が存在しない）。実装済み・部分対応は以下のみ:
-
-- 部分対応: 薬剤師モードのポーション扱い（`MaidPharmcistBehavior` に POTION 系分岐あり）— ただし「無手でもモード続行」「メインハンド水瓶の醸造利用」は未対応
-- 未実装（コード上に痕跡なし）: ガード実装 / KMExtend 描画バグ調査 / 移動×お仕事の組み合わせ表示名 / 外部 Mod 連携 API / インベントリ開時の停止 / 頭装飾専用スロット / コンフィグ同期コマンド（`LMCommands` は reload・models・maid・debug のみ）/ ModelCaps 未実装埋め / 潜水（`MaidSwim` は水面浮上のみ）/ 経験値瓶改善 / ポーション・牛乳・金リンゴ給餌 / 火矢 / インゲームモードトリガー / IFF リセットボタン / モード・待機アイコン化 / お給料状態表示 / お散歩モード（`MaidMode` は FREEDOM/ESCORT/TRACER のみ）/ グループ分け / 利き手設定 / 好感度 / ユーザードキュメント
-- バグ系（赤石検知迷子・マルチ安定性）は再現調査が必要なため sistr_TODO 側で継続管理
-- 対応済み: `TargetingSystem.Mob/Maid` の equals/hashCode 明示（entity 同一性に委譲、戦闘モードは identity に含めない）
-
+詳細は `sistr_TODO.md` を参照。

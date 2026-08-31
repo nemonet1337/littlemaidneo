@@ -117,7 +117,7 @@ public class MaidTorcherBehavior extends AbstractMaidBehavior {
 
     @Override
     protected void start(ServerLevel level, LittleMaidEntity mob, long gameTime) {
-        mob.getNavigation().stop();
+        mob.getBrain().eraseMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.WALK_TARGET);
         mob.play(LMSounds.FIND_TARGET_D);
         mob.setSprinting(true);
     }
@@ -183,6 +183,6 @@ public class MaidTorcherBehavior extends AbstractMaidBehavior {
         this.failPlaceTimer = 0;
         this.recalcPathTimer = 0;
         mob.setSprinting(false);
-        mob.getNavigation().stop();
+        mob.getBrain().eraseMemory(net.minecraft.world.entity.ai.memory.MemoryModuleType.WALK_TARGET);
     }
 }

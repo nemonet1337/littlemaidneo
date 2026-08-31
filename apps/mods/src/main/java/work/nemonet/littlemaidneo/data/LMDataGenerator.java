@@ -43,6 +43,7 @@ public class LMDataGenerator {
 
         // Advancements
         event.createProvider(LMAdvancementProvider::create);
+        event.createProvider(LMJobDataMapProvider::new);
 
         // Datapack built-in entries for Biome Modifiers
         RegistrySetBuilder registrySetBuilder = new RegistrySetBuilder()

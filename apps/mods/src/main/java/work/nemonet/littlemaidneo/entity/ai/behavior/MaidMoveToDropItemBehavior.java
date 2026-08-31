@@ -4,9 +4,12 @@ import com.google.common.collect.ImmutableMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
+import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.level.pathfinder.Path;
+import org.jetbrains.annotations.Nullable;
 import net.minecraft.world.phys.Vec3;
 import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
@@ -16,11 +19,11 @@ import work.nemonet.littlemaidneo.resource.util.LMSounds;
 import work.nemonet.littlemaidneo.setup.ModRegistration;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class MaidMoveToDropItemBehavior extends AbstractMaidBehavior {
+    @Nullable
+    private BlockPos dest;
 
     public MaidMoveToDropItemBehavior() {
         super(ImmutableMap.of(
@@ -51,20 +54,27 @@ public class MaidMoveToDropItemBehavior extends AbstractMaidBehavior {
         if (entity.getRandom().nextFloat() > 1.0f / freq || isInventoryFull(entity)) {
             return false;
         }
-        Stream<BlockPos> positions = findAroundDropItem(entity).stream().map(Entity::blockPosition);
-        Path path = positions.map(pos -> entity.getNavigation().createPath(pos, 0))
-                .filter(Objects::nonNull)
-                .filter(Path::canReach)
-                .findAny().orElse(null);
-        if (path == null) return false;
-
-        entity.getNavigation().moveTo(path, config.movement.pickupItemSpeed);
-        return true;
+        for (ItemEntity item : findAroundDropItem(entity)) {
+            Path path = entity.getNavigation().createPath(item.blockPosition(), 0);
+            if (path == null || !path.canReach()) {
+                continue;
+            }
+            this.dest = item.blockPosition();
+            entity.getBrain().setMemory(MemoryModuleType.WALK_TARGET,
+                    new WalkTarget(item.position(), config.movement.pickupItemSpeed, 0));
+            return true;
+        }
+        return false;
     }
 
     @Override
     protected boolean canStillUse(ServerLevel level, LittleMaidEntity entity, long gameTime) {
-        return !entity.getNavigation().isDone();
+        return dest != null && !entity.blockPosition().closerThan(dest, 1.5) && !isInventoryFull(entity);
+    }
+
+    @Override
+    protected void stop(ServerLevel level, LittleMaidEntity entity, long gameTime) {
+        this.dest = null;
     }
 
     @Override

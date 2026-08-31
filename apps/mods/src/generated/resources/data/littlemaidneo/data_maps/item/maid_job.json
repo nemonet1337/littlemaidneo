@@ -1,0 +1,36 @@
+{
+  "values": {
+    "#littlemaidneo:fencer_mode": {
+      "job": "combat",
+      "priority": 400
+    },
+    "#littlemaidneo:archer_mode": {
+      "job": "combat",
+      "priority": 400
+    },
+    "#littlemaidneo:cooking_mode": {
+      "job": "cooking",
+      "priority": 400
+    },
+    "#littlemaidneo:ripper_mode": {
+      "job": "ripper",
+      "priority": 400
+    },
+    "#littlemaidneo:torcher_mode": {
+      "job": "torcher",
+      "priority": 400
+    },
+    "#littlemaidneo:healer_mode": {
+      "job": "healer",
+      "priority": 400
+    },
+    "#littlemaidneo:pharmcist_mode": {
+      "job": "pharmcist",
+      "priority": 400
+    },
+    "#littlemaidneo:pharmcist_ingredients": {
+      "job": "pharmcist",
+      "priority": 100
+    }
+  }
+}

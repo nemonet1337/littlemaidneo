@@ -22,7 +22,6 @@ import work.nemonet.littlemaidneo.entity.LittleMaidScreenHandler;
 import net.minecraft.ChatFormatting;
 import work.nemonet.littlemaidneo.entity.util.MaidMode;
 import work.nemonet.littlemaidneo.network.*;
-import work.nemonet.littlemaidneo.util.Tuple;
 public class LittleMaidScreen
         extends AbstractContainerScreen<LittleMaidScreenHandler> {
     private IconButtonWidget changeMovingModeButton;
@@ -310,7 +309,7 @@ public class LittleMaidScreen
         if (isSettingWISS) {
             // スロットをクリックしたなら、そのスロットの一つ手前までで設定する
             getMaidSlotPos(mouseX, mouseY).ifPresent(pos -> {
-                workItemSlotSize = convSlotIndex(pos.a(), pos.b());
+                workItemSlotSize = convSlotIndex(pos.x(), pos.y());
                 NetworkHandler.sendSetWorkItemSlotSizeC2S(
                         owner,
                         workItemSlotSize);
@@ -323,7 +322,9 @@ public class LittleMaidScreen
         return super.mouseClicked(event, handled);
     }
 
-    public Optional<Tuple<Integer, Integer>> getMaidSlotPos(
+    private record SlotPos(int x, int y) {}
+
+    public Optional<SlotPos> getMaidSlotPos(
             double x,
             double y) {
         float left = (width - imageWidth) / 2F;
@@ -339,7 +340,7 @@ public class LittleMaidScreen
                 y < baseTop + size * slotRow) {
             int indexX = Mth.floor((x - baseLeft) / size);
             int indexY = Mth.floor((y - baseTop) / size);
-            return Optional.of(new Tuple<>(indexX, indexY));
+            return Optional.of(new SlotPos(indexX, indexY));
         }
         return Optional.empty();
     }
@@ -485,6 +486,18 @@ public class LittleMaidScreen
                 this.imageHeight,
                 TEXTURE_SIZE,
                 TEXTURE_SIZE);
+        // 頭飾りスロット（テクスチャに穴が無いのでヘルメット枠を流用）
+        context.blit(
+                RenderPipelines.GUI_TEXTURED,
+                GUI,
+                relX + 8,
+                relY + 26,
+                8.0f,
+                8.0f,
+                18,
+                18,
+                TEXTURE_SIZE,
+                TEXTURE_SIZE);
     }
 
     @Override
@@ -520,7 +533,7 @@ public class LittleMaidScreen
         var optional = getMaidSlotPos(mouseX, mouseY);
         if (optional.isPresent()) {
             var pos = optional.get();
-            int index = convSlotIndex(pos.a(), pos.b());
+            int index = convSlotIndex(pos.x(), pos.y());
             drawWorkItemSlotOverlay(context, index);
         } else {
             drawWorkItemSlotOverlay(context, workItemSlotSize);

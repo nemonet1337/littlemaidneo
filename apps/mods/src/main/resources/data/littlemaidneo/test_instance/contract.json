@@ -1,0 +1,9 @@
+{
+  "environment": "minecraft:default",
+  "structure": "littlemaidneo:small_floor",
+  "max_ticks": 40,
+  "setup_ticks": 5,
+  "required": true,
+  "type": "minecraft:function",
+  "function": "littlemaidneo:contract"
+}

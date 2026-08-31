@@ -14,6 +14,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.consume_effects.ApplyStatusEffectsConsumeEffect;
 import work.nemonet.littlemaidneo.entity.LMHasInventory;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
+import work.nemonet.littlemaidneo.entity.mode.ModeHelpers;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 import work.nemonet.littlemaidneo.resource.util.LMSounds;
 
@@ -23,6 +24,7 @@ public class MaidHealerBehavior extends AbstractMaidBehavior {
     protected LivingEntity owner;
     protected int foodIndex;
     protected int potionIndex;
+    protected int timeToRecalcPath;
 
     public MaidHealerBehavior() {
         super(Map.of(
@@ -42,6 +44,8 @@ public class MaidHealerBehavior extends AbstractMaidBehavior {
         }
         LivingEntity o = TameableUtil.getTameOwner(mob).orElse(null);
         if (!(o instanceof Player)) return false;
+        double range = LittleMaidEntity.getConfig().work.maxTargetRange;
+        if (mob.distanceToSqr(o) > range * range) return false;
         this.owner = o;
         boolean isHunger = ((Player) o).getFoodData().needsFood();
         boolean fullHealth = o.getHealth() >= o.getMaxHealth();
@@ -56,6 +60,8 @@ public class MaidHealerBehavior extends AbstractMaidBehavior {
         }
         LivingEntity o = TameableUtil.getTameOwner(mob).orElse(null);
         if (!(o instanceof Player)) return false;
+        double range = LittleMaidEntity.getConfig().work.maxTargetRange;
+        if (mob.distanceToSqr(o) > range * range) return false;
         boolean isHunger = ((Player) o).getFoodData().needsFood();
         boolean fullHealth = o.getMaxHealth() <= o.getHealth();
         this.owner = o;
@@ -110,6 +116,20 @@ public class MaidHealerBehavior extends AbstractMaidBehavior {
 
     @Override
     protected void tick(ServerLevel level, LittleMaidEntity mob, long gameTime) {
+        if (owner == null) {
+            return;
+        }
+        mob.getLookControl().setLookAt(owner, 10.0f, mob.getMaxHeadXRot());
+        var navResult = ModeHelpers.approach(mob, owner, 1.0, timeToRecalcPath, 10, 2.0, 1);
+        timeToRecalcPath = navResult.nextTimer();
+        if (navResult.unreachable()) {
+            return;
+        }
+        if (mob.distanceToSqr(owner) > 4.0) {
+            return;
+        }
+        mob.getNavigation().stop();
+
         Container inventory = LMHasInventory.getInvAndHands(mob);
         if (foodIndex != -1 && foodIndex >= 0 && foodIndex < inventory.getContainerSize()) {
             ItemStack stack = inventory.getItem(foodIndex);

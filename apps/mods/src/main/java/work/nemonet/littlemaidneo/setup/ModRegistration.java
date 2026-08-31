@@ -1,10 +1,12 @@
 package work.nemonet.littlemaidneo.setup;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ai.village.poi.PoiType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.BlockItem;
@@ -12,7 +14,10 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.ChestBlock;
 import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.properties.NoteBlockInstrument;
@@ -67,6 +72,8 @@ public class ModRegistration {
             DeferredRegister.create(Registries.CREATIVE_MODE_TAB, LittleMaidNeo.MODID);
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
             DeferredRegister.create(Registries.BLOCK_ENTITY_TYPE, LittleMaidNeo.MODID);
+    public static final DeferredRegister<PoiType> POI_TYPES =
+            DeferredRegister.create(Registries.POINT_OF_INTEREST_TYPE, LittleMaidNeo.MODID);
     public static final DeferredRegister<MemoryModuleType<?>> MEMORY_MODULES =
             DeferredRegister.create(Registries.MEMORY_MODULE_TYPE, LittleMaidNeo.MODID);
     public static final DeferredRegister<SensorType<?>> SENSORS =
@@ -210,4 +217,35 @@ public class ModRegistration {
     public static final DeferredHolder<BlockEntityType<?>, BlockEntityType<SalaryBoxBlockEntity>> SALARY_BOX_BLOCK_ENTITY =
             BLOCK_ENTITIES.register("salary_box", () ->
                     new BlockEntityType<>(SalaryBoxBlockEntity::new, salaryBoxBlockInstance));
+
+    /**
+     * バニラかまど専用。溶鉱炉／燻製器は村人職場 POI（ARMORER / BUTCHER）と BlockState が衝突するため再利用する。
+     */
+    public static final DeferredHolder<PoiType, PoiType> FURNACE_POI =
+            POI_TYPES.register("furnace", () -> new PoiType(allStates(Blocks.FURNACE), 1, 1));
+
+    /** チェスト類。樽は FISHERMAN と衝突するため再利用する。 */
+    public static final DeferredHolder<PoiType, PoiType> CONTAINER_POI =
+            POI_TYPES.register("container", () -> new PoiType(chestStates(), 1, 1));
+
+    public static final DeferredHolder<PoiType, PoiType> SALARY_BOX_POI =
+            POI_TYPES.register("salary_box", () -> new PoiType(allStates(salaryBoxBlockInstance), 1, 1));
+
+    private static java.util.Set<BlockState> allStates(Block... blocks) {
+        java.util.Set<BlockState> states = new java.util.HashSet<>();
+        for (Block block : blocks) {
+            states.addAll(block.getStateDefinition().getPossibleStates());
+        }
+        return java.util.Set.copyOf(states);
+    }
+
+    private static java.util.Set<BlockState> chestStates() {
+        java.util.Set<BlockState> states = new java.util.HashSet<>();
+        for (Block block : BuiltInRegistries.BLOCK) {
+            if (block instanceof ChestBlock) {
+                states.addAll(block.getStateDefinition().getPossibleStates());
+            }
+        }
+        return java.util.Set.copyOf(states);
+    }
 }

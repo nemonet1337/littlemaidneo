@@ -37,7 +37,7 @@ public class LMArmorLayer<S extends MultiModelRenderState, M extends LMModel<S>>
                                LMModel<?> model, Identifier tex, boolean isLight, IHasMultiModel.Layer layer,
                                IHasMultiModel.Part part) {
         if (model == null || tex == null) return;
-        int lightVal = isLight ? 0xF00000 : light;
+        int lightVal = isLight ? net.minecraft.client.renderer.LightTexture.FULL_BRIGHT : light;
         // ルート解決とポーズ保存は submit 時点で行う（ラムダ実行時は別メイドさんの状態に書き換わっている）
         ModelPart root = layer == IHasMultiModel.Layer.OUTER ? model.getOuterRoot() : model.getInnerRoot();
         if (root == null) root = model.getSkinRoot();

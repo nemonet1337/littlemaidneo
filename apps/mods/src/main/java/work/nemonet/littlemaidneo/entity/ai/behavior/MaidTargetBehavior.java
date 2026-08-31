@@ -3,6 +3,7 @@ package work.nemonet.littlemaidneo.entity.ai.behavior;
 import com.google.common.collect.ImmutableMap;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.targeting.TargetTagManager;
@@ -33,7 +34,7 @@ public class MaidTargetBehavior extends AbstractMaidBehavior {
     private boolean targeting(LittleMaidEntity entity) {
         var aroundMobs = getAroundMobs(entity);
         if (aroundMobs.isEmpty()) {
-            entity.setTarget(null);
+            clearTarget(entity);
             return false;
         }
         var aroundMaids = getAroundMaids(entity);
@@ -60,12 +61,22 @@ public class MaidTargetBehavior extends AbstractMaidBehavior {
 
         if (targetOpt.isPresent()) {
             this.target = targetOpt.get();
-            entity.setTarget(targetOpt.get());
+            setAttackTarget(entity, targetOpt.get());
             return true;
         }
 
-        entity.setTarget(null);
+        clearTarget(entity);
         return false;
+    }
+
+    private static void setAttackTarget(LittleMaidEntity entity, Mob target) {
+        entity.setTarget(target);
+        entity.getBrain().setMemory(MemoryModuleType.ATTACK_TARGET, target);
+    }
+
+    private static void clearTarget(LittleMaidEntity entity) {
+        entity.setTarget(null);
+        entity.getBrain().eraseMemory(MemoryModuleType.ATTACK_TARGET);
     }
 
     @Override
@@ -78,9 +89,9 @@ public class MaidTargetBehavior extends AbstractMaidBehavior {
         }
         recalc = Math.max(0, recalc - 1);
         if (recalc > 0) {
-            recalc = 10;
             return true;
         }
+        recalc = 10;
         return targeting(entity);
     }
 
@@ -93,7 +104,7 @@ public class MaidTargetBehavior extends AbstractMaidBehavior {
     protected void stop(ServerLevel level, LittleMaidEntity entity, long gameTime) {
         recalc = 0;
         this.target = null;
-        entity.setTarget(null);
+        clearTarget(entity);
     }
 
     private List<Mob> getAroundMobs(LittleMaidEntity entity) {

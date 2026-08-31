@@ -31,8 +31,9 @@ public class MaidTeleportBehavior extends AbstractMaidBehavior {
         double distanceSq = entity.distanceToSqr(tameOwner);
         LMNConfig config = LittleMaidEntity.getConfig();
 
-        // 通常の追従テレポート条件
-        double startDist = config.movement.teleportStartDistance;
+        double startDist = entity.isEmergency()
+                ? config.movement.emergencyTeleportStartDistance
+                : config.movement.teleportStartDistance;
         if (distanceSq >= startDist * startDist) {
             this.owner = tameOwner;
             return true;
@@ -47,7 +48,9 @@ public class MaidTeleportBehavior extends AbstractMaidBehavior {
         if (this.owner == null || !this.owner.isAlive()) return false;
 
         LMNConfig config = LittleMaidEntity.getConfig();
-        double startDist = config.movement.teleportStartDistance;
+        double startDist = entity.isEmergency()
+                ? config.movement.emergencyTeleportStartDistance
+                : config.movement.teleportStartDistance;
 
         return entity.distanceToSqr(this.owner) >= startDist * startDist;
     }

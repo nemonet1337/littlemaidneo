@@ -3,10 +3,8 @@ package work.nemonet.littlemaidneo.resource.util;
 import net.minecraft.resources.Identifier;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
 import work.nemonet.littlemaidneo.maidmodel.LMModel;
-import work.nemonet.littlemaidneo.resource.holder.TextureHolder;
 
-import java.lang.ref.WeakReference;
-import java.util.*;
+import java.util.Objects;
 
 public class ArmorPart {
     private final TexturePair innerTex;
@@ -24,12 +22,12 @@ public class ArmorPart {
     }
 
     public Identifier getTexture(IHasMultiModel.Layer layer, boolean isLight) {
-        if (layer.isArmor()) throw new IllegalArgumentException("取得できません。");
+        if (layer == IHasMultiModel.Layer.SKIN) throw new IllegalArgumentException("取得できません。");
         return layer == IHasMultiModel.Layer.INNER ? innerTex.getTexture(isLight) : outerTex.getTexture(isLight);
     }
 
     public LMModel<?> getModel(IHasMultiModel.Layer layer) {
-        if (layer.isArmor()) throw new IllegalArgumentException("取得できません。");
+        if (layer == IHasMultiModel.Layer.SKIN) throw new IllegalArgumentException("取得できません。");
         return layer == IHasMultiModel.Layer.INNER ? innerModel : outerModel;
     }
 
@@ -48,7 +46,6 @@ public class ArmorPart {
     }
 
     public static final class Builder {
-        private static final Map<TextureHolder, List<WeakReference<ArmorPart>>> REFERENCES = new HashMap<>();
         private Identifier innerTex;
         private Identifier innerTexLight;
         private Identifier outerTex;

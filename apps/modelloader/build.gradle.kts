@@ -1,5 +1,5 @@
-// apps/modelloader — 外部モデル/テクスチャ/ボイスパック読み込み基盤（旧 LMML 系）
-// resource/classloader（ASM リマップ）と maidmodel/ は保護コア A。削除・破壊的変更厳禁。
+// apps/modelloader — 外部テクスチャ/ボイスパック読み込みと内蔵 ModelPart モデル。
+// ボイス（.cfg/.ogg）と PNG テクスチャの命名は保護コア B。外部 .class モデルパック互換は廃止済み。
 plugins {
     `java-library`
     id("net.neoforged.moddev")

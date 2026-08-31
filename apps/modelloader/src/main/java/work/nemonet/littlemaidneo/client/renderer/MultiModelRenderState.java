@@ -6,11 +6,12 @@ import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
+import work.nemonet.littlemaidneo.entity.compound.MultiModelView;
 import work.nemonet.littlemaidneo.maidmodel.LMModel;
 import work.nemonet.littlemaidneo.resource.util.ArmorSets;
 
 public class MultiModelRenderState extends LivingEntityRenderState {
-    public IHasMultiModel multiModel;
+    public MultiModelView multiModel;
     public LivingEntity entity;
     public HumanoidArm mainArm = HumanoidArm.RIGHT;
     public ItemStack mainHandItem = ItemStack.EMPTY;
@@ -63,4 +64,56 @@ public class MultiModelRenderState extends LivingEntityRenderState {
     ) {}
 
     public ArmorRenderState[] armorStates = new ArmorRenderState[4];
+
+    /**
+     * スキン／防具のモデルとテクスチャを {@code view} からこの state へコピーする。
+     */
+    public void fillFrom(LivingEntity entity, MultiModelView view, float partialTick) {
+        this.multiModel = view;
+        this.entity = entity;
+        this.mainArm = entity.getMainArm();
+        this.mainHandItem = entity.getMainHandItem();
+        this.offHandItem = entity.getOffhandItem();
+        this.walkAnimationPos = entity.walkAnimation.position(partialTick);
+        this.walkAnimationSpeed = entity.walkAnimation.speed(partialTick);
+
+        this.skinModel = view.getModel(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD).orElse(null);
+        this.skinTexture = view.getTexture(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD, false).orElse(null);
+        this.skinTextureLight = view.getTexture(IHasMultiModel.Layer.SKIN, IHasMultiModel.Part.HEAD, true).orElse(null);
+
+        this.armorsVisible.clear();
+        this.armorsGlint.clear();
+        this.innerModels.clear();
+        this.outerModels.clear();
+        this.innerTextures.clear();
+        this.innerTexturesLight.clear();
+        this.outerTextures.clear();
+        this.outerTexturesLight.clear();
+
+        for (IHasMultiModel.Part part : IHasMultiModel.Part.values()) {
+            boolean visible = view.isArmorVisible(part);
+            boolean glint = view.isArmorGlint(part);
+            this.armorsVisible.setArmor(visible, part);
+            this.armorsGlint.setArmor(glint, part);
+
+            LMModel<?> innerModel = view.getModel(IHasMultiModel.Layer.INNER, part).orElse(null);
+            LMModel<?> outerModel = view.getModel(IHasMultiModel.Layer.OUTER, part).orElse(null);
+            this.innerModels.setArmor(innerModel, part);
+            this.outerModels.setArmor(outerModel, part);
+
+            Identifier innerTex = view.getTexture(IHasMultiModel.Layer.INNER, part, false).orElse(null);
+            Identifier innerLight = view.getTexture(IHasMultiModel.Layer.INNER, part, true).orElse(null);
+            Identifier outerTex = view.getTexture(IHasMultiModel.Layer.OUTER, part, false).orElse(null);
+            Identifier outerLight = view.getTexture(IHasMultiModel.Layer.OUTER, part, true).orElse(null);
+            this.innerTextures.setArmor(innerTex, part);
+            this.innerTexturesLight.setArmor(innerLight, part);
+            this.outerTextures.setArmor(outerTex, part);
+            this.outerTexturesLight.setArmor(outerLight, part);
+
+            this.armorStates[part.getIndex()] = new ArmorRenderState(
+                    innerModel, outerModel,
+                    innerTex, innerLight, outerTex, outerLight,
+                    visible, glint);
+        }
+    }
 }

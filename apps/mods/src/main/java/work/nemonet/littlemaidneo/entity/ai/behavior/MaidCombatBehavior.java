@@ -8,7 +8,10 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.behavior.EntityTracker;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
+import net.minecraft.world.entity.ai.memory.WalkTarget;
 import net.minecraft.world.item.BowItem;
 import net.minecraft.world.item.CrossbowItem;
 import net.minecraft.world.item.ItemStack;
@@ -97,6 +100,7 @@ public class MaidCombatBehavior extends AbstractMaidBehavior {
             a.resetTask(mob);
             this.active = null;
         }
+        mob.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
     }
 
     private abstract static class BattleStyle {
@@ -155,12 +159,15 @@ public class MaidCombatBehavior extends AbstractMaidBehavior {
                 if (recalcPathCool <= 0) {
                     int maxRecalcPathCool = 10;
                     recalcPathCool = maxRecalcPathCool;
-                    mob.getNavigation().moveTo(this.target, speedFunc.apply(1.0f));
+                    mob.getBrain().setMemory(MemoryModuleType.WALK_TARGET, new WalkTarget(
+                            new EntityTracker(this.target, false),
+                            speedFunc.apply(1.0f),
+                            1));
                 }
                 // 接近中も盾を構える（視線があるときだけ）
                 tryRaiseShield(mob, shieldHand, true);
             } else {
-                mob.getNavigation().stop();
+                mob.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
                 if (canAttack(mob)) {
                     if (mob.isUsingItem()) {
                         mob.stopUsingItem();
@@ -260,7 +267,7 @@ public class MaidCombatBehavior extends AbstractMaidBehavior {
             mob.setAggressive(true);
             mob.setAimingBow(true);
             mob.play(LMSounds.FIND_TARGET_N);
-            mob.getNavigation().stop();
+            mob.getBrain().eraseMemory(MemoryModuleType.WALK_TARGET);
         }
 
         @Override

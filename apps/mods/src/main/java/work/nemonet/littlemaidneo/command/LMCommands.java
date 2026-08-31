@@ -1,6 +1,7 @@
 package work.nemonet.littlemaidneo.command;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
@@ -11,7 +12,12 @@ import work.nemonet.littlemaidneo.resource.loader.LMFileLoader;
 import work.nemonet.littlemaidneo.resource.manager.LMModelManager;
 import work.nemonet.littlemaidneo.resource.manager.LMConfigManager;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
+import work.nemonet.littlemaidneo.entity.util.MaidJobEntry;
+import work.nemonet.littlemaidneo.entity.util.MaidManager;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
+import work.nemonet.littlemaidneo.setup.LMDataMaps;
+import work.nemonet.littlemaidneo.setup.ModRegistration;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.server.level.ServerPlayer;
@@ -46,6 +52,17 @@ public class LMCommands {
                         .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                         .executes(LMCommands::executeMaidDismiss)
                     )
+                    .then(Commands.literal("group")
+                        .then(Commands.literal("clear")
+                            .executes(ctx -> executeMaidGroup(ctx, ""))
+                        )
+                        .then(Commands.argument("name", StringArgumentType.greedyString())
+                            .executes(ctx -> executeMaidGroup(ctx, StringArgumentType.getString(ctx, "name")))
+                        )
+                    )
+                )
+                .then(Commands.literal("job")
+                    .executes(LMCommands::executeJobInspect)
                 )
                 .then(Commands.literal("config")
                     .then(Commands.literal("bake")
@@ -85,6 +102,17 @@ public class LMCommands {
                         .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                         .executes(LMCommands::executeMaidDismiss)
                     )
+                    .then(Commands.literal("group")
+                        .then(Commands.literal("clear")
+                            .executes(ctx -> executeMaidGroup(ctx, ""))
+                        )
+                        .then(Commands.argument("name", StringArgumentType.greedyString())
+                            .executes(ctx -> executeMaidGroup(ctx, StringArgumentType.getString(ctx, "name")))
+                        )
+                    )
+                )
+                .then(Commands.literal("job")
+                    .executes(LMCommands::executeJobInspect)
                 )
                 .then(Commands.literal("config")
                     .then(Commands.literal("bake")
@@ -177,6 +205,74 @@ public class LMCommands {
         }
         source.sendSystemMessage(Component.translatable("commands.littlemaidneo.maid.dismiss.success", dismissCount));
         return dismissCount;
+    }
+
+    private static int executeMaidGroup(CommandContext<CommandSourceStack> context, String groupName) {
+        CommandSourceStack source = context.getSource();
+        Entity executor = source.getEntity();
+        if (!(executor instanceof ServerPlayer player)) {
+            source.sendFailure(Component.translatable("commands.littlemaidneo.executor.not_player"));
+            return 0;
+        }
+
+        String group = MaidManager.sanitizeGroup(groupName);
+        MaidManager manager = player.getData(ModRegistration.MAID_MANAGER_ATTACHMENT.get());
+        AABB box = player.getBoundingBox().inflate(16.0);
+        List<LittleMaidEntity> maids = player.level().getEntitiesOfClass(LittleMaidEntity.class, box);
+        int count = 0;
+        for (LittleMaidEntity maid : maids) {
+            if (maid.isTame() && TameableUtil.getTameOwnerUuid(maid).filter(uuid -> uuid.equals(player.getUUID())).isPresent()) {
+                manager.registerMaid(maid);
+                manager.setGroup(maid.getUUID(), group);
+                count++;
+            }
+        }
+        if (group.isEmpty()) {
+            source.sendSystemMessage(Component.translatable("commands.littlemaidneo.maid.group.cleared", count));
+        } else {
+            source.sendSystemMessage(Component.translatable("commands.littlemaidneo.maid.group.success", count, group));
+        }
+        return count;
+    }
+
+    private static int executeJobInspect(CommandContext<CommandSourceStack> context) {
+        CommandSourceStack source = context.getSource();
+        Entity executor = source.getEntity();
+        if (executor instanceof ServerPlayer player) {
+            ItemStack held = player.getMainHandItem();
+            if (held.isEmpty()) {
+                source.sendSystemMessage(Component.translatable("commands.littlemaidneo.job.held.empty"));
+            } else {
+                MaidJobEntry mapped = held.getItemHolder().getData(LMDataMaps.MAID_JOB);
+                if (mapped != null) {
+                    source.sendSystemMessage(Component.translatable(
+                            "commands.littlemaidneo.job.held.mapped",
+                            held.getHoverName(),
+                            mapped.job(),
+                            mapped.priority()));
+                } else {
+                    source.sendSystemMessage(Component.translatable(
+                            "commands.littlemaidneo.job.held.unmapped",
+                            held.getHoverName()));
+                }
+            }
+        }
+
+        if (executor == null) {
+            source.sendFailure(Component.translatable("commands.littlemaidneo.executor.null"));
+            return 0;
+        }
+        AABB box = executor.getBoundingBox().inflate(32.0);
+        List<LittleMaidEntity> maids = source.getLevel().getEntitiesOfClass(LittleMaidEntity.class, box);
+        source.sendSystemMessage(Component.translatable("commands.littlemaidneo.job.nearby.header", maids.size()));
+        for (LittleMaidEntity maid : maids) {
+            source.sendSystemMessage(Component.translatable(
+                    "commands.littlemaidneo.job.nearby.entry",
+                    maid.getName(),
+                    maid.getActiveJobName(),
+                    maid.getModeName().orElse("-")));
+        }
+        return maids.size();
     }
 
     private static int executeDebugDump(CommandContext<CommandSourceStack> context) {

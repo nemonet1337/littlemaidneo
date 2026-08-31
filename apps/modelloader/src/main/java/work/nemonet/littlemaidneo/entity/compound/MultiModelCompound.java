@@ -115,11 +115,12 @@ public class MultiModelCompound implements IHasMultiModel {
         dataBuilder.innerTexLight(textureHolder.getArmorTexture(Layer.INNER, armorName, damagePercent, true).orElse(null));
         dataBuilder.outerTex(textureHolder.getArmorTexture(Layer.OUTER, armorName, damagePercent, false).orElse(null));
         dataBuilder.outerTexLight(textureHolder.getArmorTexture(Layer.OUTER, armorName, damagePercent, true).orElse(null));
-        armorsData.setArmor(dataBuilder.build(), part);
+        ArmorPart built = dataBuilder.build();
+        armorsData.setArmor(built, part);
         LMNLib.LOGGER.info("[ArmorDebug] updateArmorPart part={} armorName='{}' holder={} innerTex={} outerTex={}",
                 part, armorName, textureHolder.getTextureName(),
-                dataBuilder.build().getTexture(Layer.INNER, false),
-                dataBuilder.build().getTexture(Layer.OUTER, false));
+                built.getTexture(Layer.INNER, false),
+                built.getTexture(Layer.OUTER, false));
     }
 
     @Override

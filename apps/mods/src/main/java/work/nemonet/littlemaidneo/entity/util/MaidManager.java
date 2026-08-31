@@ -26,6 +26,8 @@ public interface MaidManager {
 
     List<LMInfo> getMaidList();
 
+    boolean setGroup(UUID id, String group);
+
     void writeMaidManager(ValueOutput output);
 
     void readMaidManager(ValueInput input);
@@ -42,6 +44,7 @@ public interface MaidManager {
         protected final Status status;
         protected final BlockPos lastPos;
         protected final String worldId;
+        protected String group = "";
 
         protected LMInfo(UUID id, String name, Status status, BlockPos lastPos, String worldId) {
             this.id = id;
@@ -63,12 +66,23 @@ public interface MaidManager {
             return status;
         }
 
+        public String group() {
+            return group == null ? "" : group;
+        }
+
+        public void setGroup(String group) {
+            this.group = sanitizeGroup(group);
+        }
+
         public void write(ValueOutput output) {
             output.putString("name", name);
             output.putString("status", status.name());
             output.store("id", UUIDUtil.CODEC, id);
             output.putIntArray("lastPos", new int[]{lastPos.getX(), lastPos.getY(), lastPos.getZ()});
             output.putString("worldId", worldId);
+            if (!group().isEmpty()) {
+                output.putString("group", group());
+            }
             var entityId = getEntityId();
             if (entityId != -1) {
                 output.putInt("entityId", entityId);
@@ -91,18 +105,22 @@ public interface MaidManager {
                     .orElse(BlockPos.ZERO);
             String worldId = input.getStringOr("worldId", "");
             int entityId = input.getIntOr("entityId", -1);
+            String group = input.getStringOr("group", "");
 
+            LMInfo info;
             if (status == Status.ALIVE) {
-                return new MaidLMInfo(id, name, lastPos, worldId, null, entityId);
+                info = new MaidLMInfo(id, name, lastPos, worldId, null, entityId);
             } else if (status == Status.SOUL_ENTITY) {
                 var soulNbt = input.read("soul", CompoundTag.CODEC).orElse(null);
                 var soul = soulNbt != null ? MaidSoulData.fromNbt(soulNbt) : null;
-                return new SoulEntityLMInfo(id, name, lastPos, worldId, null, soul, entityId);
+                info = new SoulEntityLMInfo(id, name, lastPos, worldId, null, soul, entityId);
             } else {
                 var soulNbt = input.read("soul", CompoundTag.CODEC).orElse(null);
                 var soul = soulNbt != null ? MaidSoulData.fromNbt(soulNbt) : null;
-                return new SoulLMInfo(id, name, soul);
+                info = new SoulLMInfo(id, name, soul);
             }
+            info.setGroup(group);
+            return info;
         }
 
         public Optional<Entity> getEntityClient(Level world) {
@@ -271,6 +289,23 @@ public interface MaidManager {
             return -1;
         }
 
+    }
+
+    static String sanitizeGroup(String group) {
+        if (group == null) {
+            return "";
+        }
+        String trimmed = group.trim();
+        if (trimmed.isEmpty()
+                || trimmed.equals("-")
+                || trimmed.equalsIgnoreCase("none")
+                || trimmed.equalsIgnoreCase("clear")) {
+            return "";
+        }
+        if (trimmed.length() > 32) {
+            trimmed = trimmed.substring(0, 32);
+        }
+        return trimmed.replace('\n', ' ').replace('\r', ' ');
     }
 
     enum Status {

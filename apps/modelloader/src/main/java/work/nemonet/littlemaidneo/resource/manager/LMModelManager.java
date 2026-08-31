@@ -41,16 +41,25 @@ public class LMModelManager {
         return defaultLMModel;
     }
 
-    public record ModelFactory(
-        Supplier<LMModel<?>> skinFactory,
-        Supplier<LMModel<?>> innerFactory,
-        Supplier<LMModel<?>> outerFactory
-    ) {
+    public static final class ModelFactory {
+        private final Supplier<LMModel<?>> skinFactory;
+        private final Supplier<LMModel<?>> innerFactory;
+        private final Supplier<LMModel<?>> outerFactory;
+        private LMModel<?> skin;
+        private LMModel<?> inner;
+        private LMModel<?> outer;
+
+        public ModelFactory(Supplier<LMModel<?>> skinFactory, Supplier<LMModel<?>> innerFactory, Supplier<LMModel<?>> outerFactory) {
+            this.skinFactory = skinFactory;
+            this.innerFactory = innerFactory;
+            this.outerFactory = outerFactory;
+        }
+
         public LMModel<?> getModel(IHasMultiModel.Layer layer) {
             return switch (layer) {
-                case SKIN -> skinFactory.get();
-                case INNER -> innerFactory.get();
-                case OUTER -> outerFactory.get();
+                case SKIN -> skin != null ? skin : (skin = skinFactory.get());
+                case INNER -> inner != null ? inner : (inner = innerFactory.get());
+                case OUTER -> outer != null ? outer : (outer = outerFactory.get());
             };
         }
     }

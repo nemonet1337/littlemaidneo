@@ -19,12 +19,12 @@ import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
+import work.nemonet.littlemaidneo.entity.ai.WorkPoi;
 import work.nemonet.littlemaidneo.entity.mode.ModeHelpers;
 import work.nemonet.littlemaidneo.resource.util.LMSounds;
-import work.nemonet.littlemaidneo.util.AbstractFurnaceAccessor;
-import work.nemonet.littlemaidneo.util.BlockFinder;
+import work.nemonet.littlemaidneo.setup.ModRegistration;
+import net.minecraft.world.entity.ai.village.poi.PoiTypes;
 
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -109,7 +109,7 @@ public class MaidCookingBehavior extends AbstractMaidBehavior implements Persist
         if (!result.isEmpty()) {
             return true;
         }
-        boolean burning = ((AbstractFurnaceAccessor) furnace).isBurningFire_LM();
+        boolean burning = ModeHelpers.isFurnaceLit(furnace);
         if (burning) {
             for (int availableSlot : furnace.getSlotsForFace(Direction.UP)) {
                 if (!furnace.getItem(availableSlot).isEmpty()) {
@@ -117,7 +117,7 @@ public class MaidCookingBehavior extends AbstractMaidBehavior implements Persist
                 }
             }
         }
-        var recipeType = ((AbstractFurnaceAccessor) furnace).getRecipeType_LM();
+        var recipeType = ModeHelpers.furnaceRecipeType(furnace);
         return (burning || getFuel(mob).isPresent())
                 && getAnyCookableItem(mob, recipeType, i -> true).isPresent();
     }
@@ -148,7 +148,7 @@ public class MaidCookingBehavior extends AbstractMaidBehavior implements Persist
         }
 
         Container inventory = mob.getInventory();
-        RecipeType<? extends AbstractCookingRecipe> recipeType = ((AbstractFurnaceAccessor) furnace).getRecipeType_LM();
+        RecipeType<? extends AbstractCookingRecipe> recipeType = ModeHelpers.furnaceRecipeType(furnace);
         playSoundCool--;
 
         getCookable(mob, recipeType).ifPresent(cookableIndex -> tryInsertCookable(mob, furnace, inventory, cookableIndex));
@@ -184,8 +184,15 @@ public class MaidCookingBehavior extends AbstractMaidBehavior implements Persist
     }
 
     private Optional<BlockPos> findFurnacePos(LittleMaidEntity mob) {
-        return BlockFinder.searchTargetBlock(mob.blockPosition(), pos -> isTargetFurnace(mob, pos), pos -> isSearchable(mob, pos),
-                Arrays.asList(Direction.values()), 128);
+        if (!(mob.level() instanceof ServerLevel level)) {
+            return Optional.empty();
+        }
+        return WorkPoi.findClosest(
+                level,
+                mob.blockPosition(),
+                8,
+                type -> type.is(ModRegistration.FURNACE_POI) || type.is(PoiTypes.ARMORER) || type.is(PoiTypes.BUTCHER),
+                pos -> isSearchable(mob, pos) && isTargetFurnace(mob, pos));
     }
 
     private boolean isTargetFurnace(LittleMaidEntity mob, BlockPos pos) {
@@ -203,7 +210,7 @@ public class MaidCookingBehavior extends AbstractMaidBehavior implements Persist
     }
 
     private boolean canCookingFurnace(LittleMaidEntity mob, AbstractFurnaceBlockEntity tile) {
-        RecipeType<? extends AbstractCookingRecipe> recipeType = ((AbstractFurnaceAccessor) tile).getRecipeType_LM();
+        RecipeType<? extends AbstractCookingRecipe> recipeType = ModeHelpers.furnaceRecipeType(tile);
         for (int slot : tile.getSlotsForFace(Direction.UP)) {
             ItemStack stack = tile.getItem(slot);
             if (!stack.isEmpty())
