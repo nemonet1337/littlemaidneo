@@ -12,6 +12,10 @@ updates:
     labels:
       - dependencies
       - gradle
+    ignore:
+      # NeoForge / Minecraft が strictly 固定。単独バンプは compileClasspath が解決不能になる。
+      - dependency-name: "org.ow2.asm:*"
+      - dependency-name: "commons-io:commons-io"
     groups:
       neoforge:
         patterns:

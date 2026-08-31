@@ -42,8 +42,22 @@ repo/
 ### LMM Base Source ###
 #LMMBase/
 
-### Claude Code ###
-.claude/
+### Agent / local tooling ###
+# Share: .devcontainer/, .grok/config.toml, .claude/settings.json, .claude/rules/
+.claude/settings.local.json
+.mcp-auth/
+.headroom/
+
+### Other Code ###
 .gemini/
 .kilo/
 .kilocode/
+
+# Secrets / local credentials (do not commit)
+.env
+.env.*
+!.env.example
+.dev.vars
+*.pem
+credentials.json
+

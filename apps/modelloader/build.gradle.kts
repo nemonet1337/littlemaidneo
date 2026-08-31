@@ -13,9 +13,6 @@ neoForge {
 
 dependencies {
     api(project(":apps:common"))
-
-    // 外部 .class モデルパックの ASM リマップ（MultiModelClassTransformer）用
-    implementation("org.ow2.asm:asm:9.7")
-    implementation("org.ow2.asm:asm-tree:9.7")
-    implementation("commons-io:commons-io:2.15.1")
+    // ASM / commons-io は NeoForge が compile classpath に strictly 固定で供給する。
+    // 独自にバージョンを書くと Dependabot がより新しい版へ上げ、解決不能になる。
 }

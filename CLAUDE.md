@@ -58,7 +58,7 @@ LittleMaidNeo は、レガシー Mod 系譜 **LittleMaidRebirth (LMRB)** と **L
 - `./gradlew :apps:mods:runServer` — サーバー起動（`--nogui`）
 - `./gradlew :apps:mods:runGameTestServer` — GameTest 実行（namespace は `littlemaidneo`）
 - `./gradlew :apps:mods:mergeData` — データジェネレータ実行（出力先 `apps/mods/src/generated/resources/`）
-- CI: `.github/workflows/build.yml`（push/PR で `./gradlew build`、Java 25 / temurin）
+- CI: `.github/workflows/build.yml`（push/PR で `./gradlew build`、Java 25 / temurin）。main の Build 成功後に `.github/workflows/release.yml` が起動
 
 ## Localization and Communication Guidelines
 
