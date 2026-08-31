@@ -15,6 +15,7 @@
 - `IHasMultiModel.Layer.isArmor()` の命名（真偽がフィールドと逆。`ArmorPart` 依存）
 - GUI の `ChatFormatting` を `Style` へ
 - `MASTER_STANCE` SynchedEntityData 未使用
+- `LMAdvancementProvider` の `parent(Identifier)` が `[removal]`（`AdvancementHolder` へ置換）
 
 ## 機能要望
 

@@ -243,7 +243,7 @@ public class LMCommands {
             if (held.isEmpty()) {
                 source.sendSystemMessage(Component.translatable("commands.littlemaidneo.job.held.empty"));
             } else {
-                MaidJobEntry mapped = held.getItemHolder().getData(LMDataMaps.MAID_JOB);
+                MaidJobEntry mapped = held.getData(LMDataMaps.MAID_JOB);
                 if (mapped != null) {
                     source.sendSystemMessage(Component.translatable(
                             "commands.littlemaidneo.job.held.mapped",

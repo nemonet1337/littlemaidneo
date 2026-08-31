@@ -4,8 +4,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
@@ -51,7 +51,7 @@ public final class LMGameTests {
 
     public static void contract(GameTestHelper helper) {
         LittleMaidEntity maid = spawnMaid(helper, 2, 1, 2);
-        ServerPlayer player = helper.makeMockServerPlayer(GameType.SURVIVAL);
+        Player player = helper.makeMockServerPlayer(GameType.SURVIVAL);
         maid.contract(player, new ItemStack(Items.CAKE), false);
         helper.assertTrue(maid.isContract(), "maid should be contracted");
         helper.assertTrue(
@@ -77,7 +77,7 @@ public final class LMGameTests {
 
     private static LittleMaidEntity spawnContracted(GameTestHelper helper, int x, int y, int z) {
         LittleMaidEntity maid = spawnMaid(helper, x, y, z);
-        ServerPlayer player = helper.makeMockServerPlayer(GameType.SURVIVAL);
+        Player player = helper.makeMockServerPlayer(GameType.SURVIVAL);
         maid.contract(player, new ItemStack(Items.CAKE), false);
         TameableUtil.setWait(maid, false);
         return maid;

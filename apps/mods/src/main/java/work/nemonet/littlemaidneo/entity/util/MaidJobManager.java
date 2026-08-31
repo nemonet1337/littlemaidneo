@@ -109,7 +109,7 @@ public class MaidJobManager {
     }
 
     private static MaidJobEntry mappedJob(ItemStack stack) {
-        MaidJobEntry data = stack.getItemHolder().getData(LMDataMaps.MAID_JOB);
+        MaidJobEntry data = stack.getData(LMDataMaps.MAID_JOB);
         if (data != null) {
             return data;
         }
