@@ -1,6 +1,5 @@
 package work.nemonet.littlemaidneo.entity.util;
 
-import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
@@ -309,9 +308,9 @@ public interface MaidManager {
     }
 
     enum Status {
-        ALIVE(Component.literal("Alive").withStyle(ChatFormatting.WHITE)), // 生きてる
-        SOUL_ENTITY(Component.literal("Soul").withStyle(ChatFormatting.DARK_AQUA)), // ソウルエンティティになってる
-        SOUL_WITHIN(Component.literal("Soul Within").withStyle(ChatFormatting.AQUA)); // ソウルになってプレイヤーと共にいる
+        ALIVE(Component.literal("Alive").withStyle(style -> style.withColor(0xFFFFFF))),
+        SOUL_ENTITY(Component.literal("Soul").withStyle(style -> style.withColor(0x00AAAA))),
+        SOUL_WITHIN(Component.literal("Soul Within").withStyle(style -> style.withColor(0x55FFFF)));
 
         private final Component text;
 

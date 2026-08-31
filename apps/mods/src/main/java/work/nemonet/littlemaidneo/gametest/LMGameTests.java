@@ -4,8 +4,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.GameType;
@@ -22,7 +22,8 @@ import work.nemonet.littlemaidneo.setup.ModRegistration;
 import java.util.function.Consumer;
 
 /**
- * 最低限の GameTest。JSON の test_instance から参照する。
+ * NeoForge 26.2 GameTest。{@code spawnMob} / {@code makeMockServerPlayer} を使う。
+ * JSON の {@code test_instance} から参照する。
  */
 public final class LMGameTests {
     private LMGameTests() {
@@ -41,7 +42,7 @@ public final class LMGameTests {
             TEST_FUNCTIONS.register("store_items", () -> LMGameTests::storeItems);
 
     public static void jobSwitch(GameTestHelper helper) {
-        LittleMaidEntity maid = spawnContracted(helper, new BlockPos(2, 1, 2));
+        LittleMaidEntity maid = spawnContracted(helper, 2, 1, 2);
         maid.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SWORD));
         helper.succeedWhen(() -> helper.assertTrue(
                 MaidJobManager.JOB_COMBAT.equals(maid.getActiveJobName()),
@@ -49,8 +50,8 @@ public final class LMGameTests {
     }
 
     public static void contract(GameTestHelper helper) {
-        LittleMaidEntity maid = helper.spawn(ModRegistration.LITTLE_MAID_ENTITY.get(), new BlockPos(2, 1, 2));
-        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+        LittleMaidEntity maid = spawnMaid(helper, 2, 1, 2);
+        ServerPlayer player = helper.makeMockServerPlayer(GameType.SURVIVAL);
         maid.contract(player, new ItemStack(Items.CAKE), false);
         helper.assertTrue(maid.isContract(), "maid should be contracted");
         helper.assertTrue(
@@ -60,9 +61,8 @@ public final class LMGameTests {
     }
 
     public static void storeItems(GameTestHelper helper) {
-        BlockPos maidPos = new BlockPos(2, 1, 2);
         BlockPos chestPos = new BlockPos(3, 1, 2);
-        LittleMaidEntity maid = spawnContracted(helper, maidPos);
+        LittleMaidEntity maid = spawnContracted(helper, 2, 1, 2);
         maid.setMaidMode(MaidMode.FREEDOM);
         maid.setFreedomPos(maid.blockPosition());
         maid.setWorkItemSlotNum(0);
@@ -71,9 +71,13 @@ public final class LMGameTests {
         helper.succeedWhen(() -> helper.assertContainerContains(chestPos, Items.COBBLESTONE));
     }
 
-    private static LittleMaidEntity spawnContracted(GameTestHelper helper, BlockPos pos) {
-        LittleMaidEntity maid = helper.spawn(ModRegistration.LITTLE_MAID_ENTITY.get(), pos);
-        Player player = helper.makeMockPlayer(GameType.SURVIVAL);
+    private static LittleMaidEntity spawnMaid(GameTestHelper helper, int x, int y, int z) {
+        return helper.spawnMob(ModRegistration.LITTLE_MAID_ENTITY.get(), x, y, z).spawn();
+    }
+
+    private static LittleMaidEntity spawnContracted(GameTestHelper helper, int x, int y, int z) {
+        LittleMaidEntity maid = spawnMaid(helper, x, y, z);
+        ServerPlayer player = helper.makeMockServerPlayer(GameType.SURVIVAL);
         maid.contract(player, new ItemStack(Items.CAKE), false);
         TameableUtil.setWait(maid, false);
         return maid;

@@ -1,6 +1,5 @@
 package work.nemonet.littlemaidneo.client.screen;
 
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -270,18 +269,18 @@ public class MaidManagerScreen extends AbstractFilterableListScreen<MaidManagerS
             // SOUL_WITHIN以外の場合はロード状態も表示
             if (lmInfo.status() != MaidManager.Status.SOUL_WITHIN) {
                 var loadedText = lmInfo.isLoaded()
-                        ? Component.literal("Loaded").withStyle(ChatFormatting.GRAY)
-                        : Component.literal("Unloaded").withStyle(ChatFormatting.GRAY);
+                        ? Component.literal("Loaded").withStyle(style -> style.withColor(0xAAAAAA))
+                        : Component.literal("Unloaded").withStyle(style -> style.withColor(0xAAAAAA));
                 statusText = statusText
-                        .append(Component.literal(" / ").withStyle(ChatFormatting.GRAY))
+                        .append(Component.literal(" / ").withStyle(style -> style.withColor(0xAAAAAA)))
                         .append(loadedText);
             }
 
             String group = lmInfo.group();
             if (!group.isEmpty()) {
                 statusText = statusText
-                        .append(Component.literal(" / ").withStyle(ChatFormatting.GRAY))
-                        .append(Component.literal(group).withStyle(ChatFormatting.YELLOW));
+                        .append(Component.literal(" / ").withStyle(style -> style.withColor(0xAAAAAA)))
+                        .append(Component.literal(group).withStyle(style -> style.withColor(0xFFFF55)));
             }
             context.text(textRenderer, statusText,
                     this.x, this.y + textRenderer.lineHeight, 0xFFCCCCCC, true);
@@ -310,9 +309,9 @@ public class MaidManagerScreen extends AbstractFilterableListScreen<MaidManagerS
                     double distance = Math.sqrt(squaredDistance);
 
                     // 8ブロック以内なら白、そうでないならグレー
-                    ChatFormatting distanceColor = distance <= 8.0 ? ChatFormatting.WHITE : ChatFormatting.GRAY;
+                    int distanceColor = distance <= 8.0 ? 0xFFFFFF : 0xAAAAAA;
                     Component distanceText = Component.literal(String.format(" (%.0fm)", distance))
-                            .withStyle(distanceColor);
+                            .withStyle(style -> style.withColor(distanceColor));
                     coordText.append(distanceText);
                 }
 

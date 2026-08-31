@@ -28,11 +28,13 @@ GUI はヘルメットと胸の間 `(8, 26)`。テクスチャに穴が無いの
 
 ## GameTest
 
-NeoForge 26.1 以降の `BuiltInRegistries.TEST_FUNCTION` ＋ `data/.../test_instance/*.json`。ストラクチャは既存 `small_floor`（8x4x8）。
+NeoForge 26.2 の `GameTestHelper#spawnMob` / `#makeMockServerPlayer(GameType)`（26.1 の `spawn(EntityType, BlockPos)` / `makeMockPlayer` ではない）。関数は `BuiltInRegistries.TEST_FUNCTION`、インスタンスは `data/.../test_instance/*.json`。ストラクチャは既存 `small_floor`（8x4x8）。
 
 - `contract` — ケーキで雇用
 - `job_switch` — 鉄剣で combat
 - `store_items` — FREEDOM ＋隣接チェストへ丸石
+
+管理画面の色は 26.2 でほぼ空になった `ChatFormatting` ではなく `Style#withColor`。
 
 ## 凍結
 
