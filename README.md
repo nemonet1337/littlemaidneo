@@ -5,7 +5,7 @@ NeoForge 向けに書き直されたメイドさん Mod。レガシー Mod 系�
 ## 動作環境
 
 - Minecraft 26.2
-- NeoForge 26.2.0.32-beta
+- NeoForge 26.2.0.87
 - Java 25
 
 旧 LMRB / LMML（MC 1.20.1 + Architectury + Java 17、Fabric/Forge 両対応）からは大幅にアップデートされており、**NeoForge 単一プラットフォーム** に移行している。

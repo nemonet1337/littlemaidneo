@@ -27,7 +27,8 @@ bin/
 !**/src/**/bin/
 
 ### VS Code ###
-.vscode/
+.vscode/*
+!.vscode/mcp.json
 
 ### Mac OS ###
 .DS_Store
@@ -43,7 +44,7 @@ repo/
 #LMMBase/
 
 ### Agent / local tooling ###
-# Share: .devcontainer/, .grok/config.toml, .claude/settings.json, .claude/rules/
+# Share: .devcontainer/, .grok/config.toml, .claude/settings.json, .claude/rules/, .mcp.json, .vscode/mcp.json, .github/copilot/settings.json
 .claude/settings.local.json
 .mcp-auth/
 .headroom/
