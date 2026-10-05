@@ -1,6 +1,5 @@
 package work.nemonet.littlemaidneo.entity.ai.behavior;
 
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -25,13 +24,21 @@ import work.nemonet.littlemaidneo.resource.util.LMSounds;
 import work.nemonet.littlemaidneo.setup.ModRegistration;
 import net.minecraft.world.entity.ai.village.poi.PoiTypes;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Set;
 import java.util.function.Predicate;
 
 public class MaidCookingBehavior extends AbstractMaidBehavior implements PersistentMaidBehavior {
-    private static final Object2ObjectOpenHashMap<BlockPos, LittleMaidEntity> USED_FURNACE_MAP = new Object2ObjectOpenHashMap<>();
+    /**
+     * 他のメイドが声称しているかまどを探す半径。
+     * 仕事場 POI の探索範囲（8）に、当人のかまどまでの寄り（1.75）を足した
+     * 9.75 を超えると他メイドの声称を見落とすため 10 を使う。
+     */
+    private static final double CLAIM_SEARCH_RADIUS = 10;
+
     private BlockPos furnacePos;
     private int timeToRecalcPath;
     private int findCool;
@@ -58,7 +65,7 @@ public class MaidCookingBehavior extends AbstractMaidBehavior implements Persist
         AbstractFurnaceBlockEntity prev;
         if (furnacePos != null && furnacePos.closerToCenterThan(mob.position(), 6)
                 && (prev = getFurnaceBlockEntity(mob, furnacePos).orElse(null)) != null
-                && !isUsingFurnaceByOtherMaid(mob, furnacePos)) {
+                && !claimedFurnaces(mob).contains(furnacePos)) {
             if (!prev.isEmpty()) {
                 furnace = prev;
                 return true;
@@ -85,7 +92,6 @@ public class MaidCookingBehavior extends AbstractMaidBehavior implements Persist
     @Override
     protected void start(ServerLevel level, LittleMaidEntity mob, long gameTime) {
         findCool = 0;
-        USED_FURNACE_MAP.put(furnacePos, mob);
         mob.play(LMSounds.COOKING_START);
         playSoundCool = 20;
     }
@@ -161,7 +167,6 @@ public class MaidCookingBehavior extends AbstractMaidBehavior implements Persist
         playSoundCool = 0;
         mob.setShiftKeyDown(false);
         if (furnacePos != null) {
-            USED_FURNACE_MAP.remove(furnacePos, mob);
             AbstractFurnaceBlockEntity f = getFurnaceBlockEntity(mob, furnacePos).orElse(null);
             if (f != null) {
                 for (int i = 0; i < f.getContainerSize(); i++) {
@@ -177,6 +182,8 @@ public class MaidCookingBehavior extends AbstractMaidBehavior implements Persist
                 }
             }
         }
+        // 他メイドにかまどを譲るため、このメイドの声称を必ず消す
+        furnacePos = null;
     }
 
     private OptionalInt getFuel(LittleMaidEntity mob) {
@@ -187,16 +194,17 @@ public class MaidCookingBehavior extends AbstractMaidBehavior implements Persist
         if (!(mob.level() instanceof ServerLevel level)) {
             return Optional.empty();
         }
+        Set<BlockPos> claimed = claimedFurnaces(mob);
         return WorkPoi.findClosest(
                 level,
                 mob.blockPosition(),
                 8,
                 type -> type.is(ModRegistration.FURNACE_POI) || type.is(PoiTypes.ARMORER) || type.is(PoiTypes.BUTCHER),
-                pos -> isSearchable(mob, pos) && isTargetFurnace(mob, pos));
+                pos -> isSearchable(mob, pos) && isTargetFurnace(mob, pos, claimed));
     }
 
-    private boolean isTargetFurnace(LittleMaidEntity mob, BlockPos pos) {
-        if (isUsingFurnaceByOtherMaid(mob, pos)) {
+    private boolean isTargetFurnace(LittleMaidEntity mob, BlockPos pos, Set<BlockPos> claimed) {
+        if (claimed.contains(pos)) {
             return false;
         }
         return getFurnaceBlockEntity(mob, pos)
@@ -223,16 +231,20 @@ public class MaidCookingBehavior extends AbstractMaidBehavior implements Persist
         return false;
     }
 
-    private boolean isUsingFurnaceByOtherMaid(LittleMaidEntity mob, BlockPos furnacePos) {
-        var user = USED_FURNACE_MAP.get(furnacePos);
-        if (user != null && user != mob) {
-            if (!user.isAlive() || user != user.level().getEntity(user.getId())) {
-                USED_FURNACE_MAP.remove(furnacePos);
-                return false;
+    /**
+     * 半径 {@link #CLAIM_SEARCH_RADIUS} 以内にいる他のメイドが声称しているかまどを列挙する。
+     * static なマップを保持せずワールドを直接問い合わせるため、次元跨ぎの衝突も despawn 時のリークも起きない。
+     */
+    private Set<BlockPos> claimedFurnaces(LittleMaidEntity mob) {
+        Set<BlockPos> claimed = new HashSet<>();
+        for (LittleMaidEntity other : mob.level().getEntitiesOfClass(
+                LittleMaidEntity.class, mob.getBoundingBox().inflate(CLAIM_SEARCH_RADIUS))) {
+            var behavior = other.cookingBehavior;
+            if (behavior != null && behavior.furnacePos != null) {
+                claimed.add(behavior.furnacePos);
             }
-            return true;
         }
-        return false;
+        return claimed;
     }
 
     private Optional<ItemStack> getAnyCookableItem(LittleMaidEntity mob, RecipeType<? extends AbstractCookingRecipe> recipeType,
