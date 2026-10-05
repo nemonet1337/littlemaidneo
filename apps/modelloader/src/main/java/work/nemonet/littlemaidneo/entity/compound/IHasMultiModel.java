@@ -43,17 +43,9 @@ public interface IHasMultiModel extends MultiModelView {
             return partIndex;
         }
 
-        /** アーマーレイヤー（INNER/OUTER）なら true。{@link #isArmor()} は歴史的に反転している。 */
+        /** アーマーレイヤー（INNER/OUTER）なら true。SKIN かどうかは {@code this == SKIN} で判定する。 */
         public boolean isArmorLayer() {
             return isArmor;
-        }
-
-        /**
-         * SKIN のとき true。フィールド {@code isArmor} の否定であり、名前と逆。
-         * 新規コードは {@link #isArmorLayer()} か {@code layer == SKIN} を使う。
-         */
-        public boolean isArmor() {
-            return !isArmor;
         }
     }
 
