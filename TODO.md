@@ -2,20 +2,16 @@
 
 ## 高
 
-- かまど使用マップ `USED_FURNACE_MAP` が static・次元非対応（despawn リーク）
+（なし）
 
 ## 中
 
-- 描画: `IHasMultiModel.Layer.isArmor()` の歴史的な反転（新規は `isArmorLayer()`）
-- `pharmcist` 誤字のリネーム（datafixer 必須）
+- datagen: client/server 2 パスが同一出力先と `HashCache` を共有し、キャッシュを冷えた状態で `mergeData` すると互いの生成物を削除し合う（lang / models / blockstates が消える）。`mergeData` の 2 連続実行、または個別に再生成が必要
 
 ## 低
 
 - 好感度（`sistr_TODO.md`、仕様未確定。凍結）
-- `IHasMultiModel.Layer.isArmor()` の命名（真偽がフィールドと逆。`ArmorPart` 依存）
-- GUI の `ChatFormatting` を `Style` へ
-- `MASTER_STANCE` SynchedEntityData 未使用
-- `LMAdvancementProvider` の `parent(Identifier)` が `[removal]`（`AdvancementHolder` へ置換）
+- `src/generated/resources` の生成物が、現在の datagen 出力と乖離している（`maid_job.json` のキー順、`priority` / `category` / `bonus_rolls` の既定値省略）。次回 `mergeData` 時に一大括の整形差分が出る
 
 ## 機能要望
 

@@ -27,7 +27,20 @@ public class MaidJobManager {
     public static final String JOB_RIPPER = "ripper";
     public static final String JOB_TORCHER = "torcher";
     public static final String JOB_HEALER = "healer";
-    public static final String JOB_PHARMCIST = "pharmcist";
+    public static final String JOB_PHARMACIST = "pharmacist";
+
+    /** 旧バージョンの誤字。セーブ読み込み時に {@link #JOB_PHARMACIST} へ正規化される。 */
+    private static final String LEGACY_JOB_PHARMACIST = "pharmcist";
+
+    /**
+     * 旧表記のジョブ名を現行表記へ正規化する。
+     *
+     * @param job Brain に記憶されているジョブ名
+     * @return 正規化後のジョブ名
+     */
+    public static String normalizeJob(String job) {
+        return LEGACY_JOB_PHARMACIST.equals(job) ? JOB_PHARMACIST : job;
+    }
 
     public static final String BATTLE_NONE = "none";
     public static final String BATTLE_SWORD = "sword";
@@ -44,6 +57,10 @@ public class MaidJobManager {
 
     public static void tick(LittleMaidEntity maid) {
         String currentJob = maid.getBrain().getMemory(ModRegistration.ACTIVE_JOB_NAME.get()).orElse(JOB_NONE);
+        if (currentJob.equals(LEGACY_JOB_PHARMACIST)) {
+            currentJob = JOB_PHARMACIST;
+            maid.getBrain().setMemory(ModRegistration.ACTIVE_JOB_NAME.get(), currentJob);
+        }
         boolean scanInventory = maid.tickCount % INVENTORY_SCAN_INTERVAL == 0;
 
         if (!currentJob.equals(JOB_NONE)) {
@@ -101,7 +118,7 @@ public class MaidJobManager {
     }
 
     public static boolean canContinueJobEmptyHanded(String job) {
-        return JOB_PHARMCIST.equals(job)
+        return JOB_PHARMACIST.equals(job)
                 || JOB_COOKING.equals(job)
                 || JOB_HEALER.equals(job)
                 || JOB_TORCHER.equals(job)
@@ -129,17 +146,17 @@ public class MaidJobManager {
         if (stack.is(LMTags.Items.HEALER_MODE)) {
             return new MaidJobEntry(JOB_HEALER, 400);
         }
-        if (stack.is(LMTags.Items.PHARMCIST_MODE)) {
-            return new MaidJobEntry(JOB_PHARMCIST, 400);
+        if (stack.is(LMTags.Items.PHARMACIST_MODE)) {
+            return new MaidJobEntry(JOB_PHARMACIST, 400);
         }
-        if (stack.is(LMTags.Items.PHARMCIST_INGREDIENTS)) {
-            return new MaidJobEntry(JOB_PHARMCIST, 100);
+        if (stack.is(LMTags.Items.PHARMACIST_INGREDIENTS)) {
+            return new MaidJobEntry(JOB_PHARMACIST, 100);
         }
         return null;
     }
 
     private static boolean isSalaryBlocked(String job, ItemStack stack) {
-        return JOB_PHARMCIST.equals(job) && stack.is(LMTags.Items.MAIDS_SALARY);
+        return JOB_PHARMACIST.equals(job) && stack.is(LMTags.Items.MAIDS_SALARY);
     }
 
     private static Optional<String> getJobFromItem(ItemStack stack) {
@@ -163,7 +180,7 @@ public class MaidJobManager {
             return Optional.of(JOB_HEALER);
         }
         if (isWaterBottle(stack)) {
-            return Optional.of(JOB_PHARMCIST);
+            return Optional.of(JOB_PHARMACIST);
         }
         return Optional.empty();
     }
@@ -174,7 +191,7 @@ public class MaidJobManager {
             case JOB_RIPPER -> isRipperFallback(stack);
             case JOB_TORCHER -> isTorcherFallback(stack);
             case JOB_HEALER -> isHealerFallback(stack);
-            case JOB_PHARMCIST -> isWaterBottle(stack);
+            case JOB_PHARMACIST -> isWaterBottle(stack);
             default -> false;
         };
     }

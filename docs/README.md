@@ -51,7 +51,7 @@ datapack でジョブを足す場合は Item Data Map `littlemaidneo:maid_job`�
 }
 ```
 
-`job` は `combat` / `cooking` / `ripper` / `torcher` / `healer` / `pharmcist`。優先度 400 以上がインベントリからの新規開始。手持ちの対応は `/lmn job` で確認できます。インゲームのタグ編集画面はありません。
+`job` は `combat` / `cooking` / `ripper` / `torcher` / `healer` / `pharmacist`。優先度 400 以上がインベントリからの新規開始。手持ちの対応は `/lmn job` で確認できます。インゲームのタグ編集画面はありません。
 
 ## 頭飾り
 

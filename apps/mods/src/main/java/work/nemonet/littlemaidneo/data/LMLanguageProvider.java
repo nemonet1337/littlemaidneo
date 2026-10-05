@@ -45,7 +45,7 @@ public class LMLanguageProvider extends LanguageProvider {
             add("mode.littlemaidneo.Fencer", "Fencer");
             add("mode.littlemaidneo.Archer", "Archer");
             add("mode.littlemaidneo.Cooking", "Cooking");
-            add("mode.littlemaidneo.Pharmcist", "Pharmacist");
+            add("mode.littlemaidneo.Pharmacist", "Pharmacist");
             add("mode.littlemaidneo.Ripper", "Ripper");
             add("mode.littlemaidneo.Torcher", "Torcher");
             add("mode.littlemaidneo.Healer", "Healer");
@@ -59,9 +59,9 @@ public class LMLanguageProvider extends LanguageProvider {
             addCombinedStateEn("Escort", "Cooking", "Escort Cook");
             addCombinedStateEn("Freedom", "Cooking", "Free Cook");
             addCombinedStateEn("Tracer", "Cooking", "Tracer Cook");
-            addCombinedStateEn("Escort", "Pharmcist", "Escort Pharmacist");
-            addCombinedStateEn("Freedom", "Pharmcist", "Free Pharmacist");
-            addCombinedStateEn("Tracer", "Pharmcist", "Tracer Pharmacist");
+            addCombinedStateEn("Escort", "Pharmacist", "Escort Pharmacist");
+            addCombinedStateEn("Freedom", "Pharmacist", "Free Pharmacist");
+            addCombinedStateEn("Tracer", "Pharmacist", "Tracer Pharmacist");
             addCombinedStateEn("Escort", "Ripper", "Escort Ripper");
             addCombinedStateEn("Freedom", "Ripper", "Free Ripper");
             addCombinedStateEn("Tracer", "Ripper", "Tracer Ripper");
@@ -74,7 +74,7 @@ public class LMLanguageProvider extends LanguageProvider {
             addCombinedStateEn("Stroll", "Fencer", "Stroll Fencer");
             addCombinedStateEn("Stroll", "Archer", "Stroll Archer");
             addCombinedStateEn("Stroll", "Cooking", "Stroll Cook");
-            addCombinedStateEn("Stroll", "Pharmcist", "Stroll Pharmacist");
+            addCombinedStateEn("Stroll", "Pharmacist", "Stroll Pharmacist");
             addCombinedStateEn("Stroll", "Ripper", "Stroll Ripper");
             addCombinedStateEn("Stroll", "Torcher", "Stroll Torcher");
             addCombinedStateEn("Stroll", "Healer", "Stroll Healer");
@@ -182,7 +182,7 @@ public class LMLanguageProvider extends LanguageProvider {
             add("mode.littlemaidneo.Fencer", "剣士");
             add("mode.littlemaidneo.Archer", "弓兵");
             add("mode.littlemaidneo.Cooking", "お料理係");
-            add("mode.littlemaidneo.Pharmcist", "調合係");
+            add("mode.littlemaidneo.Pharmacist", "調合係");
             add("mode.littlemaidneo.Ripper", "毛狩り隊");
             add("mode.littlemaidneo.Torcher", "照明係");
             add("mode.littlemaidneo.Healer", "回復係");
@@ -196,9 +196,9 @@ public class LMLanguageProvider extends LanguageProvider {
             addCombinedStateJa("Escort", "Cooking", "護衛お料理係");
             addCombinedStateJa("Freedom", "Cooking", "自由お料理係");
             addCombinedStateJa("Tracer", "Cooking", "探知お料理係");
-            addCombinedStateJa("Escort", "Pharmcist", "護衛調合係");
-            addCombinedStateJa("Freedom", "Pharmcist", "自由調合係");
-            addCombinedStateJa("Tracer", "Pharmcist", "探知調合係");
+            addCombinedStateJa("Escort", "Pharmacist", "護衛調合係");
+            addCombinedStateJa("Freedom", "Pharmacist", "自由調合係");
+            addCombinedStateJa("Tracer", "Pharmacist", "探知調合係");
             addCombinedStateJa("Escort", "Ripper", "護衛毛狩り隊");
             addCombinedStateJa("Freedom", "Ripper", "自由毛狩り隊");
             addCombinedStateJa("Tracer", "Ripper", "探知毛狩り隊");
@@ -211,7 +211,7 @@ public class LMLanguageProvider extends LanguageProvider {
             addCombinedStateJa("Stroll", "Fencer", "散歩剣士");
             addCombinedStateJa("Stroll", "Archer", "散歩弓兵");
             addCombinedStateJa("Stroll", "Cooking", "散歩お料理係");
-            addCombinedStateJa("Stroll", "Pharmcist", "散歩調合係");
+            addCombinedStateJa("Stroll", "Pharmacist", "散歩調合係");
             addCombinedStateJa("Stroll", "Ripper", "散歩毛狩り隊");
             addCombinedStateJa("Stroll", "Torcher", "散歩照明係");
             addCombinedStateJa("Stroll", "Healer", "散歩回復係");

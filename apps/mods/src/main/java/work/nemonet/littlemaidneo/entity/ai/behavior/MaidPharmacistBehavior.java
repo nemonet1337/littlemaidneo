@@ -15,17 +15,18 @@ import work.nemonet.littlemaidneo.entity.LMHasInventory;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.ai.WorkPoi;
 import work.nemonet.littlemaidneo.entity.mode.ModeHelpers;
+import work.nemonet.littlemaidneo.entity.util.MaidJobManager;
 import net.minecraft.world.entity.ai.village.poi.PoiTypes;
 
 import java.util.Map;
 import java.util.Optional;
 
-public class MaidPharmcistBehavior extends AbstractMaidBehavior implements PersistentMaidBehavior {
+public class MaidPharmacistBehavior extends AbstractMaidBehavior implements PersistentMaidBehavior {
     private BlockPos brewingStandPos;
     private int recalcPathTimer;
     private int processTimer;
 
-    public MaidPharmcistBehavior() {
+    public MaidPharmacistBehavior() {
         super(Map.of(
                 work.nemonet.littlemaidneo.setup.ModRegistration.ACTIVE_JOB_NAME.get(), MemoryStatus.VALUE_PRESENT
         ));
@@ -34,7 +35,7 @@ public class MaidPharmcistBehavior extends AbstractMaidBehavior implements Persi
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, LittleMaidEntity mob) {
         String job = mob.getBrain().getMemory(work.nemonet.littlemaidneo.setup.ModRegistration.ACTIVE_JOB_NAME.get()).orElse("");
-        if (!job.equals("pharmcist")) {
+        if (!job.equals(MaidJobManager.JOB_PHARMACIST)) {
             return false;
         }
 
@@ -69,7 +70,7 @@ public class MaidPharmcistBehavior extends AbstractMaidBehavior implements Persi
     @Override
     protected boolean canStillUse(ServerLevel level, LittleMaidEntity mob, long gameTime) {
         String job = mob.getBrain().getMemory(work.nemonet.littlemaidneo.setup.ModRegistration.ACTIVE_JOB_NAME.get()).orElse("");
-        if (!job.equals("pharmcist")) {
+        if (!job.equals(MaidJobManager.JOB_PHARMACIST)) {
             return false;
         }
         if (mob.isStrike()) return false;

@@ -40,7 +40,7 @@ public class LMAdvancementProvider {
             HolderGetter<Item> itemLookup = registries.lookupOrThrow(Registries.ITEM);
 
             AdvancementHolder contractMaid = Advancement.Builder.advancement()
-                    .parent(Identifier.parse("minecraft:husbandry/root"))
+                    .parent(AdvancementSubProvider.createPlaceholder("minecraft:husbandry/root"))
                     .display(
                             Items.CAKE,
                             Component.translatable("advancements.husbandry.contract_maid.title"),
@@ -70,7 +70,7 @@ public class LMAdvancementProvider {
                     .save(saver, LittleMaidNeo.MODID + ":husbandry/resurrect_maid");
 
             Advancement.Builder.advancement()
-                    .parent(Identifier.parse("minecraft:recipes/root"))
+                    .parent(AdvancementSubProvider.createPlaceholder("minecraft:recipes/root"))
                     .addCriterion("sugar", InventoryChangeTrigger.TriggerInstance.hasItems(
                             ItemPredicate.Builder.item().of(itemLookup, LMTags.Items.MAIDS_SALARY).build()
                     ))
@@ -93,7 +93,7 @@ public class LMAdvancementProvider {
                     .save(saver, LittleMaidNeo.MODID + ":recipes/little_maid_spawn_egg");
 
             Advancement.Builder.advancement()
-                    .parent(Identifier.parse("minecraft:recipes/root"))
+                    .parent(AdvancementSubProvider.createPlaceholder("minecraft:recipes/root"))
                     .addCriterion("sugar", InventoryChangeTrigger.TriggerInstance.hasItems(
                             ItemPredicate.Builder.item().of(itemLookup, Items.SUGAR).build()
                     ))

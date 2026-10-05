@@ -107,9 +107,6 @@ public class LittleMaidEntity
     private static final EntityDataAccessor<Boolean> ACCELERATE = SynchedEntityData.defineId(
             LittleMaidEntity.class,
             EntityDataSerializers.BOOLEAN);
-    private static final EntityDataAccessor<Byte> MASTER_STANCE = SynchedEntityData.defineId(
-            LittleMaidEntity.class,
-            EntityDataSerializers.BYTE);
     private static final EntityDataAccessor<Integer> CONTRACT_TIME = SynchedEntityData.defineId(
             LittleMaidEntity.class,
             EntityDataSerializers.INT);
@@ -131,7 +128,7 @@ public class LittleMaidEntity
     public work.nemonet.littlemaidneo.entity.ai.behavior.MaidCombatBehavior combatBehavior;
     public work.nemonet.littlemaidneo.entity.ai.behavior.MaidCookingBehavior cookingBehavior;
     public work.nemonet.littlemaidneo.entity.ai.behavior.MaidHealerBehavior healerBehavior;
-    public work.nemonet.littlemaidneo.entity.ai.behavior.MaidPharmcistBehavior pharmcistBehavior;
+    public work.nemonet.littlemaidneo.entity.ai.behavior.MaidPharmacistBehavior pharmacistBehavior;
     public work.nemonet.littlemaidneo.entity.ai.behavior.MaidRipperBehavior ripperBehavior;
     public work.nemonet.littlemaidneo.entity.ai.behavior.MaidTorcherBehavior torcherBehavior;
 
@@ -240,7 +237,7 @@ private float prevInterestedAngle;
             this.combatBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidCombatBehavior();
             this.cookingBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidCookingBehavior();
             this.healerBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidHealerBehavior();
-            this.pharmcistBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidPharmcistBehavior();
+            this.pharmacistBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidPharmacistBehavior();
             this.ripperBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidRipperBehavior();
             this.torcherBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidTorcherBehavior();
             this.lookAroundBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidLookAroundBehavior();
@@ -271,7 +268,6 @@ private float prevInterestedAngle;
         builder.define(MODE_NAME, "");
         builder.define(CHARGING, false);
         builder.define(ACCELERATE, false);
-        builder.define(MASTER_STANCE, (byte) 0);
         builder.define(CONTRACT_TIME, 0);
         builder.define(HEAD_COSMETIC, ItemStack.EMPTY);
     }
@@ -1193,12 +1189,15 @@ private void tickInterestedAngle() {
 
     public void writeModeData(ValueOutput output) {
         cookingBehavior.writeBehaviorData(output.child("cooking"));
-        pharmcistBehavior.writeBehaviorData(output.child("pharmcist"));
+        pharmacistBehavior.writeBehaviorData(output.child("pharmacist"));
     }
 
     public void readModeData(ValueInput input) {
         input.child("cooking").ifPresent(cookingBehavior::readBehaviorData);
-        input.child("pharmcist").ifPresent(pharmcistBehavior::readBehaviorData);
+        // 旧セーブの "pharmcist" キーは読み取り時だけ受け付ける（datafixer 相当）
+        input.child("pharmacist")
+                .or(() -> input.child("pharmcist"))
+                .ifPresent(pharmacistBehavior::readBehaviorData);
     }
 
     public void setModeName(String modeName) {

@@ -25,8 +25,8 @@ public class LMItemTagsProvider extends ItemTagsProvider {
         tag(LMTags.Items.FENCER_MODE).add(Items.TRIDENT.builtInRegistryHolder().key());
         tag(LMTags.Items.ARCHER_MODE);
         tag(LMTags.Items.COOKING_MODE).add(Items.BOWL.builtInRegistryHolder().key());
-        tag(LMTags.Items.PHARMCIST_MODE).add(Items.GLASS_BOTTLE.builtInRegistryHolder().key());
-        tag(LMTags.Items.PHARMCIST_INGREDIENTS)
+        tag(LMTags.Items.PHARMACIST_MODE).add(Items.GLASS_BOTTLE.builtInRegistryHolder().key());
+        tag(LMTags.Items.PHARMACIST_INGREDIENTS)
                 .add(Items.NETHER_WART.builtInRegistryHolder().key())
                 .add(Items.BLAZE_POWDER.builtInRegistryHolder().key())
                 .add(Items.GLOWSTONE_DUST.builtInRegistryHolder().key())

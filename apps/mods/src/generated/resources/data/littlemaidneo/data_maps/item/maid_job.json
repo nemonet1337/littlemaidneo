@@ -24,12 +24,12 @@
       "job": "healer",
       "priority": 400
     },
-    "#littlemaidneo:pharmcist_mode": {
-      "job": "pharmcist",
+    "#littlemaidneo:pharmacist_mode": {
+      "job": "pharmacist",
       "priority": 400
     },
-    "#littlemaidneo:pharmcist_ingredients": {
-      "job": "pharmcist",
+    "#littlemaidneo:pharmacist_ingredients": {
+      "job": "pharmacist",
       "priority": 100
     }
   }

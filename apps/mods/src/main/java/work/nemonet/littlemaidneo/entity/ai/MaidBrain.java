@@ -89,7 +89,7 @@ public final class MaidBrain {
         return ImmutableList.of(
                 entity.cookingBehavior,
                 entity.healerBehavior,
-                entity.pharmcistBehavior,
+                entity.pharmacistBehavior,
                 entity.ripperBehavior,
                 entity.torcherBehavior
         );

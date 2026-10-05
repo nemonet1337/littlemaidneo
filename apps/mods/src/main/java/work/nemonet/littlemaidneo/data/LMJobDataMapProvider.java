@@ -24,7 +24,7 @@ public class LMJobDataMapProvider extends DataMapProvider {
                 .add(LMTags.Items.RIPPER_MODE, new MaidJobEntry(MaidJobManager.JOB_RIPPER, 400), false)
                 .add(LMTags.Items.TORCHER_MODE, new MaidJobEntry(MaidJobManager.JOB_TORCHER, 400), false)
                 .add(LMTags.Items.HEALER_MODE, new MaidJobEntry(MaidJobManager.JOB_HEALER, 400), false)
-                .add(LMTags.Items.PHARMCIST_MODE, new MaidJobEntry(MaidJobManager.JOB_PHARMCIST, 400), false)
-                .add(LMTags.Items.PHARMCIST_INGREDIENTS, new MaidJobEntry(MaidJobManager.JOB_PHARMCIST, 100), false);
+                .add(LMTags.Items.PHARMACIST_MODE, new MaidJobEntry(MaidJobManager.JOB_PHARMACIST, 400), false)
+                .add(LMTags.Items.PHARMACIST_INGREDIENTS, new MaidJobEntry(MaidJobManager.JOB_PHARMACIST, 100), false);
     }
 }

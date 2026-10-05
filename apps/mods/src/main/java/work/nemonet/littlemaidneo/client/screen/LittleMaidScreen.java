@@ -19,7 +19,6 @@ import net.minecraft.world.item.Items;
 import work.nemonet.littlemaidneo.LittleMaidNeo;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.LittleMaidScreenHandler;
-import net.minecraft.ChatFormatting;
 import work.nemonet.littlemaidneo.entity.util.MaidMode;
 import work.nemonet.littlemaidneo.network.*;
 public class LittleMaidScreen
@@ -183,7 +182,8 @@ public class LittleMaidScreen
     public Component getStateText() {
         if (owner.isStrike()) {
             return Component.translatable(
-                    "state." + LittleMaidNeo.MODID + ".Strike").withStyle(ChatFormatting.RED, ChatFormatting.BOLD);
+                    "state." + LittleMaidNeo.MODID + ".Strike")
+                    .withStyle(style -> style.withColor(0xFF5555).withBold(true));
         }
         // 待機中は移動モードより待機表示を優先
         if (owner.isInSittingPose()) {
@@ -229,7 +229,7 @@ public class LittleMaidScreen
             movingTooltip = Component.translatable("state." + LittleMaidNeo.MODID + ".Strike")
                     .append("\n")
                     .append(Component.translatable("gui.littlemaidneo.littlemaid.tooltip.strike_warning")
-                            .withStyle(ChatFormatting.GOLD));
+                            .withStyle(style -> style.withColor(0xFFAA00)));
         } else if (isWait) {
             movingIcon = Items.CLOCK.getDefaultInstance();
             movingTooltip = Component.translatable("state." + LittleMaidNeo.MODID + ".Wait");
@@ -361,13 +361,13 @@ public class LittleMaidScreen
         Component salaryText;
         if (owner.isStrike()) {
             salaryText = Component.translatable("gui.littlemaidneo.littlemaid.salary.strike")
-                    .withStyle(ChatFormatting.RED);
+                    .withStyle(style -> style.withColor(0xFF5555));
         } else if (unpaid > 0) {
             salaryText = Component.translatable("gui.littlemaidneo.littlemaid.salary.unpaid", unpaid)
-                    .withStyle(ChatFormatting.GOLD);
+                    .withStyle(style -> style.withColor(0xFFAA00));
         } else {
             salaryText = Component.translatable("gui.littlemaidneo.littlemaid.salary.ok")
-                    .withStyle(ChatFormatting.DARK_GREEN);
+                    .withStyle(style -> style.withColor(0x00AA00));
         }
         context.text(font, salaryText, textX, 71, 0xFF404040, false);
         String insideSkirt = Component.translatable(
