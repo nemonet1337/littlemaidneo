@@ -53,7 +53,7 @@ https://github.com/NeoForged/NeoForm/blob/main/Mojang.md
 
 ## ライセンス
 
-LittleMaid Licence — [LICENCE.md](LICENCE.md) 参照
+PolyForm Noncommercial License 1.0.0 — [LICENCE.md](LICENCE.md) 参照
 
 ## 参考リンク
 
