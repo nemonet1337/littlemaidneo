@@ -1,28 +1,3 @@
-# LittleMaidNeo ライセンス
-
-Required Notice: Copyright (C) 2026 MMM, EMB4, Verclene, firis-games, Sistr, Nemo
-
-LittleMaidNeo（以下「本MOD」）は **PolyForm Noncommercial License 1.0.0** の下で提供されます。
-
-- ライセンス本文: <https://polyformproject.org/licenses/noncommercial/1.0.0>
-- SPDX 識別子: `PolyForm-Noncommercial-1.0.0`
-- 公式テキスト全文を無改変で本ファイル末尾に収録しています。
-
-## 補足 (Supplementary Notes)
-
-以下は PolyForm Noncommercial License 1.0.0 に対する補足・明確化です。ライセンス本文（下記）と併せて読んでください。
-
-1. **適用範囲**: 本ライセンスは、許諾者が許諾できる範囲（許諾者自身が著作権を持つ部分）に適用されます。上流プロジェクト（LittleMaidReengaged / LittleMaidReBirth など）に由来する部分には、引き続きそれぞれの元ライセンスの条件が適用されます。
-   - <https://github.com/SistrScarlet/LittleMaidReengagedFirisPatch/blob/master/document/MMM_LICENSE.md>
-   - <https://github.com/SistrScarlet/LittleMaidReengagedFirisPatch/blob/master/document/Verclene_LICENSE.md>
-   - <https://github.com/SistrScarlet/LittleMaidReBirth-Architectury/blob/master/LICENSE>
-
-   上流の条件（非商用利用であること等）は PolyForm の下でも変わりません。上流の条件と PolyForm 本文の両方を必ず満たす形で利用してください。
-2. **動画・配信**: 従来の LittleMaid Licence と同様に、このMODをムービーに使用し、その動画を任意のサービス（YouTube、niconicoなど）にアップロードすることを許可します。動画が収益化される場合は PolyForm 本文の非営利の定義に従って判断されます。
-3. **非営利の意味**: 本ライセンスにおける「非営利」は、主に商業的な利益や金銭的な報酬を目的としていないことを意味するものとして解釈します。個人的利用、非営利組織による利用は PolyForm 本文のとおり許可されます。
-
----
-
 ## PolyForm Noncommercial License 1.0.0
 
 <https://polyformproject.org/licenses/noncommercial/1.0.0>
