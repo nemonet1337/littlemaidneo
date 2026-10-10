@@ -3,6 +3,7 @@ package work.nemonet.littlemaidneo.entity;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Prediction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -50,7 +51,7 @@ final class LMInteractionHandler {
             if (!mob.level().isClientSide()) {
                 player.hurt(mob.level().damageSources().mobAttack(mob), 1.0f); // 0.5ハートダメージ
                 mob.playForce(LMSounds.FIND_TARGET_D);
-                mob.swing(InteractionHand.MAIN_HAND);
+                mob.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, false);
                 mob.level().broadcastEntityEvent(mob, (byte) 6); // 怒りエフェクト
             }
             return InteractionResult.SUCCESS;
@@ -69,7 +70,7 @@ final class LMInteractionHandler {
                     }
                     mob.level().broadcastEntityEvent(mob, (byte) 71); // 再雇用エフェクト
                     mob.playSound(SoundEvents.GENERIC_EAT.value(), 1.0F, 1.0F);
-                    mob.swing(InteractionHand.MAIN_HAND);
+                    mob.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, false);
 
                     mob.setContractMM(true);
                     if (!mob.level().isClientSide()) {
@@ -97,7 +98,7 @@ final class LMInteractionHandler {
                 BookParameterParser.apply(mob, stack, player);
                 player.sendSystemMessage(Component.translatable("chat.littlemaidneo.book_parameters_applied"));
             }
-            mob.swing(InteractionHand.MAIN_HAND);
+            mob.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, false);
             return InteractionResult.SUCCESS;
         }
         // ケーキ
@@ -106,7 +107,7 @@ final class LMInteractionHandler {
                 stack.shrink(1);
             }
             mob.playSound(SoundEvents.GENERIC_EAT.value(), 1.0F, 1.0F);
-            mob.swing(InteractionHand.MAIN_HAND);
+            mob.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, false);
             if (!mob.level().isClientSide()) {
                 mob.addEffect(new MobEffectInstance(MobEffects.SPEED, 600, 1)); // Speed II
                 mob.addEffect(new MobEffectInstance(MobEffects.HASTE, 600, 1));      // Haste II
@@ -140,7 +141,7 @@ final class LMInteractionHandler {
             }
             mob.removeAllEffects();
             mob.playSound(SoundEvents.GENERIC_DRINK.value(), 1.0F, 1.0F);
-            mob.swing(InteractionHand.MAIN_HAND);
+            mob.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, false);
             return InteractionResult.SUCCESS;
         }
         // 金リンゴ
@@ -151,7 +152,7 @@ final class LMInteractionHandler {
             }
             mob.heal(mob.getMaxHealth());
             mob.playSound(SoundEvents.GENERIC_EAT.value(), 1.0F, 1.0F);
-            mob.swing(InteractionHand.MAIN_HAND);
+            mob.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, false);
             if (!mob.level().isClientSide()) {
                 if (enchanted) {
                     mob.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 400, 1));
@@ -184,11 +185,11 @@ final class LMInteractionHandler {
                     if (stack.isEmpty()) {
                         player.setItemInHand(hand, new ItemStack(Items.GLASS_BOTTLE));
                     } else if (!player.getInventory().add(new ItemStack(Items.GLASS_BOTTLE))) {
-                        player.drop(new ItemStack(Items.GLASS_BOTTLE), false);
+                        player.drop(new ItemStack(Items.GLASS_BOTTLE), false, Prediction.PREDICTED);
                     }
                 }
                 mob.playSound(SoundEvents.GENERIC_DRINK.value(), 1.0F, 1.0F);
-                mob.swing(InteractionHand.MAIN_HAND);
+                mob.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, false);
                 return InteractionResult.SUCCESS;
             }
         }
@@ -241,7 +242,7 @@ final class LMInteractionHandler {
                         left ? "chat.littlemaidneo.main_hand.left" : "chat.littlemaidneo.main_hand.right",
                         mob.getDisplayName()));
             }
-            mob.swing(InteractionHand.MAIN_HAND);
+            mob.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, false);
             return InteractionResult.SUCCESS;
         }
         // ガラス瓶 -> 経験値瓶（所持 XP と瓶の数だけまとめて変換）
@@ -264,7 +265,7 @@ final class LMInteractionHandler {
                 }
                 ItemStack bottles = new ItemStack(Items.EXPERIENCE_BOTTLE, count);
                 if (!player.getInventory().add(bottles)) {
-                    player.drop(bottles, false);
+                    player.drop(bottles, false, Prediction.PREDICTED);
                 }
                 mob.addExperience(-cost * count);
                 return InteractionResult.SUCCESS;

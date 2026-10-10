@@ -232,7 +232,7 @@ public class MaidSoulEntity extends Entity {
 
     @Override
     public PushReaction getPistonPushReaction() {
-        return PushReaction.IGNORE;
+        return PushReaction.IGNORE_ENTITY;
     }
 
     @Override

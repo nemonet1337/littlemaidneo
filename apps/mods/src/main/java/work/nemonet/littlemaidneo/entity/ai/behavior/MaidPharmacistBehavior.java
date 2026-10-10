@@ -8,6 +8,10 @@ import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.alchemy.Potions;
+import net.minecraft.world.item.crafting.BrewingInput;
+import net.minecraft.world.item.crafting.BrewingRecipe;
+import net.minecraft.world.item.crafting.RecipePropertySet;
+import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.block.entity.BrewingStandBlockEntity;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
@@ -102,7 +106,7 @@ public class MaidPharmacistBehavior extends AbstractMaidBehavior implements Pers
             processTimer = 0;
             boolean worked = performBrewingInteractions(mob, tile);
             if (worked) {
-                mob.swing(InteractionHand.MAIN_HAND);
+                mob.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, false);
             }
         }
     }
@@ -117,7 +121,9 @@ public class MaidPharmacistBehavior extends AbstractMaidBehavior implements Pers
 
     private boolean hasBrewingWork(LittleMaidEntity mob, BrewingStandBlockEntity tile) {
         var inventory = LMHasInventory.getInvAndHands(mob);
-        var brewing = mob.level().potionBrewing();
+        if (!(mob.level() instanceof ServerLevel level)) {
+            return false;
+        }
 
         ItemStack fuelStack = tile.getItem(4);
         if (fuelStack.isEmpty() || (fuelStack.is(Items.BLAZE_POWDER) && fuelStack.getCount() < fuelStack.getMaxStackSize())) {
@@ -141,7 +147,11 @@ public class MaidPharmacistBehavior extends AbstractMaidBehavior implements Pers
                 if (!bottleStack.isEmpty()) {
                     for (int i = 0; i < inventory.getContainerSize(); i++) {
                         ItemStack maidStack = inventory.getItem(i);
-                        if (!maidStack.isEmpty() && brewing.isIngredient(maidStack) && brewing.hasMix(bottleStack, maidStack)) return true;
+                        if (!maidStack.isEmpty()) {
+                            var isReagent = level.recipeAccess().propertySet(RecipePropertySet.BREWING_REAGENTS).test(maidStack);
+                            var hasMix = level.recipeAccess().getRecipeFor(RecipeType.BREWING, new BrewingInput(bottleStack, maidStack), level).isPresent();
+                            if (isReagent && hasMix) return true;
+                        }
                     }
                 }
             }
@@ -163,7 +173,9 @@ public class MaidPharmacistBehavior extends AbstractMaidBehavior implements Pers
 
     private boolean performBrewingInteractions(LittleMaidEntity mob, BrewingStandBlockEntity tile) {
         var inventory = LMHasInventory.getInvAndHands(mob);
-        var brewing = mob.level().potionBrewing();
+        if (!(mob.level() instanceof ServerLevel level)) {
+            return false;
+        }
         boolean interacted = false;
 
         ItemStack fuelStack = tile.getItem(4);
@@ -205,10 +217,14 @@ public class MaidPharmacistBehavior extends AbstractMaidBehavior implements Pers
                 if (!bottleStack.isEmpty()) {
                     for (int i = 0; i < inventory.getContainerSize(); i++) {
                         ItemStack maidStack = inventory.getItem(i);
-                        if (!maidStack.isEmpty() && brewing.isIngredient(maidStack) && brewing.hasMix(bottleStack, maidStack)) {
-                            tile.setItem(3, maidStack.split(1));
-                            interacted = true;
-                            break;
+                        if (!maidStack.isEmpty()) {
+                            var isReagent = level.recipeAccess().propertySet(RecipePropertySet.BREWING_REAGENTS).test(maidStack);
+                            var hasMix = level.recipeAccess().getRecipeFor(RecipeType.BREWING, new BrewingInput(bottleStack, maidStack), level).isPresent();
+                            if (isReagent && hasMix) {
+                                tile.setItem(3, maidStack.split(1));
+                                interacted = true;
+                                break;
+                            }
                         }
                     }
                 }
@@ -309,3 +325,4 @@ public class MaidPharmacistBehavior extends AbstractMaidBehavior implements Pers
         input.getLong("BrewingStandPos").ifPresent(posLong -> brewingStandPos = BlockPos.of(posLong));
     }
 }
+

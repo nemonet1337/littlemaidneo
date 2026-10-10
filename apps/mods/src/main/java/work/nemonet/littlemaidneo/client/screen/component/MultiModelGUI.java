@@ -4,7 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.util.Mth;
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 import work.nemonet.littlemaidneo.client.screen.ModelSelectScreen;
 import work.nemonet.littlemaidneo.resource.holder.TextureHolder;
 import work.nemonet.littlemaidneo.resource.manager.LMModelManager;
@@ -81,7 +81,7 @@ public class MultiModelGUI extends GUIElement implements ListGUIElement {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean handled) {
-        if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+        if (event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
             selectBox.click(event.x(), event.y());
             return true;
         }
@@ -90,7 +90,7 @@ public class MultiModelGUI extends GUIElement implements ListGUIElement {
 
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
-        if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+        if (event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
             if (selectBox.release(event.x(), event.y())) {
                 this.selectColor = TextureColors.getColor(Mth.floor((event.x() - this.x) / scale));
                 return true;

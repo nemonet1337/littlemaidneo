@@ -1,12 +1,12 @@
 package work.nemonet.littlemaidneo.client;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.resources.Identifier;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.client.network.ClientPacketDistributor;
-import org.lwjgl.glfw.GLFW;
 import work.nemonet.littlemaidneo.network.OpenMaidManagerScreenC2SPayload;
 
 public class LMKeys {
@@ -16,7 +16,7 @@ public class LMKeys {
 
     public static final KeyMapping OPEN_MAID_MANAGER_SCREEN = new KeyMapping(
             "key.littlemaidneo.open_maid_manager_screen",
-            GLFW.GLFW_KEY_M,
+            InputConstants.KEY_M,
             CATEGORY
     );
 

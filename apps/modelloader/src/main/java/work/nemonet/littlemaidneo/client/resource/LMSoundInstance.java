@@ -95,7 +95,12 @@ public class LMSoundInstance implements SoundInstance {
     }
 
     @Override
-    public WeighedSoundEvents resolve(SoundManager soundManager) {
+    public WeighedSoundEvents getSoundEvent() {
+        return this.soundSet;
+    }
+
+    @Override
+    public WeighedSoundEvents getOrResolve(SoundManager soundManager) {
         return this.soundSet;
     }
 }

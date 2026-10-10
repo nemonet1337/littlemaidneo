@@ -170,7 +170,7 @@ public class MaidTorcherBehavior extends AbstractMaidBehavior {
             } catch (Exception e) {
                 LittleMaidNeo.LOGGER.warn("Torcherでのブロック設置時に例外が発生しました。", e);
             }
-            mob.swing(InteractionHand.MAIN_HAND);
+            mob.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, false);
             mob.play(LMSounds.INSTALLATION);
             recentlyPlaced.put(placePos.immutable(), mob.level().getGameTime());
         }

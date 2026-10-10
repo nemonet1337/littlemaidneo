@@ -227,13 +227,13 @@ public class MaidCombatBehavior extends AbstractMaidBehavior {
         }
 
         private boolean canAttack(LittleMaidEntity mob) {
-            return this.cooldown <= 0 && this.target.invulnerableTime <= 10
+            return this.cooldown <= 0 && this.target.getInvulnerableTime() <= 10
                     && mob.getSensing().hasLineOfSight(this.target);
         }
 
         private void attack(LittleMaidEntity mob) {
             resetCooldown(mob);
-            mob.swing(InteractionHand.MAIN_HAND);
+            mob.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, false);
             mob.doHurtTarget((ServerLevel) mob.level(), target);
         }
 
@@ -346,7 +346,7 @@ public class MaidCombatBehavior extends AbstractMaidBehavior {
                         mob.stopUsingItem();
                         mob.performRangedAttack(target, 1.0f);
                         mob.play(LMSounds.SHOOT);
-                        mob.swing(InteractionHand.MAIN_HAND);
+                        mob.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, false);
                         itemStack.hurtAndBreak(1, mob, EquipmentSlot.MAINHAND);
                     }
                 }
@@ -373,7 +373,7 @@ public class MaidCombatBehavior extends AbstractMaidBehavior {
                             mob.stopUsingItem();
                             mob.setChargingCrossbow(false);
                             this.cool = 5;
-                            mob.swing(InteractionHand.MAIN_HAND);
+                            mob.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, false);
                         }
                     }
                 } else {
@@ -387,7 +387,7 @@ public class MaidCombatBehavior extends AbstractMaidBehavior {
                     } else {
                         mob.performRangedAttack(target, 1.0f);
                         mob.play(LMSounds.SHOOT);
-                        mob.swing(InteractionHand.MAIN_HAND);
+                        mob.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, false);
                     }
                 }
             }

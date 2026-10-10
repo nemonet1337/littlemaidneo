@@ -5,7 +5,7 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 public class ScrollBar extends GUIElement {
     private int elemSize;
@@ -64,7 +64,7 @@ public class ScrollBar extends GUIElement {
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean handled) {
         double mouseX = event.x(); double mouseY = event.y(); int button = event.button();
-        if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
+        if (button != InputConstants.MOUSE_BUTTON_LEFT) return false;
         if (!RangeChecker.checkFromWidth(mouseX, mouseY, this.x, this.y, this.width, this.height)) return false;
         clicked = true;
         pointAt(mouseY);
@@ -74,7 +74,7 @@ public class ScrollBar extends GUIElement {
     @Override
     public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
         double mouseX = event.x(); double mouseY = event.y(); int button = event.button();
-        if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
+        if (button != InputConstants.MOUSE_BUTTON_LEFT) return false;
         if (!clicked && !RangeChecker.checkFromWidth(mouseX, mouseY, this.x, this.y, this.width, this.height)) return false;
         clicked = true;
         pointAt(mouseY);
@@ -83,7 +83,7 @@ public class ScrollBar extends GUIElement {
 
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
-        if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            if (event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
             clicked = false;
         }
         return false;

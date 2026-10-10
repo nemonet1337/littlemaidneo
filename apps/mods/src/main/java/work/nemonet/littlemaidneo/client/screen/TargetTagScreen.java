@@ -20,7 +20,7 @@ import work.nemonet.littlemaidneo.entity.targeting.TargetIdentifier;
 import work.nemonet.littlemaidneo.entity.targeting.TargetTagManager;
 import work.nemonet.littlemaidneo.entity.targeting.TargetingSystem;
 import work.nemonet.littlemaidneo.network.NetworkHandler;
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -313,7 +313,7 @@ public class TargetTagScreen extends AbstractFilterableListScreen<TargetTagScree
                 }
             }
 
-            if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            if (event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
                 clickable.click(event.x(), event.y());
             }
             return super.mouseClicked(event, handled);

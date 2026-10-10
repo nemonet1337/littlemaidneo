@@ -6,7 +6,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -95,7 +95,7 @@ public class TextInputGUI extends GUIElement {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean handled) {
-        if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+        if (event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
             setFocused(isMouseOver(event.x(), event.y()));
             return isFocused();
         }
@@ -105,7 +105,7 @@ public class TextInputGUI extends GUIElement {
     @Override
     public boolean keyPressed(KeyEvent event) {
         if (!isFocused() || !editable) return false;
-        if (event.key() == GLFW.GLFW_KEY_BACKSPACE) {
+        if (event.key() == InputConstants.KEY_BACKSPACE) {
             if (!text.isEmpty()) {
                 setText(text.substring(0, text.length() - 1));
             }

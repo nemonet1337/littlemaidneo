@@ -33,7 +33,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "littlemaidneo:little_maid_spawn_egg"
+        "recipes": "littlemaidneo:little_maid_spawn_egg"
       },
       "trigger": "minecraft:recipe_unlocked"
     },

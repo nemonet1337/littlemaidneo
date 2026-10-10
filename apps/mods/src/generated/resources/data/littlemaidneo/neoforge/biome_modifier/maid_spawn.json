@@ -1,10 +1,15 @@
 {
   "type": "neoforge:add_spawns",
   "biomes": "#littlemaidneo:maid_spawn_biome",
-  "spawners": {
-    "type": "littlemaidneo:little_maid_mob",
-    "maxCount": 3,
-    "minCount": 1,
-    "weight": 5
-  }
+  "spawners": [
+    {
+      "type": "littlemaidneo:little_maid_mob",
+      "count": {
+        "type": "minecraft:uniform",
+        "min_inclusive": 1,
+        "max_inclusive": 3
+      },
+      "weight": 5
+    }
+  ]
 }

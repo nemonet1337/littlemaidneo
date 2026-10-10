@@ -248,7 +248,7 @@ public class MaidCollectSalaryBehavior extends AbstractMaidBehavior {
     }
 
     protected void postCollect(LittleMaidEntity entity) {
-        entity.swing(InteractionHand.MAIN_HAND);
+        entity.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, false);
         entity.playSound(SoundEvents.ITEM_PICKUP, 1.0F, entity.getRandom().nextFloat() * 0.1F + 1.0F);
     }
 

@@ -496,7 +496,6 @@ private float prevInterestedAngle;
 
     @Override
     public void aiStep() {
-        updateSwingTime();
         super.aiStep();
     }
 

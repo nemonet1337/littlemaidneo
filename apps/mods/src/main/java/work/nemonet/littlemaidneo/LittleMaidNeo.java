@@ -63,9 +63,11 @@ public class LittleMaidNeo {
 
         modEventBus.addListener(work.nemonet.littlemaidneo.data.LMDataGenerator::gatherClientData);
         modEventBus.addListener(work.nemonet.littlemaidneo.data.LMDataGenerator::gatherServerData);
+        modEventBus.addListener(work.nemonet.littlemaidneo.data.LMDataGenerator::gatherRegistries);
 
-        modContainer.registerConfig(ModConfig.Type.COMMON, LMNModelConfig.SPEC, "littlemaidneo-common.toml");
-        modContainer.registerConfig(ModConfig.Type.SERVER, LMNConfig.SPEC, "littlemaidneo-server.toml");
+        // FML 12 (MC 26.3) で Type が再編: COMMON→LOCAL（両側・グローバル設定）, SERVER→SYNCED（サーバー設定・同期）
+        modContainer.registerConfig(ModConfig.Type.LOCAL, LMNModelConfig.SPEC, "littlemaidneo-common.toml");
+        modContainer.registerConfig(ModConfig.Type.SYNCED, LMNConfig.SPEC, "littlemaidneo-server.toml");
 
         modEventBus.addListener(this::onCommonSetup);
         modEventBus.addListener(this::onRegisterPayloadHandlers);

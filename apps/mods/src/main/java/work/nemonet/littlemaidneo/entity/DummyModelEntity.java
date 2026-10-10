@@ -32,6 +32,10 @@ public class DummyModelEntity extends LivingEntity implements MultiModelView {
 
     public DummyModelEntity(EntityType<DummyModelEntity> type, Level worldIn) {
         super(type, worldIn);
+        // GUI プレビュー用のダミーはレベル未登録で ID が 0 のままだが、26.3 の Entity#getId() は
+        // 未割り当て(ID=0)で IllegalStateException を投げる（ItemModelResolver が描画シードに使用）。
+        // レベル外のダミーなので、描画が破綻しないよう非 0 の ID を割り当てる。
+        this.setId(1);
     }
 
     public void setSkinModel(LMModel<?> model) {

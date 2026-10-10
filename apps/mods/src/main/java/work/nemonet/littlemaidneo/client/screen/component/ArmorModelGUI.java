@@ -8,7 +8,7 @@ import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 import work.nemonet.littlemaidneo.client.screen.ModelSelectScreen;
 import work.nemonet.littlemaidneo.entity.compound.IHasMultiModel;
 import work.nemonet.littlemaidneo.maidmodel.LMModel;
@@ -92,7 +92,7 @@ public class ArmorModelGUI extends GUIElement implements ListGUIElement {
 
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean handled) {
-        if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+        if (event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
             selectBox.click(event.x(), event.y());
             return true;
         }
@@ -101,7 +101,7 @@ public class ArmorModelGUI extends GUIElement implements ListGUIElement {
 
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
-        if (event.button() == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+        if (event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
             if (selectBox.release(event.x(), event.y())) {
                 Font fontRenderer = Minecraft.getInstance().font;
                 double relativeX = event.x() - this.x;

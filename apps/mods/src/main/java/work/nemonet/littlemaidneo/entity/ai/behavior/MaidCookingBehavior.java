@@ -10,6 +10,7 @@ import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.AbstractCookingRecipe;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.world.level.block.entity.HopperBlockEntity;
@@ -187,7 +188,7 @@ public class MaidCookingBehavior extends AbstractMaidBehavior implements Persist
     }
 
     private OptionalInt getFuel(LittleMaidEntity mob) {
-        return ModeHelpers.findSlot(mob.getInventory(), stack -> mob.level().fuelValues().isFuel(stack));
+        return ModeHelpers.findSlot(mob.getInventory(), stack -> stack.has(DataComponents.COOKING_FUEL));
     }
 
     private Optional<BlockPos> findFurnacePos(LittleMaidEntity mob) {
@@ -352,7 +353,7 @@ public class MaidCookingBehavior extends AbstractMaidBehavior implements Persist
     }
 
     private void pickupAction(LittleMaidEntity mob) {
-        mob.swing(InteractionHand.MAIN_HAND);
+        mob.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, false);
         mob.playSound(SoundEvents.ITEM_PICKUP, 1.0F, mob.getRandom().nextFloat() * 0.1F + 1.0F);
     }
 

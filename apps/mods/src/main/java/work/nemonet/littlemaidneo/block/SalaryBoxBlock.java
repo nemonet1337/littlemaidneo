@@ -1,6 +1,5 @@
 package work.nemonet.littlemaidneo.block;
 
-import com.mojang.serialization.MapCodec;
 import net.minecraft.world.level.block.*;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -25,23 +24,16 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
-import work.nemonet.littlemaidneo.setup.ModRegistration;
 import org.jetbrains.annotations.Nullable;
+import work.nemonet.littlemaidneo.setup.ModRegistration;
 
 public class SalaryBoxBlock extends BaseEntityBlock {
-    public static final MapCodec<SalaryBoxBlock> CODEC = simpleCodec(SalaryBoxBlock::new);
-
     public static final EnumProperty<Direction> FACING = BlockStateProperties.FACING;
     public static final BooleanProperty OPEN = BlockStateProperties.OPEN;
 
     public SalaryBoxBlock(Properties settings) {
         super(settings);
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(OPEN, false));
-    }
-
-    @Override
-    protected MapCodec<? extends BaseEntityBlock> codec() {
-        return CODEC;
     }
 
     @Override

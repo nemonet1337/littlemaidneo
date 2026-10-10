@@ -41,8 +41,9 @@ public class MaidModelRenderer extends MobRenderer<LittleMaidEntity, MaidRenderS
         state.maidEntity = entity;
         applyHeadCosmetic(entity, state, partialTick);
 
-        float swingProgress = entity.getAttackAnim(partialTick);
-        if (entity.swingingArm == net.minecraft.world.InteractionHand.MAIN_HAND) {
+        float swingProgress = entity.getSwingAnimation(partialTick);
+        var currentSwing = entity.getCurrentSwing();
+        if (currentSwing != null && currentSwing.hand() == net.minecraft.world.InteractionHand.MAIN_HAND) {
             if (entity.getMainArm() == net.minecraft.world.entity.HumanoidArm.RIGHT) {
                 state.swingProgressRight = swingProgress;
             } else {

@@ -3,7 +3,7 @@ package work.nemonet.littlemaidneo.entity.util;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.item.AxeItem;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.BowItem;
 import net.minecraft.world.item.CrossbowItem;
@@ -197,7 +197,7 @@ public class MaidJobManager {
     }
 
     private static boolean isCombatFallback(ItemStack stack) {
-        if (stack.has(DataComponents.WEAPON) || stack.getItem() instanceof AxeItem
+        if (stack.has(DataComponents.WEAPON) || stack.is(ItemTags.AXES)
                 || stack.getItem() instanceof IRangedWeapon) {
             return true;
         }
@@ -307,7 +307,7 @@ public class MaidJobManager {
         ItemStack main = maid.getMainHandItem();
         Item item = main.getItem();
         boolean melee = main.has(DataComponents.WEAPON)
-                || item instanceof AxeItem
+                || main.is(ItemTags.AXES)
                 || main.is(LMTags.Items.FENCER_MODE);
         if (melee) {
             maid.getBrain().setMemory(ModRegistration.ACTIVE_BATTLE_MODE.get(), BATTLE_SWORD);

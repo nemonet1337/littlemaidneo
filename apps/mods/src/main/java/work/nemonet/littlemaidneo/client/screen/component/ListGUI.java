@@ -6,7 +6,7 @@ import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.util.Mth;
-import org.lwjgl.glfw.GLFW;
+import com.mojang.blaze3d.platform.InputConstants;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -119,7 +119,7 @@ public class ListGUI<T extends GUIElement> extends GUIElement {
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean handled) {
         double mouseX = event.x(); double mouseY = event.y(); int button = event.button();
-        if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+        if (button == InputConstants.MOUSE_BUTTON_LEFT) {
             selectBox.click(mouseX, mouseY);
         }
         Optional<T> e = getElement(mouseX, mouseY);
@@ -131,7 +131,7 @@ public class ListGUI<T extends GUIElement> extends GUIElement {
         double mouseX = event.x(); double mouseY = event.y(); int button = event.button();
         Optional<T> e = getElement(mouseX, mouseY);
         if (e.isPresent()) {
-            if (button == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
+            if (button == InputConstants.MOUSE_BUTTON_LEFT) {
                 if (selectBox.release(mouseX, mouseY)) {
                     int index = getIndex(mouseX, mouseY);
                     if (checkElementsBounds(index)) {

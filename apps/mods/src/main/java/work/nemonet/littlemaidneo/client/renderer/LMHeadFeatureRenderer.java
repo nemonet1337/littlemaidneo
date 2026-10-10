@@ -67,7 +67,7 @@ public class LMHeadFeatureRenderer<S extends MaidRenderState, M extends LMMultiM
 
     public static void translate(PoseStack matrices, boolean villager) {
         matrices.translate(0.0, -0.25, 0.0);
-        matrices.mulPose(Axis.YP.rotationDegrees(180.0f));
+        matrices.rotate(Axis.YP, 180.0f);
         matrices.scale(0.625f, -0.625f, -0.625f);
         if (villager) {
             matrices.translate(0.0, 0.1875, 0.0);

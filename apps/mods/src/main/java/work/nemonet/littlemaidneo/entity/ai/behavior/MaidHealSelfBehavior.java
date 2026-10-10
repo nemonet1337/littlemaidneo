@@ -62,7 +62,7 @@ public class MaidHealSelfBehavior extends AbstractMaidBehavior {
         entity.heal(LittleMaidEntity.getConfig().health.healAmount);
         consumeHealItem(entity, healItem);
         entity.playSound(SoundEvents.ITEM_PICKUP, 1.0F, entity.getRandom().nextFloat() * 0.1F + 1.0F);
-        entity.swing(InteractionHand.MAIN_HAND);
+        entity.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, false);
         
         var sound = isHealthFull(entity) ? LMSounds.EAT_SUGAR_MAX_POWER : LMSounds.EAT_SUGAR;
         entity.play(sound);
@@ -109,3 +109,4 @@ public class MaidHealSelfBehavior extends AbstractMaidBehavior {
         return entity.getHealth() / entity.getMaxHealth() > LMNConfig.get().health.healDelayThreshold;
     }
 }
+

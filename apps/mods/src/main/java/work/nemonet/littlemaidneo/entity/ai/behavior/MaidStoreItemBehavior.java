@@ -99,7 +99,7 @@ public class MaidStoreItemBehavior extends AbstractMaidBehavior {
 
         entity.level().playSound(null, containerPos,
                 SoundEvents.CHEST_OPEN, net.minecraft.sounds.SoundSource.BLOCKS, 1.0f, 1.0f);
-        entity.swing(InteractionHand.MAIN_HAND);
+        entity.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, false);
 
         if (entity.level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
             double cx = containerPos.getX() + 0.5;
@@ -151,3 +151,4 @@ public class MaidStoreItemBehavior extends AbstractMaidBehavior {
         containerPos = null;
     }
 }
+

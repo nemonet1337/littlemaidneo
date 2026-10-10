@@ -10,6 +10,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.entity.projectile.throwableitemprojectile.Snowball;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.SwingAnimation;
 import net.minecraft.world.level.Level;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.resource.util.LMSounds;
@@ -74,7 +75,7 @@ public class MaidPlaySnowBehavior extends AbstractMaidBehavior {
                 entity.play(LMSounds.COLLECT_SNOW);
             }
             if (timer % 15 == 0 && timer % 30 != 0) {
-                entity.swing(InteractionHand.MAIN_HAND);
+                entity.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
                 entity.level().playSound(null, entity.getX(), entity.getY(), entity.getZ(),
                         SoundEvents.SNOW_HIT, SoundSource.NEUTRAL, 1.0f, 1.0f);
             }
@@ -136,7 +137,7 @@ public class MaidPlaySnowBehavior extends AbstractMaidBehavior {
             } else {
                 if (timer == 0) {
                     shootSnowBall(entity.level(), entity);
-                    entity.swing(InteractionHand.MAIN_HAND);
+                    entity.swing(InteractionHand.MAIN_HAND, SwingAnimation.DEFAULT, false);
                     entity.play(LMSounds.SHOOT);
                     entity.setYRot(entity.getYHeadRot());
                 }

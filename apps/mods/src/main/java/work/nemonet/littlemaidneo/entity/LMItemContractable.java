@@ -45,7 +45,7 @@ public class LMItemContractable<T extends LittleMaidEntity> extends ItemContract
     protected void postReceive() {
         super.postReceive();
         var maid = this.mob;
-        maid.swing(InteractionHand.MAIN_HAND);
+        maid.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, false);
         maid.playSound(SoundEvents.ITEM_PICKUP,
                 1.0F, maid.getRandom().nextFloat() * 0.1F + 1.0F);
         maid.play(LMSounds.EAT_SUGAR);

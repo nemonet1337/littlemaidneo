@@ -7,6 +7,9 @@ import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
+import net.minecraft.client.renderer.item.ItemModelResolver;
+import net.minecraft.client.renderer.item.ItemStackRenderState;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
@@ -31,18 +34,19 @@ public class LMHeldItemLayer<S extends MultiModelRenderState, M extends LMModel<
         ItemStack leftStack = isMainRight ? state.offHandItem : state.mainHandItem;
         if (!leftStack.isEmpty() || !rightStack.isEmpty()) {
             poseStack.pushPose();
+            ItemModelResolver itemModelResolver = Minecraft.getInstance().getItemModelResolver();
             if (state.isBaby) {
                 poseStack.translate(0.0D, 0.75D, 0.0D);
                 poseStack.scale(0.5F, 0.5F, 0.5F);
             }
-            handRender(state, rightStack, ItemDisplayContext.THIRD_PERSON_RIGHT_HAND, HumanoidArm.RIGHT, poseStack, submitNodeCollector, light);
-            handRender(state, leftStack, ItemDisplayContext.THIRD_PERSON_LEFT_HAND, HumanoidArm.LEFT, poseStack, submitNodeCollector, light);
+            handRender(state, rightStack, ItemDisplayContext.THIRD_PERSON_RIGHT_HAND, HumanoidArm.RIGHT, poseStack, submitNodeCollector, light, itemModelResolver);
+            handRender(state, leftStack, ItemDisplayContext.THIRD_PERSON_LEFT_HAND, HumanoidArm.LEFT, poseStack, submitNodeCollector, light, itemModelResolver);
             poseStack.popPose();
         }
     }
 
     private void handRender(S state, ItemStack stack, ItemDisplayContext mode, HumanoidArm hand,
-                             PoseStack poseStack, SubmitNodeCollector submitNodeCollector, int light) {
+                             PoseStack poseStack, SubmitNodeCollector submitNodeCollector, int light, ItemModelResolver itemModelResolver) {
         if (stack.isEmpty()) return;
 
         poseStack.pushPose();
@@ -52,12 +56,13 @@ public class LMHeldItemLayer<S extends MultiModelRenderState, M extends LMModel<
             translateToHand(model, isLeft, poseStack);
         }
         // ItemInHandRenderer が想定する第三者視点ハンド向きへ合わせる
-        poseStack.mulPose(Axis.XP.rotationDegrees(-90.0F));
-        poseStack.mulPose(Axis.YP.rotationDegrees(180.0F));
+        poseStack.rotate(Axis.XP, -90.0F);
+        poseStack.rotate(Axis.YP, 180.0F);
         // 旧 renderItems: glTranslatef(0, 0.05, -0.05) 相当 + わずかな左右補正
         poseStack.translate(isLeft ? -0.0125F : 0.0125F, 0.05F, -0.05F);
-        Minecraft.getInstance().getEntityRenderDispatcher().getItemInHandRenderer()
-                .renderItem(state.entity, stack, mode, poseStack, submitNodeCollector, light);
+        ItemStackRenderState itemRenderState = new ItemStackRenderState();
+        itemModelResolver.updateForLiving(itemRenderState, stack, mode, state.entity);
+        itemRenderState.submit(poseStack, submitNodeCollector, light, OverlayTexture.NO_OVERLAY, 0);
         poseStack.popPose();
     }
 

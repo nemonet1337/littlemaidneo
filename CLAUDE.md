@@ -41,7 +41,7 @@ LittleMaidNeo は、レガシー Mod 系譜 **LittleMaidRebirth (LMRB)** と **L
 
 ## Environment
 
-- Minecraft 26.2 / NeoForge 26.2.0.87
+- Minecraft 26.3 / NeoForge 26.3.0.64-beta
 - **Java 25** が必要（`java.toolchain.languageVersion = 25`）
 - Gradle: NeoForge moddev plugin `net.neoforged.moddev` 2.0.141
 - 旧 LMML/LMRB は MC 1.20.1 + Architectury + Java 17 だったが、NeoForge 移行で大幅にアップデートされている
@@ -55,7 +55,7 @@ LittleMaidNeo は、レガシー Mod 系譜 **LittleMaidRebirth (LMRB)** と **L
 - `./gradlew :apps:mods:runClient` — クライアント起動
 - `./gradlew :apps:mods:runServer` — サーバー起動（`--nogui`）
 - `./gradlew :apps:mods:runGameTestServer` — GameTest 実行（namespace は `littlemaidneo`）
-- `./gradlew :apps:mods:mergeData` — データジェネレータ実行（出力先 `apps/mods/src/generated/resources/`）
+- `./gradlew :apps:mods:mergeData` — データジェネレータ実行。clientData/serverData の各ランは `build/generated/{client,server}/` に出力し、`mergeData` が `apps/mods/src/generated/resources/` へ統合する（**26.3 から両ランが同一出力先を直接使うと HashCache の stale パージで互いの生成物を削除し合うため分離が必須**）
 - CI: `.github/workflows/build.yml`（push/PR で `./gradlew build`、Java 25 / temurin）。main の Build 成功後に `.github/workflows/release.yml` が起動
 
 ## Localization and Communication Guidelines

@@ -2,6 +2,7 @@ package work.nemonet.littlemaidneo.client.resource;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.packs.PackLocationInfo;
+import net.minecraft.server.packs.PackMetadataResources;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.PackSelectionConfig;
 import net.minecraft.server.packs.PackType;
@@ -11,6 +12,7 @@ import net.minecraft.server.packs.repository.RepositorySource;
 
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 public class LMPackProvider implements RepositorySource {
     public static final PackSource RESOURCE_PACK_SOURCE = PackSource.create(
             packName -> Component.translatable("pack.nameAndSource", packName, Component.translatable("pack.source.littlemaidneo")),
@@ -30,13 +32,13 @@ public class LMPackProvider implements RepositorySource {
                 false);
         Pack.ResourcesSupplier resourcesSupplier = new Pack.ResourcesSupplier() {
             @Override
-            public PackResources openPrimary(PackLocationInfo info) {
+            public PackMetadataResources openMetadata(PackLocationInfo info) {
                 return ResourceWrapper.INSTANCE;
             }
 
             @Override
-            public PackResources openFull(PackLocationInfo info, Pack.Metadata metadata) {
-                return ResourceWrapper.INSTANCE;
+            public Stream<PackResources> openResources(PackLocationInfo info, Pack.Metadata metadata) {
+                return Stream.of(ResourceWrapper.INSTANCE);
             }
         };
         Pack pack = Pack.readMetaAndCreate(
