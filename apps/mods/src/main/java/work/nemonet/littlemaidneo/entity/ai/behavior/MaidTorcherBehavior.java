@@ -18,6 +18,7 @@ import work.nemonet.littlemaidneo.LittleMaidNeo;
 import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.mode.ModeHelpers;
+import work.nemonet.littlemaidneo.entity.util.MaidJob;
 import work.nemonet.littlemaidneo.entity.util.MaidMode;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 import work.nemonet.littlemaidneo.resource.util.LMSounds;
@@ -45,8 +46,7 @@ public class MaidTorcherBehavior extends AbstractMaidBehavior {
 
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, LittleMaidEntity mob) {
-        String job = mob.getBrain().getMemory(work.nemonet.littlemaidneo.setup.ModRegistration.ACTIVE_JOB_NAME.get()).orElse("");
-        if (!job.equals("torcher")) {
+        if (!requireJob(mob, MaidJob.TORCHER)) {
             return false;
         }
 
@@ -105,8 +105,7 @@ public class MaidTorcherBehavior extends AbstractMaidBehavior {
 
     @Override
     protected boolean canStillUse(ServerLevel level, LittleMaidEntity mob, long gameTime) {
-        String job = mob.getBrain().getMemory(work.nemonet.littlemaidneo.setup.ModRegistration.ACTIVE_JOB_NAME.get()).orElse("");
-        if (!job.equals("torcher")) {
+        if (!requireJob(mob, MaidJob.TORCHER)) {
             return false;
         }
         return (

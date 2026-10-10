@@ -12,6 +12,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.mode.ModeHelpers;
+import work.nemonet.littlemaidneo.entity.util.MaidJob;
 
 import java.util.Collection;
 import java.util.Map;
@@ -32,8 +33,7 @@ public class MaidRipperBehavior extends AbstractMaidBehavior {
 
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, LittleMaidEntity mob) {
-        String job = mob.getBrain().getMemory(work.nemonet.littlemaidneo.setup.ModRegistration.ACTIVE_JOB_NAME.get()).orElse("");
-        if (!job.equals("ripper")) {
+        if (!requireJob(mob, MaidJob.RIPPER)) {
             return false;
         }
         if (0 < cool--) {
@@ -59,8 +59,7 @@ public class MaidRipperBehavior extends AbstractMaidBehavior {
 
     @Override
     protected boolean canStillUse(ServerLevel level, LittleMaidEntity mob, long gameTime) {
-        String job = mob.getBrain().getMemory(work.nemonet.littlemaidneo.setup.ModRegistration.ACTIVE_JOB_NAME.get()).orElse("");
-        if (!job.equals("ripper")) {
+        if (!requireJob(mob, MaidJob.RIPPER)) {
             return false;
         }
         return !this.shearable.isEmpty();

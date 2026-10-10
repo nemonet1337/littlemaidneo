@@ -17,6 +17,7 @@ import net.minecraft.world.item.*;
 import work.nemonet.littlemaidneo.LittleMaidNeo;
 import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
+import work.nemonet.littlemaidneo.entity.util.MaidJob;
 import work.nemonet.littlemaidneo.util.CrossbowItemInvoker;
 import work.nemonet.littlemaidneo.resource.util.LMSounds;
 import work.nemonet.littlemaidneo.entity.util.EPEntityUtil;
@@ -85,7 +86,7 @@ public final class MaidCombat {
         float factor = config.health.generalMaidDamageFactor;
         if ((config.health.enableWorkInEmergency || !mob.isEmergency()) &&
                 !TameableUtil.isWait(mob) &&
-                mob.getActiveJobName().equals("combat")) {
+                mob.getActiveJob() == MaidJob.COMBAT) {
             factor *= config.health.battleModeMaidDamageFactor;
         } else {
             factor *= config.health.nonBattleModeMaidDamageFactor;

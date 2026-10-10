@@ -22,7 +22,7 @@ import work.nemonet.littlemaidneo.entity.ai.behavior.MaidTargetBehavior;
 import work.nemonet.littlemaidneo.entity.ai.behavior.MaidTeleportBehavior;
 import work.nemonet.littlemaidneo.entity.ai.behavior.MaidTraceBehavior;
 import work.nemonet.littlemaidneo.entity.ai.behavior.MaidWaitBehavior;
-import work.nemonet.littlemaidneo.entity.util.MaidJobManager;
+import work.nemonet.littlemaidneo.entity.util.MaidJob;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 import work.nemonet.littlemaidneo.setup.ModRegistration;
 
@@ -87,6 +87,8 @@ public final class MaidBrain {
 
     private static ImmutableList<BehaviorControl<? super LittleMaidEntity>> workBehaviors(LittleMaidEntity entity) {
         return ImmutableList.of(
+                // 瓶補填→醸造の順。ベース（水入り瓶）が無ければ先に水源へ向かう。
+                entity.fillBottleBehavior,
                 entity.cookingBehavior,
                 entity.healerBehavior,
                 entity.pharmacistBehavior,
@@ -122,16 +124,16 @@ public final class MaidBrain {
             brain.setActiveActivityIfPossible(Activity.PANIC);
             return;
         }
-        if (!maid.fleeEntities.isEmpty()) {
+        if (!maid.getFleeEntities().isEmpty()) {
             brain.setActiveActivityIfPossible(Activity.AVOID);
             return;
         }
-        String job = maid.getActiveJobName();
-        if (MaidJobManager.JOB_COMBAT.equals(job) && brain.hasMemoryValue(MemoryModuleType.ATTACK_TARGET)) {
+        MaidJob job = maid.getActiveJob();
+        if (job == MaidJob.COMBAT && brain.hasMemoryValue(MemoryModuleType.ATTACK_TARGET)) {
             brain.setActiveActivityIfPossible(Activity.FIGHT);
             return;
         }
-        if (!MaidJobManager.JOB_NONE.equals(job) && !MaidJobManager.JOB_COMBAT.equals(job)) {
+        if (job != MaidJob.NONE && job != MaidJob.COMBAT) {
             brain.setActiveActivityIfPossible(Activity.WORK);
             return;
         }

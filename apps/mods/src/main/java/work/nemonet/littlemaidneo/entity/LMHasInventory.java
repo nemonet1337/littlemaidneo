@@ -63,7 +63,13 @@ public class LMHasInventory implements HasInventory {
         this.workItemSlotSize = input.getByteOr("workItemSlotSize", (byte) this.workItemSlotSize) & 0xFF;
     }
 
-    public static Container getInvAndHands(LittleMaidEntity maid) {
+    /**
+     * 作業用ビュー: メインハンド → オフハンド → 18 スロット（計 20）。
+     *
+     * <p>仕事（料理・治癒・醸造等）では「手足も道具として使う」ため、ハンドを含めた
+     * 20 スロットで走査する。Behavior 側はこのビューを使うこと。
+     */
+    public static Container getWorkView(LittleMaidEntity maid) {
         var inv = maid.getInventory();
         return new Container() {
             @Override
@@ -80,68 +86,34 @@ public class LMHasInventory implements HasInventory {
 
             @Override
             public ItemStack getItem(int slot) {
-                if (slot == 0) {
-                    return maid.getMainHandItem();
-                } else if (slot == 1) {
-                    return maid.getOffhandItem();
+                if (isHandSlot(slot)) {
+                    return maid.getItemInHand(handOf(slot));
                 }
-                return inv.getItem(slot - 2);
+                return inv.getItem(slot - HAND_VIEW_SLOTS);
             }
 
             @Override
             public ItemStack removeItem(int slot, int amount) {
-                if (slot == 0) {
-                    ItemStack itemStack = maid.getMainHandItem();
-                    if (itemStack.isEmpty() || amount <= 0) {
-                        return ItemStack.EMPTY;
-                    }
-                    itemStack = itemStack.split(amount);
-                    if (!itemStack.isEmpty()) {
-                        this.setChanged();
-                    }
-                    return itemStack;
-                } else if (slot == 1) {
-                    ItemStack itemStack = maid.getOffhandItem();
-                    if (itemStack.isEmpty() || amount <= 0) {
-                        return ItemStack.EMPTY;
-                    }
-                    itemStack = itemStack.split(amount);
-                    if (!itemStack.isEmpty()) {
-                        this.setChanged();
-                    }
-                    return itemStack;
+                if (isHandSlot(slot)) {
+                    return splitHandItem(maid, slot, amount);
                 }
-                return inv.removeItem(slot - 2, amount);
+                return inv.removeItem(slot - HAND_VIEW_SLOTS, amount);
             }
 
             @Override
             public ItemStack removeItemNoUpdate(int slot) {
-                if (slot == 0) {
-                    var stack = maid.getMainHandItem();
-                    if (stack.isEmpty()) {
-                        return ItemStack.EMPTY;
-                    }
-                    maid.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
-                    return stack;
-                } else if (slot == 1) {
-                    var stack = maid.getOffhandItem();
-                    if (stack.isEmpty()) {
-                        return ItemStack.EMPTY;
-                    }
-                    maid.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
-                    return stack;
+                if (isHandSlot(slot)) {
+                    return takeHandItem(maid, slot);
                 }
-                return inv.removeItemNoUpdate(slot - 2);
+                return inv.removeItemNoUpdate(slot - HAND_VIEW_SLOTS);
             }
 
             @Override
             public void setItem(int slot, ItemStack stack) {
-                if (slot == 0) {
-                    maid.setItemInHand(InteractionHand.MAIN_HAND, stack);
-                } else if (slot == 1) {
-                    maid.setItemInHand(InteractionHand.OFF_HAND, stack);
+                if (isHandSlot(slot)) {
+                    maid.setItemInHand(handOf(slot), stack);
                 } else {
-                    inv.setItem(slot - 2, stack);
+                    inv.setItem(slot - HAND_VIEW_SLOTS, stack);
                 }
             }
 
@@ -160,6 +132,47 @@ public class LMHasInventory implements HasInventory {
                 inv.clearContent();
             }
         };
+    }
+
+    /**
+     * 生活用ビュー: 18 スロットのみ（ハンドを含まない）。
+     *
+     * <p>給料受け取りや自己回復など「手足は別の用途で使う」処理向け。
+     */
+    public static Container getLifeView(LittleMaidEntity maid) {
+        return maid.getInventory();
+    }
+
+    /** 作業用ビューのうちハンドを占める先頭スロット数（0=メインハンド, 1=オフハンド）。 */
+    public static final int HAND_VIEW_SLOTS = 2;
+
+    private static boolean isHandSlot(int slot) {
+        return slot < HAND_VIEW_SLOTS;
+    }
+
+    private static InteractionHand handOf(int slot) {
+        return slot == 0 ? InteractionHand.MAIN_HAND : InteractionHand.OFF_HAND;
+    }
+
+    private static ItemStack splitHandItem(LittleMaidEntity maid, int slot, int amount) {
+        var hand = handOf(slot);
+        var stack = maid.getItemInHand(hand);
+        if (stack.isEmpty() || amount <= 0) {
+            return ItemStack.EMPTY;
+        }
+        var result = stack.split(amount);
+        maid.setItemInHand(hand, stack);
+        return result;
+    }
+
+    private static ItemStack takeHandItem(LittleMaidEntity maid, int slot) {
+        var hand = handOf(slot);
+        var stack = maid.getItemInHand(hand);
+        if (stack.isEmpty()) {
+            return ItemStack.EMPTY;
+        }
+        maid.setItemInHand(hand, ItemStack.EMPTY);
+        return stack;
     }
 
 }

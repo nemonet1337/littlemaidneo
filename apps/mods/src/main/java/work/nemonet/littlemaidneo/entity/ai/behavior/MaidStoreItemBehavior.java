@@ -91,7 +91,7 @@ public class MaidStoreItemBehavior extends AbstractMaidBehavior {
 
     protected boolean isExceptItem(LittleMaidEntity entity, ItemStack stack) {
         return stack.is(LMTags.Items.MAIDS_SALARY) ||
-                work.nemonet.littlemaidneo.entity.util.MaidJobManager.isModeItemForJob(entity.getActiveJobName(), stack);
+                work.nemonet.littlemaidneo.entity.util.MaidJobManager.isModeItemForJob(entity.getActiveJob(), stack);
     }
 
     protected void storeItems(LittleMaidEntity entity) {

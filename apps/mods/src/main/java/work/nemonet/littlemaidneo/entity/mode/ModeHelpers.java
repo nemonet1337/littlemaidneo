@@ -107,6 +107,31 @@ public final class ModeHelpers {
         return OptionalInt.empty();
     }
 
+    /**
+     * {@code stack} を {@code container} へ可能な限り挿入する。
+     * 空スロットへの挿入と同種スタックの結合を行う。
+     *
+     * @return 挿入しきれなかった残り。全量入れば {@link ItemStack#EMPTY}
+     */
+    public static ItemStack transferTo(Container container, ItemStack stack) {
+        for (int i = 0; i < container.getContainerSize(); i++) {
+            ItemStack slotStack = container.getItem(i);
+            if (slotStack.isEmpty()) {
+                container.setItem(i, stack.copy());
+                return ItemStack.EMPTY;
+            }
+            if (ItemStack.isSameItemSameComponents(slotStack, stack) && slotStack.getCount() < slotStack.getMaxStackSize()) {
+                int toAdd = Math.min(stack.getCount(), slotStack.getMaxStackSize() - slotStack.getCount());
+                slotStack.grow(toAdd);
+                stack.shrink(toAdd);
+                if (stack.isEmpty()) {
+                    return ItemStack.EMPTY;
+                }
+            }
+        }
+        return stack;
+    }
+
     public static RecipeType<? extends AbstractCookingRecipe> furnaceRecipeType(AbstractFurnaceBlockEntity tile) {
         var block = tile.getBlockState().getBlock();
         if (block instanceof BlastFurnaceBlock) {

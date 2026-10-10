@@ -21,9 +21,9 @@ public class MaidAvoidBehavior extends AbstractMaidBehavior {
 
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, LittleMaidEntity mob) {
-        mob.fleeEntities.entrySet().removeIf(entry -> entry.getValue().test(entry.getKey()));
+        mob.getFleeEntities().entrySet().removeIf(entry -> entry.getValue().test(entry.getKey()));
 
-        if (mob.fleeEntities.isEmpty()) {
+        if (mob.getFleeEntities().isEmpty()) {
             return false;
         }
 
@@ -31,7 +31,7 @@ public class MaidAvoidBehavior extends AbstractMaidBehavior {
         LivingEntity nearest = null;
         double nearestDistSq = avoidDist * avoidDist;
 
-        for (LivingEntity danger : mob.fleeEntities.keySet()) {
+        for (LivingEntity danger : mob.getFleeEntities().keySet()) {
             if (danger.isAlive()) {
                 double distSq = mob.distanceToSqr(danger);
                 if (distSq < nearestDistSq) {
@@ -60,7 +60,7 @@ public class MaidAvoidBehavior extends AbstractMaidBehavior {
 
     @Override
     protected void tick(ServerLevel level, LittleMaidEntity mob, long gameTime) {
-        mob.fleeEntities.entrySet().removeIf(entry -> entry.getValue().test(entry.getKey()));
+        mob.getFleeEntities().entrySet().removeIf(entry -> entry.getValue().test(entry.getKey()));
 
         if (this.avoidTarget == null || !this.avoidTarget.isAlive()) {
             this.avoidTarget = null;

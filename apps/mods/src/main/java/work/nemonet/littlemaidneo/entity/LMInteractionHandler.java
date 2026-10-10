@@ -20,13 +20,13 @@ import work.nemonet.littlemaidneo.resource.util.LMSounds;
 import work.nemonet.littlemaidneo.tags.LMTags;
 
 /**
- * メイドさんの右クリック操作（ ）の
- * アイテム別分岐ロジックの移譲先。
+ * メイドさん�E右クリチE��操作！E�E��E
+ * アイチE��別刁E��ロジチE��の移譲先、E
  * <p>
- * 継承元の挙動は使わず、所持アイテムを上から順に判定する。挙動は分離前と同一。
- * 戻り値の意味: SUCCESS=実行+手振り / CONSUME=実行のみ / PASS=非実行・他動作許可 / FAIL=非実行・他動作不許可。
- * 外部から直接参照できない {@code EXPERIENCE_BOTTLE_COST}（パッケージプライベート）・
- * {@code xpReward}（{@code getXpReward_LM()} ブリッジ経由）以外は public API 経由でアクセスする。
+ * 継承允E�E挙動は使わず、所持アイチE��を上から頁E��判定する。挙動�E刁E��前と同一、E
+ * 戻り値の意味: SUCCESS=実衁E手振めE/ CONSUME=実行�Eみ / PASS=非実行�E他動作許可 / FAIL=非実行�E他動作不許可、E
+ * 外部から直接参�EできなぁE{@code EXPERIENCE_BOTTLE_COST}�E�パチE��ージプライベ�Eト）�E
+ * {@code xpReward}�E�E@code getXpReward_LM()} ブリチE��経由�E�以外�E public API 経由でアクセスする、E
  */
 final class LMInteractionHandler {
 
@@ -38,25 +38,25 @@ final class LMInteractionHandler {
             return InteractionResult.PASS;
         }
         ItemStack stack = player.getItemInHand(hand);
-        // オーナーが居ない場合
+        // オーナ�Eが屁E��ぁE��吁E
         if (TameableUtil.getTameOwnerUuid(mob).isEmpty()) {
             if (stack.is(LMTags.Items.MAIDS_EMPLOYABLE)) {
                 return mob.contract(player, stack, false);
             }
             return InteractionResult.PASS;
         }
-        // オーナーじゃない場合
+        // オーナ�EじゃなぁE��吁E
         if (TameableUtil.getTameOwnerUuid(mob).isPresent() &&
                 !TameableUtil.isTameOwner(mob, player)) {
             if (!mob.level().isClientSide()) {
-                player.hurt(mob.level().damageSources().mobAttack(mob), 1.0f); // 0.5ハートダメージ
+                player.hurt(mob.level().damageSources().mobAttack(mob), 1.0f); // 0.5ハ�Eトダメージ
                 mob.playForce(LMSounds.FIND_TARGET_D);
                 mob.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, false);
-                mob.level().broadcastEntityEvent(mob, (byte) 6); // 怒りエフェクト
+                mob.level().broadcastEntityEvent(mob, (byte) 6); // 怒りエフェクチE
             }
             return InteractionResult.SUCCESS;
         }
-        // ストライキ時
+        // ストライキ晁E
         if (mob.isStrike()) {
             if (stack.is(LMTags.Items.MAIDS_EMPLOYABLE)) {
                 return mob.contract(player, stack, true);
@@ -68,7 +68,7 @@ final class LMInteractionHandler {
                     if (!player.getAbilities().instabuild) {
                         stack.shrink(8);
                     }
-                    mob.level().broadcastEntityEvent(mob, (byte) 71); // 再雇用エフェクト
+                    mob.level().broadcastEntityEvent(mob, (byte) 71); // 再雇用エフェクチE
                     mob.playSound(SoundEvents.GENERIC_EAT.value(), 1.0F, 1.0F);
                     mob.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, false);
 
@@ -77,13 +77,13 @@ final class LMInteractionHandler {
                         NetworkHandler.sendSyncMultiModelS2C(mob, mob);
                     }
                     mob.setStrike(false);
-                    mob.itemContractable.setUnpaidTimes(0);
+                    mob.getItemContractable().setUnpaidTimes(0);
                     mob.getNavigation().stop();
                     mob.setMaidMode(MaidMode.ESCORT);
 
                     return InteractionResult.SUCCESS;
                 } else {
-                    mob.level().broadcastEntityEvent(mob, (byte) 6); // 怒りエフェクト
+                    mob.level().broadcastEntityEvent(mob, (byte) 6); // 怒りエフェクチE
                     mob.playForce(LMSounds.FIND_TARGET_D);
                     player.sendSystemMessage(Component.translatable("chat.littlemaidneo.need_more_sugar_for_strike"));
                     return InteractionResult.CONSUME;
@@ -115,7 +115,7 @@ final class LMInteractionHandler {
             }
             return InteractionResult.SUCCESS;
         }
-        // サドル持ってるとき
+        // サドル持ってるとぁE
         if (stack.is(Items.SADDLE)) {
             if (!mob.isPassenger()) {
                 if (player.isVehicle()) {
@@ -130,7 +130,7 @@ final class LMInteractionHandler {
             }
             return InteractionResult.SUCCESS;
         }
-        // 肩車されてるとき
+        // 肩車されてるとぁE
         if (mob.getVehicle() == player) {
             return InteractionResult.PASS;
         }
@@ -166,7 +166,7 @@ final class LMInteractionHandler {
             }
             return InteractionResult.SUCCESS;
         }
-        // 飲むポーション（スプラッシュ／残留は対象外）
+        // 飲むポ�Eション�E�スプラチE��ュ�E�残留は対象外！E
         if (stack.is(Items.POTION)) {
             var contents = stack.get(net.minecraft.core.component.DataComponents.POTION_CONTENTS);
             if (contents != null) {
@@ -193,13 +193,13 @@ final class LMInteractionHandler {
                 return InteractionResult.SUCCESS;
             }
         }
-        // 砂糖
+        // 砂糁E
         if (stack.is(LMTags.Items.MAIDS_SALARY)) {
             LMNConfig config = LittleMaidEntity.getConfig();
             mob.heal(config.health.healAmount);
             return mob.changeState(player, stack);
         }
-        // Freedom / Stroll 切替（羽）: ESCORT → FREEDOM → STROLL → ESCORT
+        // Freedom / Stroll 刁E���E�羽�E�E ESCORT ↁEFREEDOM ↁESTROLL ↁEESCORT
         if (stack.getItem() == Items.FEATHER) {
             switch (mob.getMaidMode()) {
                 case ESCORT -> {
@@ -218,7 +218,7 @@ final class LMInteractionHandler {
             }
             return InteractionResult.SUCCESS;
         }
-        // Tracer切替（赤石）: FREEDOM/STROLL ↔ TRACER
+        // Tracer刁E���E�赤石�E�E FREEDOM/STROLL ↁETRACER
         if ((mob.getMaidMode() == MaidMode.FREEDOM ||
                 mob.getMaidMode() == MaidMode.STROLL ||
                 mob.getMaidMode() == MaidMode.TRACER) &&
@@ -233,7 +233,7 @@ final class LMInteractionHandler {
             }
             return InteractionResult.SUCCESS;
         }
-        // 利き手切替（棒）
+        // 利き手刁E���E�棒！E
         if (stack.getItem() == Items.STICK) {
             boolean left = !mob.isLeftHanded();
             mob.setLeftHanded(left);
@@ -245,7 +245,7 @@ final class LMInteractionHandler {
             mob.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, false);
             return InteractionResult.SUCCESS;
         }
-        // ガラス瓶 -> 経験値瓶（所持 XP と瓶の数だけまとめて変換）
+        // ガラス瓶 -> 経験値瓶�E�所持EXP と瓶の数だけまとめて変換�E�E
         if (stack.is(Items.GLASS_BOTTLE) && mob.getXpReward_LM() >= LittleMaidEntity.EXPERIENCE_BOTTLE_COST) {
             int cost = LittleMaidEntity.EXPERIENCE_BOTTLE_COST;
             int maxByXp = mob.getXpReward_LM() / cost;
@@ -284,7 +284,7 @@ final class LMInteractionHandler {
         if (stack.getItem() == Items.GUNPOWDER) {
             int maxAccelerationStack = LittleMaidEntity.getConfig().misc.maxAccelerationStack;
             int accelerationTicks = LittleMaidEntity.getConfig().misc.accelerationTicksPerStack;
-            // 同期ズレ防止のため、if条件を付加する場合は結果をパケットで送信すること
+            // 同期ズレ防止のため、if条件を付加する場合�E結果をパケチE��で送信すること
             int resumeCount = Math.min(maxAccelerationStack, stack.getCount());
             int acTicks = resumeCount * accelerationTicks;
             mob.setAccelerationTicks(acTicks);

@@ -118,17 +118,29 @@ public class LittleMaidEntity
     /** 経験値瓶 1 本に必要な XP（旧 7 → 5 に軽減） */
     static final int EXPERIENCE_BOTTLE_COST = 5;
 
-    // ????s
-    public final LMHasInventory littleMaidInventory = new LMHasInventory();
-    public final LMItemContractable<LittleMaidEntity> itemContractable = new LMItemContractable<>(
+    /** インベントリ委譲クラス（保存・スロット操作はこちら経由）。 */
+    private final LMHasInventory littleMaidInventory = new LMHasInventory();
+    /** 給料・契約・ストライキの委譲クラス。 */
+    private final LMItemContractable<LittleMaidEntity> itemContractable = new LMItemContractable<>(
             this,
             () -> getConfig().contract.consumeSalaryInterval,
             () -> getConfig().contract.unpaidDaysLimit,
             (ItemStack stack) -> stack.is(LMTags.Items.MAIDS_SALARY));
+
+    /** 繧､繝ｳ繝吶Φ繝医Μ蟋碑ｭｲ繧ｯ繝ｩ繧ｹ・井ｿ晏ｭ倥・繧ｹ繝ｭ繝・ヨ謫堺ｽ懊・縺薙■繧臥ｵ檎罰・峨・*/
+    public LMHasInventory getLittleMaidInventory() {
+        return littleMaidInventory;
+    }
+
+    /** 邨ｦ譁吶・螂醍ｴ・・繧ｹ繝医Λ繧､繧ｭ縺ｮ蟋碑ｭｲ繧ｯ繝ｩ繧ｹ縲・*/
+    public LMItemContractable<LittleMaidEntity> getItemContractable() {
+        return itemContractable;
+    }
     public work.nemonet.littlemaidneo.entity.ai.behavior.MaidCombatBehavior combatBehavior;
     public work.nemonet.littlemaidneo.entity.ai.behavior.MaidCookingBehavior cookingBehavior;
     public work.nemonet.littlemaidneo.entity.ai.behavior.MaidHealerBehavior healerBehavior;
     public work.nemonet.littlemaidneo.entity.ai.behavior.MaidPharmacistBehavior pharmacistBehavior;
+    public work.nemonet.littlemaidneo.entity.ai.behavior.MaidFillBottleBehavior fillBottleBehavior;
     public work.nemonet.littlemaidneo.entity.ai.behavior.MaidRipperBehavior ripperBehavior;
     public work.nemonet.littlemaidneo.entity.ai.behavior.MaidTorcherBehavior torcherBehavior;
 
@@ -136,18 +148,28 @@ public class LittleMaidEntity
     public work.nemonet.littlemaidneo.entity.ai.behavior.MaidPanicBehavior panicBehavior;
     public work.nemonet.littlemaidneo.entity.ai.behavior.MaidAvoidBehavior avoidBehavior;
 
-    public String getActiveJobName() {
+    public MaidJob getActiveJob() {
         if (this.isStrike()) {
-            return "none";
+            return MaidJob.NONE;
         }
-        return this.getBrain().getMemory(ModRegistration.ACTIVE_JOB_NAME.get()).orElse("none");
+        return this.getBrain().getMemory(ModRegistration.ACTIVE_JOB_NAME.get()).orElse(MaidJob.NONE);
     }
 
-    public String getActiveBattleMode() {
-        return this.getBrain().getMemory(ModRegistration.ACTIVE_BATTLE_MODE.get()).orElse("none");
+    /** datapack / 外部 API 互換の小文字ジョブ名。 */
+    public String getActiveJobName() {
+        return getActiveJob().getSerialName();
     }
-    public final MultiModelCompound multiModel;
-    public final SoundPlayableCompound soundPlayer;
+
+    public BattleMode getActiveBattle() {
+        return this.getBrain().getMemory(ModRegistration.ACTIVE_BATTLE_MODE.get()).orElse(BattleMode.NONE);
+    }
+
+    /** 外部互換の小文字戦闘モード名。 */
+    public String getActiveBattleMode() {
+        return getActiveBattle().getSerialName();
+    }
+    private final MultiModelCompound multiModel;
+    private final SoundPlayableCompound soundPlayer;
     private final LMScreenHandlerFactory screenFactory = new LMScreenHandlerFactory(this);
     private final TargetTagManager targetTagManager;
 
@@ -161,7 +183,12 @@ public class LittleMaidEntity
         return soundPlayer;
     }
 
-    public final Map<Mob, java.util.function.Predicate<Mob>> fleeEntities = new HashMap<>();
+    private final Map<Mob, java.util.function.Predicate<Mob>> fleeEntities = new HashMap<>();
+
+    /** 逃げる対象とその除去条件。 */
+    public Map<Mob, java.util.function.Predicate<Mob>> getFleeEntities() {
+        return fleeEntities;
+    }
 
     @Nullable
     private BlockPos freedomPos;
@@ -237,6 +264,7 @@ private float prevInterestedAngle;
             this.combatBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidCombatBehavior();
             this.cookingBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidCookingBehavior();
             this.healerBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidHealerBehavior();
+            this.fillBottleBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidFillBottleBehavior();
             this.pharmacistBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidPharmacistBehavior();
             this.ripperBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidRipperBehavior();
             this.torcherBehavior = new work.nemonet.littlemaidneo.entity.ai.behavior.MaidTorcherBehavior();
@@ -517,10 +545,6 @@ private float prevInterestedAngle;
         itemContractable.tick();
         work.nemonet.littlemaidneo.entity.util.MaidJobManager.tick(this);
 
-        if (this.tickCount % 40 == 0 && this.getHealth() < this.getMaxHealth()) {
-            tryEatingFromInventory();
-        }
-
         if (TameableUtil.isWait(this) && this.isInWater()) {
             TameableUtil.setWait(this, false);
         }
@@ -538,37 +562,7 @@ private float prevInterestedAngle;
     }
 
     protected void pickupItem() {
-        if (!getConfig().misc.canPickupExperienceOrb &&
-                !getConfig().misc.canPickupItem) {
-            return;
-        }
-        if (this.getHealth() <= 0 || this.isSpectator()) {
-            return;
-        }
-        var aabb = this.getBoundingBox().inflate(1.0, 0.5, 1.0);
-        // LMCollidable（ItemEntity / ExperienceOrb の Mixin）だけをセクション走査の段階で絞り込む。
-        // 無条件の getEntities は毎 tick 周囲の全エンティティを収集するため、多数のメイドさんがいると重い。
-        var aroundItems = this.level().getEntities(this, aabb,
-                e -> e instanceof LMCollidable && !e.isRemoved());
-        var exps = Lists.<Entity>newArrayList();
-        for (Entity entity : aroundItems) {
-            if (entity instanceof ExperienceOrb) {
-                if (getConfig().misc.canPickupExperienceOrb) {
-                    exps.add(entity);
-                }
-                continue;
-            }
-            if (!getConfig().misc.canPickupItem) {
-                continue;
-            }
-            ((LMCollidable) entity).onCollision_LM(this);
-        }
-        if (!exps.isEmpty()) {
-            var collidable = ((LMCollidable) Util.getRandom(exps, this.random));
-            if (collidable != null) {
-                collidable.onCollision_LM(this);
-            }
-        }
+        MaidPickup.pickup(this);
     }
 
     @Override
@@ -1343,24 +1337,6 @@ public Optional<String> getModeName() {
             }
         }
         soundPlayer.play(soundName);
-    }
-
-    private void tryEatingFromInventory() {
-        Container inv = this.getInventory();
-        for (int i = 0; i < inv.getContainerSize(); i++) {
-            ItemStack stack = inv.getItem(i);
-            if (!stack.isEmpty() && stack.is(LMTags.Items.MAIDS_SALARY)) {
-                stack.shrink(1);
-                if (stack.isEmpty()) {
-                    inv.setItem(i, ItemStack.EMPTY);
-                }
-                var config = getConfig();
-                this.heal(config.health.healAmount);
-                this.playSound(SoundEvents.GENERIC_EAT.value(), 0.5f, 0.5f + this.random.nextFloat() * 0.5f);
-                this.level().broadcastEntityEvent(this, (byte) 72); // ??????????????
-                break;
-            }
-        }
     }
 
     protected void showTransAmParticles() {

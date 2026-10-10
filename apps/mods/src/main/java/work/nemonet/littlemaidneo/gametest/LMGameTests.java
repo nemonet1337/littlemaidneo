@@ -14,7 +14,7 @@ import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import work.nemonet.littlemaidneo.LittleMaidNeo;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
-import work.nemonet.littlemaidneo.entity.util.MaidJobManager;
+import work.nemonet.littlemaidneo.entity.util.MaidJob;
 import work.nemonet.littlemaidneo.entity.util.MaidMode;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 import work.nemonet.littlemaidneo.setup.ModRegistration;
@@ -45,7 +45,7 @@ public final class LMGameTests {
         LittleMaidEntity maid = spawnContracted(helper, 2, 1, 2);
         maid.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SWORD));
         helper.succeedWhen(() -> helper.assertTrue(
-                MaidJobManager.JOB_COMBAT.equals(maid.getActiveJobName()),
+                maid.getActiveJob() == MaidJob.COMBAT,
                 Component.literal("expected combat job, got " + maid.getActiveJobName())));
     }
 

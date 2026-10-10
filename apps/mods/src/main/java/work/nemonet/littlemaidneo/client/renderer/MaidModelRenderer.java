@@ -62,7 +62,7 @@ public class MaidModelRenderer extends MobRenderer<LittleMaidEntity, MaidRenderS
         state.isFreedomMode = entity.getMaidMode() == work.nemonet.littlemaidneo.entity.util.MaidMode.FREEDOM;
         state.isTracerMode = entity.getMaidMode() == work.nemonet.littlemaidneo.entity.util.MaidMode.TRACER;
         state.isPlayingSnow = entity.isPlayingSnow();
-        state.isWorking = !entity.getActiveJobName().equals("none");
+        state.isWorking = entity.getActiveJob() != work.nemonet.littlemaidneo.entity.util.MaidJob.NONE;
         state.isPlanter = false;
         state.isOverdrive = entity.getAccelerationTicks() > 0;
         state.activeJobName = entity.getActiveJobName();

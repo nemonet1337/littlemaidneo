@@ -3,16 +3,32 @@ package work.nemonet.littlemaidneo.entity.ai.behavior;
 import com.google.common.collect.ImmutableMap;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.world.Container;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.item.ItemStack;
 import work.nemonet.littlemaidneo.config.LMNConfig;
+import work.nemonet.littlemaidneo.entity.LMHasInventory;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
+import work.nemonet.littlemaidneo.entity.mode.ModeHelpers;
 import work.nemonet.littlemaidneo.resource.util.LMSounds;
 import work.nemonet.littlemaidneo.setup.ModRegistration;
 import work.nemonet.littlemaidneo.tags.LMTags;
 
+/**
+ * 自己回復（給料アイテム＝砂糖を食べる）。
+ *
+ * <p>唯一の自己回復経路。旧 {@code LittleMaidEntity#tryEatingFromInventory} は
+ * 二重実装だったため削除し、こちらに一本化した。
+ *
+ * <p>方針:
+ * <ul>
+ *   <li>対象は「給料タグ付きアイテム」のみ。メインハンド・オフハンドを含む作業ビュー
+ *       （{@link LMHasInventory#getWorkView}）を走査する</li>
+ *   <li>一般の食料／ポーションは healer ジョブ（飼い主への提供）専用。
+ *       {@code MaidJobManager} 側で給料タグを healer フォールバックから除外してある</li>
+ *   <li>待機中（IS_WAITING）は発生しない</li>
+ * </ul>
+ */
 public class MaidHealSelfBehavior extends AbstractMaidBehavior {
     private int cool;
     private int healItemSlot = -1;
@@ -47,8 +63,9 @@ public class MaidHealSelfBehavior extends AbstractMaidBehavior {
 
     @Override
     protected void tick(ServerLevel level, LittleMaidEntity entity, long gameTime) {
-        if (0 < cool--) return;
-        cool = LittleMaidEntity.getConfig().health.healInterval;
+        // healInterval は「N tick 間隔」（旧実装は +1 tick ずれていた）
+        if (++cool < LittleMaidEntity.getConfig().health.healInterval) return;
+        cool = 0;
 
         var healItem = getHealItem(entity, healItemSlot);
         if (!isHealItem(healItem)) {
@@ -63,25 +80,22 @@ public class MaidHealSelfBehavior extends AbstractMaidBehavior {
         consumeHealItem(entity, healItem);
         entity.playSound(SoundEvents.ITEM_PICKUP, 1.0F, entity.getRandom().nextFloat() * 0.1F + 1.0F);
         entity.swing(InteractionHand.MAIN_HAND, net.minecraft.world.item.component.SwingAnimation.DEFAULT, false);
-        
+        // 砂糖を食べた演出（changeState と同一のノート粒子）
+        entity.level().broadcastEntityEvent(entity, (byte) 72);
+
         var sound = isHealthFull(entity) ? LMSounds.EAT_SUGAR_MAX_POWER : LMSounds.EAT_SUGAR;
         entity.play(sound);
     }
 
+    /** 作業ビュー（メインハンド→オフハンド→18 スロット）から給料アイテムを探す。 */
     private int findHealItemSlot(LittleMaidEntity entity) {
-        Container inv = entity.getInventory();
-        for (int i = 0; i < inv.getContainerSize(); i++) {
-            ItemStack slotStack = inv.getItem(i);
-            if (isHealItem(slotStack)) {
-                return i;
-            }
-        }
-        return -1;
+        return ModeHelpers.findSlot(LMHasInventory.getWorkView(entity), this::isHealItem)
+                .orElse(-1);
     }
 
     private ItemStack getHealItem(LittleMaidEntity entity, int slot) {
         if (slot == -1) return ItemStack.EMPTY;
-        var stack = entity.getInventory().getItem(slot);
+        var stack = LMHasInventory.getWorkView(entity).getItem(slot);
         if (!isHealItem(stack)) return ItemStack.EMPTY;
         return stack;
     }
@@ -93,7 +107,7 @@ public class MaidHealSelfBehavior extends AbstractMaidBehavior {
     private void consumeHealItem(LittleMaidEntity entity, ItemStack healItem) {
         healItem.shrink(1);
         if (healItem.isEmpty() && healItemSlot != -1) {
-            entity.getInventory().removeItemNoUpdate(healItemSlot);
+            LMHasInventory.getWorkView(entity).removeItemNoUpdate(healItemSlot);
         }
     }
 
@@ -109,4 +123,3 @@ public class MaidHealSelfBehavior extends AbstractMaidBehavior {
         return entity.getHealth() / entity.getMaxHealth() > LMNConfig.get().health.healDelayThreshold;
     }
 }
-

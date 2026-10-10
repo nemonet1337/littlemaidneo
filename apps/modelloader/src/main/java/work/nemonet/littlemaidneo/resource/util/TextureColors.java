@@ -1,5 +1,11 @@
 package work.nemonet.littlemaidneo.resource.util;
 
+/**
+ * テクスチャの色インデックス（index 0-15）と色コード。
+ *
+ * <p><b>不変条件（保護コア B）</b>: 宣言順は index 昇順で固定。外部テクスチャパックが
+ * index と色コードの対応に依存するため、順序・index・色コードは変更不可。
+ */
 public enum TextureColors {
     WHITE(0, 0xFFFFFF),
     ORANGE(1, 0xD87F33),

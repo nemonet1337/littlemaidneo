@@ -15,16 +15,21 @@ import net.minecraft.world.item.consume_effects.ApplyStatusEffectsConsumeEffect;
 import work.nemonet.littlemaidneo.entity.LMHasInventory;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.entity.mode.ModeHelpers;
+import work.nemonet.littlemaidneo.entity.util.MaidJob;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 import work.nemonet.littlemaidneo.resource.util.LMSounds;
 
 import java.util.Map;
 
 public class MaidHealerBehavior extends AbstractMaidBehavior {
+    /** インベントリ全走査の間隔（tick）。 */
+    private static final int SEARCH_INTERVAL = 20;
+
     protected LivingEntity owner;
     protected int foodIndex;
     protected int potionIndex;
     protected int timeToRecalcPath;
+    private int searchCool;
 
     public MaidHealerBehavior() {
         super(Map.of(
@@ -34,8 +39,7 @@ public class MaidHealerBehavior extends AbstractMaidBehavior {
 
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, LittleMaidEntity mob) {
-        String job = mob.getBrain().getMemory(work.nemonet.littlemaidneo.setup.ModRegistration.ACTIVE_JOB_NAME.get()).orElse("");
-        if (!job.equals("healer")) {
+        if (!requireJob(mob, MaidJob.HEALER)) {
             return false;
         }
 
@@ -54,25 +58,40 @@ public class MaidHealerBehavior extends AbstractMaidBehavior {
 
     @Override
     protected boolean canStillUse(ServerLevel level, LittleMaidEntity mob, long gameTime) {
-        String job = mob.getBrain().getMemory(work.nemonet.littlemaidneo.setup.ModRegistration.ACTIVE_JOB_NAME.get()).orElse("");
-        if (!job.equals("healer")) {
+        if (!requireJob(mob, MaidJob.HEALER)) {
             return false;
         }
         LivingEntity o = TameableUtil.getTameOwner(mob).orElse(null);
         if (!(o instanceof Player)) return false;
         double range = LittleMaidEntity.getConfig().work.maxTargetRange;
         if (mob.distanceToSqr(o) > range * range) return false;
+        this.owner = o;
+        // インベントリ全走査は開始時と間引き時だけ。それ以外は既知 slot の有効性だけ見る。
+        if (0 < --searchCool) {
+            return hasUsableItem(mob);
+        }
+        searchCool = SEARCH_INTERVAL;
         boolean isHunger = ((Player) o).getFoodData().needsFood();
         boolean fullHealth = o.getMaxHealth() <= o.getHealth();
-        this.owner = o;
         return searchInventory(mob, o, isHunger, fullHealth);
+    }
+
+    /** 既に発見した slot の有効性だけを見る（毎 tick の全走査を避ける）。 */
+    private boolean hasUsableItem(LittleMaidEntity mob) {
+        Container inventory = LMHasInventory.getWorkView(mob);
+        boolean fullHealth = owner != null && owner.getHealth() >= owner.getMaxHealth();
+        if (foodIndex != -1 && foodIndex < inventory.getContainerSize() && isFood(inventory.getItem(foodIndex))) {
+            return true;
+        }
+        return potionIndex != -1 && potionIndex < inventory.getContainerSize()
+                && isBeneficialPotion(owner, inventory.getItem(potionIndex), fullHealth);
     }
 
     public boolean searchInventory(LittleMaidEntity mob, LivingEntity owner, boolean isHunger, boolean fullHealth) {
         boolean result = false;
         foodIndex = -1;
         potionIndex = -1;
-        Container inventory = LMHasInventory.getInvAndHands(mob);
+        Container inventory = LMHasInventory.getWorkView(mob);
         for (int i = 0; i < inventory.getContainerSize(); ++i) {
             ItemStack stack = inventory.getItem(i);
             if (isHunger && foodIndex == -1 && isFood(stack)) {
@@ -130,7 +149,7 @@ public class MaidHealerBehavior extends AbstractMaidBehavior {
         }
         mob.getNavigation().stop();
 
-        Container inventory = LMHasInventory.getInvAndHands(mob);
+        Container inventory = LMHasInventory.getWorkView(mob);
         if (foodIndex != -1 && foodIndex >= 0 && foodIndex < inventory.getContainerSize()) {
             ItemStack stack = inventory.getItem(foodIndex);
             if (isFood(stack)) {

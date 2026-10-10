@@ -3,6 +3,7 @@ package work.nemonet.littlemaidneo.entity.targeting;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.Vec3;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
+import work.nemonet.littlemaidneo.entity.util.BattleMode;
 import work.nemonet.littlemaidneo.entity.util.TameableUtil;
 import org.jetbrains.annotations.Nullable;
 
@@ -107,13 +108,11 @@ public class TargetingSystem {
         }
 
         public BattleModeType getCombatType() {
-            String mode = maid.getActiveBattleMode();
-            if ("sword".equals(mode)) {
-                return BattleModeType.SWORD;
-            } else if ("bow".equals(mode)) {
-                return BattleModeType.BOW;
-            }
-            return BattleModeType.NONE;
+            return switch (maid.getActiveBattle()) {
+                case SWORD -> BattleModeType.SWORD;
+                case BOW -> BattleModeType.BOW;
+                case NONE -> BattleModeType.NONE;
+            };
         }
 
         @Override

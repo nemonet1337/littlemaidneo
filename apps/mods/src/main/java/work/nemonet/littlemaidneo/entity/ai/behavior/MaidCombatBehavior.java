@@ -21,7 +21,8 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 import work.nemonet.littlemaidneo.config.LMNConfig;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
-import work.nemonet.littlemaidneo.entity.util.MaidJobManager;
+import work.nemonet.littlemaidneo.entity.util.BattleMode;
+import work.nemonet.littlemaidneo.entity.util.MaidJob;
 import work.nemonet.littlemaidneo.item.IRangedWeapon;
 import work.nemonet.littlemaidneo.resource.util.LMSounds;
 import work.nemonet.littlemaidneo.util.ReachAttributeUtil;
@@ -45,14 +46,12 @@ public class MaidCombatBehavior extends AbstractMaidBehavior {
     }
 
     private BattleStyle selectStyle(LittleMaidEntity mob) {
-        String battleMode = mob.getBrain().getMemory(work.nemonet.littlemaidneo.setup.ModRegistration.ACTIVE_BATTLE_MODE.get()).orElse(MaidJobManager.BATTLE_SWORD);
-        return battleMode.equals(MaidJobManager.BATTLE_BOW) ? this.ranged : this.melee;
+        return mob.getActiveBattle() == BattleMode.BOW ? this.ranged : this.melee;
     }
 
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, LittleMaidEntity mob) {
-        String job = mob.getBrain().getMemory(work.nemonet.littlemaidneo.setup.ModRegistration.ACTIVE_JOB_NAME.get()).orElse("");
-        if (!job.equals("combat")) {
+        if (!requireJob(mob, MaidJob.COMBAT)) {
             return false;
         }
         BattleStyle style = selectStyle(mob);
@@ -63,8 +62,7 @@ public class MaidCombatBehavior extends AbstractMaidBehavior {
 
     @Override
     protected boolean canStillUse(ServerLevel level, LittleMaidEntity mob, long gameTime) {
-        String job = mob.getBrain().getMemory(work.nemonet.littlemaidneo.setup.ModRegistration.ACTIVE_JOB_NAME.get()).orElse("");
-        if (!job.equals("combat")) {
+        if (!requireJob(mob, MaidJob.COMBAT)) {
             return false;
         }
         BattleStyle a = this.active;
@@ -250,7 +248,11 @@ public class MaidCombatBehavior extends AbstractMaidBehavior {
     }
 
     private static class RangedStyle extends BattleStyle {
+        /** 視線判定の間隔（tick）。 */
+        private static final int SEE_INTERVAL = 4;
+
         private int seeTime;
+        private int seeInterval;
         private boolean strafingClockwise;
         private boolean strafingBackwards;
         private int strafingTime = -1;
@@ -277,7 +279,12 @@ public class MaidCombatBehavior extends AbstractMaidBehavior {
                 return;
             }
             double distanceSq = mob.distanceToSqr(target.getX(), target.getY(), target.getZ());
-            boolean canSee = mob.getSensing().hasLineOfSight(target);
+            // 視線判定は tick 負荷が高いので間引く。seeTime を直前の結果キャッシュとして使い回す。
+            boolean canSee = 0 < this.seeTime;
+            if (--this.seeInterval <= 0) {
+                this.seeInterval = SEE_INTERVAL;
+                canSee = mob.getSensing().hasLineOfSight(target);
+            }
             ItemStack itemStack = mob.getMainHandItem();
             float maxRange = getMaxRange(mob, itemStack);
             boolean prevCanSee = 0 < this.seeTime;

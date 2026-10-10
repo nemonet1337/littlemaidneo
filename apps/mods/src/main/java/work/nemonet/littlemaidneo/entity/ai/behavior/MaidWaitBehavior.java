@@ -21,6 +21,12 @@ public class MaidWaitBehavior extends AbstractMaidBehavior {
         return entity.getBrain().hasMemoryValue(ModRegistration.IS_WAITING.get());
     }
 
+    // 開始条件は必須メモリ（IS_WAITING present）のみ。
+    @Override
+    protected boolean checkExtraStartConditions(ServerLevel level, LittleMaidEntity entity) {
+        return true;
+    }
+
     @Override
     protected void start(ServerLevel level, LittleMaidEntity entity, long gameTime) {
         entity.getNavigation().stop();

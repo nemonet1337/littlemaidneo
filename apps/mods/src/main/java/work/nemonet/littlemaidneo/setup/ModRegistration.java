@@ -83,10 +83,10 @@ public class ModRegistration {
             MEMORY_MODULES.register("is_waiting", () -> new MemoryModuleType<>(java.util.Optional.empty()));
     public static final DeferredHolder<MemoryModuleType<?>, MemoryModuleType<net.minecraft.world.entity.player.Player>> OWNER =
             MEMORY_MODULES.register("owner", () -> new MemoryModuleType<>(java.util.Optional.empty()));
-    public static final DeferredHolder<MemoryModuleType<?>, MemoryModuleType<String>> ACTIVE_JOB_NAME =
-            MEMORY_MODULES.register("active_job_name", () -> new MemoryModuleType<>(java.util.Optional.of(com.mojang.serialization.Codec.STRING)));
-    public static final DeferredHolder<MemoryModuleType<?>, MemoryModuleType<String>> ACTIVE_BATTLE_MODE =
-            MEMORY_MODULES.register("active_battle_mode", () -> new MemoryModuleType<>(java.util.Optional.of(com.mojang.serialization.Codec.STRING)));
+    public static final DeferredHolder<MemoryModuleType<?>, MemoryModuleType<work.nemonet.littlemaidneo.entity.util.MaidJob>> ACTIVE_JOB_NAME =
+            MEMORY_MODULES.register("active_job_name", () -> new MemoryModuleType<>(java.util.Optional.of(work.nemonet.littlemaidneo.entity.util.MaidJob.CODEC)));
+    public static final DeferredHolder<MemoryModuleType<?>, MemoryModuleType<work.nemonet.littlemaidneo.entity.util.BattleMode>> ACTIVE_BATTLE_MODE =
+            MEMORY_MODULES.register("active_battle_mode", () -> new MemoryModuleType<>(java.util.Optional.of(work.nemonet.littlemaidneo.entity.util.BattleMode.CODEC)));
 
     public static final DeferredHolder<SensorType<?>, SensorType<work.nemonet.littlemaidneo.entity.ai.LittleMaidSensor>> LITTLE_MAID_SENSOR =
             SENSORS.register("little_maid_sensor", () -> new SensorType<>(work.nemonet.littlemaidneo.entity.ai.LittleMaidSensor::new));

@@ -28,6 +28,9 @@ import java.util.Optional;
 
 public class MaidCollectSalaryBehavior extends AbstractMaidBehavior {
 
+    /** コンチE��可用性のキャチE��ュ間隔�E�Eick�E�。スキャン毁Etick は要らなぁE��E*/
+    private static final int CONTAINER_CACHE_TICKS = 5;
+
     @Nullable
     protected BlockPos targetContainerPos;
     @Nullable
@@ -39,6 +42,11 @@ public class MaidCollectSalaryBehavior extends AbstractMaidBehavior {
     protected BlockPos prevWaitPos;
     protected int moveToPrevWaitPosTime;
 
+    @Nullable
+    private BlockPos containerCachePos;
+    private int containerCacheCool;
+    private Optional<Container> containerCache = Optional.empty();
+
     public MaidCollectSalaryBehavior() {
         super(ImmutableMap.of(
                 ModRegistration.IS_WAITING.get(), MemoryStatus.VALUE_ABSENT
@@ -48,7 +56,7 @@ public class MaidCollectSalaryBehavior extends AbstractMaidBehavior {
     @Override
     protected boolean checkExtraStartConditions(ServerLevel level, LittleMaidEntity entity) {
         rememberNearbySalaryBoxes(level, entity);
-        return entity.itemContractable.hasSalaryBoxPositions()
+        return entity.getItemContractable().hasSalaryBoxPositions()
                 && TameableUtil.hasTameOwner(entity)
                 && entity.getRandom().nextFloat() <= (1.0f / getConfigCheckInterval())
                 && shouldCollect(entity)
@@ -82,7 +90,7 @@ public class MaidCollectSalaryBehavior extends AbstractMaidBehavior {
     @Override
     protected void tick(ServerLevel level, LittleMaidEntity entity, long gameTime) {
         if (targetContainerPos == null) {
-            // 待機前位置への帰還
+            // 征E��前位置への帰邁E
             if (prevWaitPos != null) {
                 if (prevWaitPos.equals(entity.blockPosition())
                         || moveToPrevWaitPosTime++ > getConfigMaxMoveTimePrevPos()) {
@@ -164,7 +172,15 @@ public class MaidCollectSalaryBehavior extends AbstractMaidBehavior {
     }
 
     protected Optional<Container> getAvailableContainer(LittleMaidEntity entity) {
-        return getAvailableContainer(entity, this.targetContainerPos);
+        if (this.containerCacheCool > 0
+                && java.util.Objects.equals(this.containerCachePos, this.targetContainerPos)) {
+            this.containerCacheCool--;
+            return this.containerCache;
+        }
+        this.containerCache = getAvailableContainer(entity, this.targetContainerPos);
+        this.containerCachePos = this.targetContainerPos;
+        this.containerCacheCool = CONTAINER_CACHE_TICKS;
+        return this.containerCache;
     }
 
     protected Optional<Container> getAvailableContainer(LittleMaidEntity entity, BlockPos containerPos) {
@@ -188,16 +204,16 @@ public class MaidCollectSalaryBehavior extends AbstractMaidBehavior {
     }
 
     protected boolean isTargetItem(LittleMaidEntity entity, ItemStack stack) {
-        return entity.itemContractable.isSalary(stack);
+        return entity.getItemContractable().isSalary(stack);
     }
 
     protected boolean shouldCollect(LittleMaidEntity entity) {
-        int salarySlots = entity.itemContractable.checkSalarySlots();
+        int salarySlots = entity.getItemContractable().checkSalarySlots();
         return salarySlots <= getConfigMinSalarySlots();
     }
 
     protected boolean canCollectState(LittleMaidEntity entity) {
-        int salarySlots = entity.itemContractable.checkSalarySlots();
+        int salarySlots = entity.getItemContractable().checkSalarySlots();
         var inv = entity.getInventory();
         for (int i = 0; i < inv.getContainerSize(); i++) {
             if (inv.getItem(i).isEmpty()) return salarySlots < getConfigMaxSalarySlots();
@@ -208,11 +224,11 @@ public class MaidCollectSalaryBehavior extends AbstractMaidBehavior {
     private void rememberNearbySalaryBoxes(ServerLevel level, LittleMaidEntity entity) {
         int range = (int) getConfigSalaryBoxRange();
         WorkPoi.findAll(level, entity.blockPosition(), range, type -> type.is(ModRegistration.SALARY_BOX_POI))
-                .forEach(entity.itemContractable::listenSalaryBoxPos);
+                .forEach(entity.getItemContractable()::listenSalaryBoxPos);
     }
 
     protected Optional<BlockPos> searchContainerPos(LittleMaidEntity entity) {
-        var salaryBoxList = entity.itemContractable.getSalaryBoxPositions();
+        var salaryBoxList = entity.getItemContractable().getSalaryBoxPositions();
         if (salaryBoxList.isEmpty()) return Optional.empty();
 
         List<BlockPos> newSalaryBoxList = Lists.newArrayList();
@@ -239,7 +255,7 @@ public class MaidCollectSalaryBehavior extends AbstractMaidBehavior {
                 resultPath = path;
             }
         }
-        entity.itemContractable.setSalaryBoxPositions(newSalaryBoxList);
+        entity.getItemContractable().setSalaryBoxPositions(newSalaryBoxList);
         if (resultPath != null) {
             this.toContainerPath = resultPath;
             return Optional.of(result);

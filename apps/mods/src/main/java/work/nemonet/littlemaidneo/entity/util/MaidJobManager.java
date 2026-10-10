@@ -11,7 +11,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.ShearsItem;
-import net.minecraft.world.item.alchemy.Potions;
+import work.nemonet.littlemaidneo.entity.LMHasInventory;
 import work.nemonet.littlemaidneo.entity.LittleMaidEntity;
 import work.nemonet.littlemaidneo.item.IRangedWeapon;
 import work.nemonet.littlemaidneo.setup.LMDataMaps;
@@ -20,32 +20,14 @@ import work.nemonet.littlemaidneo.tags.LMTags;
 
 import java.util.Optional;
 
+/**
+ * メイドさんのジョブ（お仕事）管理。
+ *
+ * <p>開始判定は「メインハンドのアイテム → インベントリ内の最高優先度アイテム」、
+ * 継続判定は「メインハンドが現在のジョブに適合するか」。
+ * ジョブ名は型安全な {@link MaidJob} で扱う（旧 String 定数は Codec 側に集約済み）。
+ */
 public class MaidJobManager {
-    public static final String JOB_NONE = "none";
-    public static final String JOB_COMBAT = "combat";
-    public static final String JOB_COOKING = "cooking";
-    public static final String JOB_RIPPER = "ripper";
-    public static final String JOB_TORCHER = "torcher";
-    public static final String JOB_HEALER = "healer";
-    public static final String JOB_PHARMACIST = "pharmacist";
-
-    /** 旧バージョンの誤字。セーブ読み込み時に {@link #JOB_PHARMACIST} へ正規化される。 */
-    private static final String LEGACY_JOB_PHARMACIST = "pharmcist";
-
-    /**
-     * 旧表記のジョブ名を現行表記へ正規化する。
-     *
-     * @param job Brain に記憶されているジョブ名
-     * @return 正規化後のジョブ名
-     */
-    public static String normalizeJob(String job) {
-        return LEGACY_JOB_PHARMACIST.equals(job) ? JOB_PHARMACIST : job;
-    }
-
-    public static final String BATTLE_NONE = "none";
-    public static final String BATTLE_SWORD = "sword";
-    public static final String BATTLE_BOW = "bow";
-
     /** インベントリ走査でジョブを新規開始する最低優先度（タグ／明示 Data Map）。 */
     private static final int INVENTORY_START_PRIORITY = 400;
 
@@ -56,14 +38,11 @@ public class MaidJobManager {
     private static final int INVENTORY_SCAN_INTERVAL = 10;
 
     public static void tick(LittleMaidEntity maid) {
-        String currentJob = maid.getBrain().getMemory(ModRegistration.ACTIVE_JOB_NAME.get()).orElse(JOB_NONE);
-        if (currentJob.equals(LEGACY_JOB_PHARMACIST)) {
-            currentJob = JOB_PHARMACIST;
-            maid.getBrain().setMemory(ModRegistration.ACTIVE_JOB_NAME.get(), currentJob);
-        }
+        MaidJob currentJob = maid.getBrain()
+                .getMemory(ModRegistration.ACTIVE_JOB_NAME.get()).orElse(MaidJob.NONE);
         boolean scanInventory = maid.tickCount % INVENTORY_SCAN_INTERVAL == 0;
 
-        if (!currentJob.equals(JOB_NONE)) {
+        if (currentJob != MaidJob.NONE) {
             ItemStack mainHand = maid.getMainHandItem();
             boolean mainHandOk = isModeItemForJob(currentJob, mainHand);
             boolean emptyHandContinue = mainHand.isEmpty() && canContinueJobEmptyHanded(currentJob);
@@ -87,7 +66,7 @@ public class MaidJobManager {
             endJob(maid);
         }
 
-        Optional<String> newJob = getJobFromItem(maid.getMainHandItem());
+        Optional<MaidJob> newJob = getJobFromItem(maid.getMainHandItem());
         if (newJob.isPresent()) {
             startJob(maid, newJob.get());
             return;
@@ -106,23 +85,23 @@ public class MaidJobManager {
         }
     }
 
-    public static boolean isModeItemForJob(String job, ItemStack stack) {
+    public static boolean isModeItemForJob(MaidJob job, ItemStack stack) {
         if (stack.isEmpty()) {
             return false;
         }
         MaidJobEntry mapped = mappedJob(stack);
-        if (mapped != null && job.equals(mapped.job()) && !isSalaryBlocked(job, stack)) {
+        if (mapped != null && job == mapped.job() && !isSalaryBlocked(job, stack)) {
             return true;
         }
         return isFallbackForJob(job, stack);
     }
 
-    public static boolean canContinueJobEmptyHanded(String job) {
-        return JOB_PHARMACIST.equals(job)
-                || JOB_COOKING.equals(job)
-                || JOB_HEALER.equals(job)
-                || JOB_TORCHER.equals(job)
-                || JOB_RIPPER.equals(job);
+    public static boolean canContinueJobEmptyHanded(MaidJob job) {
+        return job == MaidJob.PHARMACIST
+                || job == MaidJob.COOKING
+                || job == MaidJob.HEALER
+                || job == MaidJob.TORCHER
+                || job == MaidJob.RIPPER;
     }
 
     private static MaidJobEntry mappedJob(ItemStack stack) {
@@ -132,34 +111,34 @@ public class MaidJobManager {
         }
         // Data Map 未ロード時のタグフォールバック（datapack と同じ対応）
         if (stack.is(LMTags.Items.FENCER_MODE) || stack.is(LMTags.Items.ARCHER_MODE)) {
-            return new MaidJobEntry(JOB_COMBAT, 400);
+            return new MaidJobEntry(MaidJob.COMBAT, 400);
         }
         if (stack.is(LMTags.Items.COOKING_MODE)) {
-            return new MaidJobEntry(JOB_COOKING, 400);
+            return new MaidJobEntry(MaidJob.COOKING, 400);
         }
         if (stack.is(LMTags.Items.RIPPER_MODE)) {
-            return new MaidJobEntry(JOB_RIPPER, 400);
+            return new MaidJobEntry(MaidJob.RIPPER, 400);
         }
         if (stack.is(LMTags.Items.TORCHER_MODE)) {
-            return new MaidJobEntry(JOB_TORCHER, 400);
+            return new MaidJobEntry(MaidJob.TORCHER, 400);
         }
         if (stack.is(LMTags.Items.HEALER_MODE)) {
-            return new MaidJobEntry(JOB_HEALER, 400);
+            return new MaidJobEntry(MaidJob.HEALER, 400);
         }
         if (stack.is(LMTags.Items.PHARMACIST_MODE)) {
-            return new MaidJobEntry(JOB_PHARMACIST, 400);
+            return new MaidJobEntry(MaidJob.PHARMACIST, 400);
         }
         if (stack.is(LMTags.Items.PHARMACIST_INGREDIENTS)) {
-            return new MaidJobEntry(JOB_PHARMACIST, 100);
+            return new MaidJobEntry(MaidJob.PHARMACIST, 100);
         }
         return null;
     }
 
-    private static boolean isSalaryBlocked(String job, ItemStack stack) {
-        return JOB_PHARMACIST.equals(job) && stack.is(LMTags.Items.MAIDS_SALARY);
+    private static boolean isSalaryBlocked(MaidJob job, ItemStack stack) {
+        return job == MaidJob.PHARMACIST && stack.is(LMTags.Items.MAIDS_SALARY);
     }
 
-    private static Optional<String> getJobFromItem(ItemStack stack) {
+    private static Optional<MaidJob> getJobFromItem(ItemStack stack) {
         if (stack.isEmpty()) {
             return Optional.empty();
         }
@@ -168,30 +147,30 @@ public class MaidJobManager {
             return Optional.of(mapped.job());
         }
         if (isCombatFallback(stack)) {
-            return Optional.of(JOB_COMBAT);
+            return Optional.of(MaidJob.COMBAT);
         }
         if (isRipperFallback(stack)) {
-            return Optional.of(JOB_RIPPER);
+            return Optional.of(MaidJob.RIPPER);
         }
         if (isTorcherFallback(stack)) {
-            return Optional.of(JOB_TORCHER);
+            return Optional.of(MaidJob.TORCHER);
         }
         if (isHealerFallback(stack)) {
-            return Optional.of(JOB_HEALER);
+            return Optional.of(MaidJob.HEALER);
         }
         if (isWaterBottle(stack)) {
-            return Optional.of(JOB_PHARMACIST);
+            return Optional.of(MaidJob.PHARMACIST);
         }
         return Optional.empty();
     }
 
-    private static boolean isFallbackForJob(String job, ItemStack stack) {
+    private static boolean isFallbackForJob(MaidJob job, ItemStack stack) {
         return switch (job) {
-            case JOB_COMBAT -> isCombatFallback(stack);
-            case JOB_RIPPER -> isRipperFallback(stack);
-            case JOB_TORCHER -> isTorcherFallback(stack);
-            case JOB_HEALER -> isHealerFallback(stack);
-            case JOB_PHARMACIST -> isWaterBottle(stack);
+            case COMBAT -> isCombatFallback(stack);
+            case RIPPER -> isRipperFallback(stack);
+            case TORCHER -> isTorcherFallback(stack);
+            case HEALER -> isHealerFallback(stack);
+            case PHARMACIST -> isWaterBottle(stack);
             default -> false;
         };
     }
@@ -222,7 +201,15 @@ public class MaidJobManager {
                 && 9 < blockItem.getBlock().defaultBlockState().getLightEmission();
     }
 
+    /**
+     * healer フォールバック（食料／ポーション）。
+     * 給料アイテム（{@link LMTags.Items#MAIDS_SALARY}）は対象外 —
+     * 自己回復専用で、飼い主へ渡す用途ではない。
+     */
     private static boolean isHealerFallback(ItemStack stack) {
+        if (stack.is(LMTags.Items.MAIDS_SALARY)) {
+            return false;
+        }
         if (stack.get(DataComponents.FOOD) != null) {
             return true;
         }
@@ -237,11 +224,12 @@ public class MaidJobManager {
         var contents = stack.get(DataComponents.POTION_CONTENTS);
         return contents != null
                 && contents.potion().isPresent()
-                && contents.potion().get().is(Potions.WATER);
+                && contents.potion().get().is(net.minecraft.world.item.alchemy.Potions.WATER);
     }
 
-    private static int findItemForJobInInventory(LittleMaidEntity maid, String job) {
-        Container inv = maid.getInventory();
+    /** ジョブ適合アイテムを手足込みの作業ビュー（メインハンド→オフハンド→18 スロット）から探す。 */
+    private static int findItemForJobInInventory(LittleMaidEntity maid, MaidJob job) {
+        Container inv = LMHasInventory.getWorkView(maid);
         for (int i = 0; i < inv.getContainerSize(); i++) {
             if (isModeItemForJob(job, inv.getItem(i))) {
                 return i;
@@ -250,10 +238,10 @@ public class MaidJobManager {
         return -1;
     }
 
-    private record InventoryJob(int slot, String job, int priority) {}
+    private record InventoryJob(int slot, MaidJob job, int priority) {}
 
     private static Optional<InventoryJob> findHighestPriorityJobInInventory(LittleMaidEntity maid, int minPriority) {
-        Container inv = maid.getInventory();
+        Container inv = LMHasInventory.getWorkView(maid);
         InventoryJob best = null;
         for (int i = 0; i < inv.getContainerSize(); i++) {
             ItemStack stack = inv.getItem(i);
@@ -271,24 +259,33 @@ public class MaidJobManager {
         return Optional.ofNullable(best);
     }
 
+    /**
+     * 作業ビュー {@code index} のアイテムとメインハンドを交換する。
+     * index 0（メインハンド自身）は何もしない。
+     */
     private static void switchMainHandItem(LittleMaidEntity maid, int index) {
-        Container inv = maid.getInventory();
-        ItemStack invStack = inv.getItem(index);
+        if (index == 0) {
+            return;
+        }
+        Container inv = LMHasInventory.getWorkView(maid);
+        ItemStack target = inv.getItem(index);
         ItemStack tmp = maid.getMainHandItem();
-        maid.setItemInHand(InteractionHand.MAIN_HAND, invStack);
         inv.setItem(index, tmp);
+        maid.setItemInHand(InteractionHand.MAIN_HAND, target);
     }
 
-    private static void startJob(LittleMaidEntity maid, String job) {
+    private static void startJob(LittleMaidEntity maid, MaidJob job) {
         maid.getBrain().setMemory(ModRegistration.ACTIVE_JOB_NAME.get(), job);
         updateBattleMode(maid);
-
-        String displayName = job.substring(0, 1).toUpperCase() + job.substring(1);
-        if (JOB_COMBAT.equals(job)) {
-            String battleMode = maid.getBrain().getMemory(ModRegistration.ACTIVE_BATTLE_MODE.get()).orElse("");
-            displayName = BATTLE_BOW.equals(battleMode) ? "Archer" : "Fencer";
-        }
-        maid.setModeName(displayName);
+        maid.setModeName(switch (job) {
+            case COMBAT -> maid.getActiveBattle() == BattleMode.BOW ? "Archer" : "Fencer";
+            case COOKING -> "Cooking";
+            case RIPPER -> "Ripper";
+            case TORCHER -> "Torcher";
+            case HEALER -> "Healer";
+            case PHARMACIST -> "Pharmacist";
+            case NONE -> "";
+        });
     }
 
     private static void endJob(LittleMaidEntity maid) {
@@ -298,8 +295,8 @@ public class MaidJobManager {
     }
 
     private static void updateBattleMode(LittleMaidEntity maid) {
-        String job = maid.getBrain().getMemory(ModRegistration.ACTIVE_JOB_NAME.get()).orElse(JOB_NONE);
-        if (!job.equals(JOB_COMBAT)) {
+        MaidJob job = maid.getBrain().getMemory(ModRegistration.ACTIVE_JOB_NAME.get()).orElse(MaidJob.NONE);
+        if (job != MaidJob.COMBAT) {
             maid.getBrain().eraseMemory(ModRegistration.ACTIVE_BATTLE_MODE.get());
             return;
         }
@@ -310,7 +307,7 @@ public class MaidJobManager {
                 || main.is(ItemTags.AXES)
                 || main.is(LMTags.Items.FENCER_MODE);
         if (melee) {
-            maid.getBrain().setMemory(ModRegistration.ACTIVE_BATTLE_MODE.get(), BATTLE_SWORD);
+            maid.getBrain().setMemory(ModRegistration.ACTIVE_BATTLE_MODE.get(), BattleMode.SWORD);
             return;
         }
 
@@ -319,9 +316,9 @@ public class MaidJobManager {
                 || item instanceof IRangedWeapon
                 || main.is(LMTags.Items.ARCHER_MODE);
         if (ranged) {
-            maid.getBrain().setMemory(ModRegistration.ACTIVE_BATTLE_MODE.get(), BATTLE_BOW);
+            maid.getBrain().setMemory(ModRegistration.ACTIVE_BATTLE_MODE.get(), BattleMode.BOW);
         } else {
-            maid.getBrain().setMemory(ModRegistration.ACTIVE_BATTLE_MODE.get(), BATTLE_SWORD);
+            maid.getBrain().setMemory(ModRegistration.ACTIVE_BATTLE_MODE.get(), BattleMode.SWORD);
         }
     }
 }
